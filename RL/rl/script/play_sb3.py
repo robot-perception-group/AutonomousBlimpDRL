@@ -18,7 +18,7 @@ AGENT = QRDQN
 time_steps = 100000
 
 # model
-model_path = "/home/yliu2/blimpRL/src/StableBaseline/RL/logs/PlanarNavigateEnv_QRDQN_continue/Tue Sep  7 21:59:19 2021/final_model.zip"
+model_path = "."
 
 # environments"""
 env_kwargs = {

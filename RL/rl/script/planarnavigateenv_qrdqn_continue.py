@@ -36,7 +36,7 @@ hour = 3600 * sec
 day = 24 * hour
 TIMESTEP = 0.5 * day
 
-path = "/home/yliu2/blimpRL/src/StableBaseline/RL/logs/PlanarNavigateEnv_QRDQN_continue/Tue Sep  7 21:59:19 2021/"
+path = "."
 model_path = os.path.join(path, "final_model.zip")
 buffer_path = os.path.join(path, "final_buffer.pkl")
 
