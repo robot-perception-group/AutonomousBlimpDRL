@@ -1,0 +1,14 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/yliu2/blimp_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/home/yliu2/blimpRL/src/StableBaseline/blimp_env/",
+        "/home/yliu2/blimpRL/src/StableBaseline/RL/"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/yliu2/blimp_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/home/yliu2/blimpRL/src/StableBaseline/blimp_env/",
+        "/home/yliu2/blimpRL/src/StableBaseline/RL/"
+    ]
+}

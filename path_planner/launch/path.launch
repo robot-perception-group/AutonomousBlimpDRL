@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+
+<launch>
+	<!--********** arg **********-->
+	<arg name="robotID" default="0"/>
+
+	<!--********** param **********-->
+	<rosparam file="$(find path_planner)/config/waypoints.yaml" />
+
+  	<!--********** spawn robot **********-->
+	<node name="path_node_$(arg robotID)" pkg="path_planner" type="path.py" output="screen"
+		args="$(arg robotID)">
+	</node>
+
+</launch>
+

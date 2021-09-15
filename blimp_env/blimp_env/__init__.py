@@ -1,0 +1,39 @@
+""" register gym environment """
+from gym.envs.registration import register
+
+register(
+    id="navigate-v0",
+    entry_point="blimp_env.envs:NavigateEnv",
+)
+register(
+    id="navigate_goal-v0",
+    entry_point="blimp_env.envs:NavigateGoalEnv",
+)
+register(
+    id="hover_goal-v0",
+    entry_point="blimp_env.envs:HoverGoalEnv",
+)
+register(
+    id="hover_fixgoal-v0",
+    entry_point="blimp_env.envs:HoverFixGoalEnv",
+)
+register(
+    id="vertical_goal-v0",
+    entry_point="blimp_env.envs:VerticalHoverGoalEnv",
+)
+register(
+    id="vertical_goal_2act-v0",
+    entry_point="blimp_env.envs:VerticalHoverGoal2ActEnv",
+)
+register(
+    id="planar_navigate-v0",
+    entry_point="blimp_env.envs:PlanarNavigateEnv",
+)
+register(
+    id="planar_navigate-v2",
+    entry_point="blimp_env.envs:PlanarNavigateEnv_v2",
+)
+register(
+    id="realworld_planar_navigate-v0",
+    entry_point="blimp_env.envs:RealWorldPlanarNavigateEnv",
+)

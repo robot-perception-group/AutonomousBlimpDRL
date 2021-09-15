@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<launch>
+	<!--********** arg **********-->
+	<arg name="robotID" default="0"/>
+	<arg name="X" default="100"/>
+	<arg name="Y" default="100"/>
+	<arg name="MAX_Z" default="200"/>
+	<arg name="MIN_Z" default="5"/>
+
+
+  	<!--********** spawn robot **********-->
+	 <node name="goal_node_$(arg robotID)" pkg="path_planner" type="goal.py" output="screen"
+		args="$(arg robotID) $(arg X) $(arg Y) $(arg MAX_Z) $(arg MIN_Z)">
+	</node> 
+
+
+</launch>
+

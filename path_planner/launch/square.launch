@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<launch>
+	<!--********** arg **********-->
+	<arg name="goalID" default="0"/>
+
+  	<!--********** spawn robot **********-->
+	 <node name="goal_node_$(arg goalID)" pkg="path_planner" type="square.py" output="screen"
+		args="$(arg goalID)">
+	</node> 
+
+
+</launch>
+

@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/home/yliu2/blimp_ws/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/yliu2/blimp_ws/src/airship_simulation/rotors_simulator/mav_comm/mav_msgs/include/**",
+        "/home/yliu2/blimp_ws/src/airship_simulation/rotors_simulator/mav_comm/mav_planning_msgs/include/**",
+        "/home/yliu2/blimp_ws/src/airship_simulation/rotors_simulator/rotors_control/include/**",
+        "/home/yliu2/blimp_ws/src/airship_simulation/rotors_simulator/rotors_gazebo_plugins/include/**",
+        "/home/yliu2/blimp_ws/src/airship_simulation/rotors_simulator/rotors_joy_interface/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}
