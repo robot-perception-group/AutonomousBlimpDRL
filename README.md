@@ -29,13 +29,13 @@ Note: The default ROS version for the blimp simulator is melodic, you can switch
 This step enables ROS control on the firmware.
 
 1. In the firts terminal starts the firmware
-```
+```console
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/firmware/fw_simposix/fw_simposix.elf 0  
 ```
 
 2. Start the GCS in the second terminal
-```
+```console
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/librepilot-gcs_release/bin/librepilot-gcs
 ```
