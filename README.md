@@ -20,8 +20,10 @@ See: https://www.gnu.org/licenses/gpl-3.0.en.html
 * /blimp_env -- training environment of the RL agent. 
 * /path_planner -- waypoints assignment.
 
-# Download blimp simulator
+# Install blimp simulator
 See: https://github.com/robot-perception-group/airship_simulation
+
+# Install RL training environment
 
 
 
