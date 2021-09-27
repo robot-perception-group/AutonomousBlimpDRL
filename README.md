@@ -1,7 +1,7 @@
 # Autonomous Blimp Control using Deep Reinforcement Learning
 =================================================================
 
-## For more information, read our preprint on Arxiv: https://arxiv.org/abs/2109.10719
+## For more information, read our preprint on arXiv: https://arxiv.org/abs/2109.10719
 --------------------------------------------------------------
 
 # Copyright and License
