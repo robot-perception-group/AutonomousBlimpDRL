@@ -78,6 +78,7 @@ cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/air
 echo 'PYTHONPATH=$PYTHONPATH:"~/catkin_ws/src/AutonomousBlimpDRL/blimp_env/"' >> ~/.bashrc
 echo 'PYTHONPATH=$PYTHONPATH:"~/catkin_ws/src/AutonomousBlimpDRL/RL/"' >> ~/.bashrc
 echo 'export PYTHONPATH' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 # Start Training
