@@ -21,8 +21,9 @@ See: https://www.gnu.org/licenses/gpl-3.0.en.html
 * /path_planner -- waypoints assignment.
 
 # Install blimp simulator
-See: https://github.com/robot-perception-group/airship_simulation.
-Note: The default uses ROS melodic, you can switch to noetic branch based on the ROS version.
+See: https://github.com/robot-perception-group/airship_simulation. 
+
+Note: The default ROS version for the blimp simulator is melodic, you can switch to noetic branch.
 
 # Install RL training environment
 ```
