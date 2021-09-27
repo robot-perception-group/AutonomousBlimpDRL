@@ -24,7 +24,9 @@ See: https://www.gnu.org/licenses/gpl-3.0.en.html
 See: https://github.com/robot-perception-group/airship_simulation
 
 # Install RL training environment
-
+```
+git clone https://github.com/robot-perception-group/AutonomousBlimpDRL.git
+```
 
 
 # Cite
