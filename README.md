@@ -75,6 +75,7 @@ cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/air
 
 5. (optional) export path to .bashrc
 ```console
+echo 'source ~/catkin_ws/devel/setup.bash' >> ~/.bashrc
 echo 'PYTHONPATH=$PYTHONPATH:"~/catkin_ws/src/AutonomousBlimpDRL/blimp_env/"' >> ~/.bashrc
 echo 'PYTHONPATH=$PYTHONPATH:"~/catkin_ws/src/AutonomousBlimpDRL/RL/"' >> ~/.bashrc
 echo 'export PYTHONPATH' >> ~/.bashrc
