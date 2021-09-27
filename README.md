@@ -8,7 +8,7 @@
 
 All Code in this repository - unless otherwise stated in local license or code headers is
 
-Copyright 2020 Max Planck Institute for Intelligent Systems
+Copyright 2021 Max Planck Institute for Intelligent Systems
 
 Licensed under the terms of the GNU General Public Licence (GPL) v3 or higher.
 See: https://www.gnu.org/licenses/gpl-3.0.en.html
@@ -16,7 +16,14 @@ See: https://www.gnu.org/licenses/gpl-3.0.en.html
 
 # Contents
 
-preparing...
+* /RL -- RL agent related files.
+* /blimp_env -- training environment of the RL agent. 
+* /path_planner -- waypoints assignment.
+
+# Download blimp simulator
+See: https://github.com/robot-perception-group/airship_simulation
+
+
 
 # Cite
 ```
