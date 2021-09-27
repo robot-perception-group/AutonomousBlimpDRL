@@ -26,9 +26,7 @@ See: https://github.com/robot-perception-group/airship_simulation.
 Note: The default ROS version for the blimp simulator is melodic, you can switch to noetic branch.
 
 ## Configure software-in-the-loop firmware
-This step has 2 purposes:
-*  enable ROS control on the firmware
-*  start firmware without Librepilot GUI
+This step enables ROS control on the firmware.
 
 1. In the firts terminal starts the firmware
 ```
