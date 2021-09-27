@@ -45,7 +45,7 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
    This will disarm the firmware and allow to save the configuration
 6. "Configuration" tab --> "Input" tab (left) --> "Flight Mode Switch Settings" --> Change Flight Mode Pos. 1 from "Manual" to "ROSControlled" 
 7. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Disarmed" to "Always Armed" --> Click "Save" --> Click "Apply" 
-8. Confirm the change by restart firmware, connect via gcs, and check if Flight Mode Pos.1 is changed to "ROSControlled"
+8. Confirm the change by restarting firmware, connecting via gcs, and checking if Flight Mode Pos.1 is changed to "ROSControlled"
 
 
 # Install RL training environment
