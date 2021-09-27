@@ -34,7 +34,7 @@ preparing...
 
 # Cite
 ```
-@article{yu2020mopo,
+@article{Liu2021ABCDRL,
   title={Autonomous Blimp Control using Deep Reinforcement Learning},
   author={Yu Tang Liu, Eric Price, Pascal Goldschmid, Michael J. Black, Aamir Ahmad},
   journal={arXiv preprint arXiv:2109.10719},
