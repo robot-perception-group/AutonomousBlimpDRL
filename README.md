@@ -41,12 +41,12 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/librepilot-gcs_release/bin/librepilot-gcs
 ```
-3. Select "Connections" (bottom right) -> UDP: localhost -> Click "Connect"
-4. "Configuration" tab -> "Input" tab (left) -> "Arming Setting" -> Change "Always Armed" to "Always Disarmed" -> Click "Apply"
+3. Select "Connections" (bottom right) --> UDP: localhost --> Click "Connect"
+4. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Armed" to "Always Disarmed" --> Click "Apply"
 5. "HITL" tab --> click "Start" --> check "GCS Control" 
    This will disarm the firmware and allow to save the configuration
-6. "Configuration" tab -> "Input" tab (left) -> "Flight Mode Switch Settings" -> Change Flight Mode Pos. 1 from "Manual" to "ROSControlled" 
-7. "Configuration" tab -> "Input" tab (left) -> "Arming Setting" -> Change "Always Disarmed" to "Always Armed" -> Click "Save" -> Click "Apply" 
+6. "Configuration" tab --> "Input" tab (left) --> "Flight Mode Switch Settings" --> Change Flight Mode Pos. 1 from "Manual" to "ROSControlled" 
+7. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Disarmed" to "Always Armed" --> Click "Save" --> Click "Apply" 
 8. Confirm the change by restart firmware, connect via gcs, and check if Flight Mode Pos.1 is changed to "ROSControlled"
 
 
