@@ -48,16 +48,27 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 8. Confirm the change by restarting firmware, connecting via gcs, and checking if "Flight Mode"/"Pos. 1" is "ROSControlled"
 
 # Install RL training environment
+
+1. setup bimp_env
 ```console
 cd ~/catkin_ws/src
 git clone https://github.com/robot-perception-group/AutonomousBlimpDRL.git
 cd ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env
 pip install .
+```
+2. setup RL agent
+```console
 cd ~/catkin_ws/src/AutonomousBlimpDRL/RL
 pip install .
+```
+3. compile 
+```console
 cd ~/catkin_ws
 catkin_make
 source ~/catkin_ws/devel/setup.bash
+```
+4. replace some files
+```console
 rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 ```
