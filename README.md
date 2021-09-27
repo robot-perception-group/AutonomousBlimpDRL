@@ -30,17 +30,24 @@ This step has 2 purposes:
 *  enable ROS control on the firmware
 *  start firmware without Librepilot GUI
 
-Start the firmware in a terminal
-```
-cd ~/catkin_ws/src/airship_simulation/LibrePilot
-./build/librepilot-gcs_release/bin/librepilot-gcs
-```
-
-In second terminal
+1. In the firts terminal starts the firmware
 ```
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/firmware/fw_simposix/fw_simposix.elf 0  
 ```
+
+2. Start the gcs in the second terminal
+```
+cd ~/catkin_ws/src/airship_simulation/LibrePilot
+./build/librepilot-gcs_release/bin/librepilot-gcs
+```
+3. Select "Connections" (bottom right) -> UDP: localhost -> Click "Connect"
+4. "Configuration" tab -> "Input" tab (left) -> "Arming Setting" -> Change "Always Armed" to "Always Disarmed" -> Click "Apply"
+5. "HITL" tab --> click "Start" --> check "GCS Control" 
+   This will disarm the firmware and allow to save the configuration
+6. "Configuration" tab -> "Input" tab (left) -> "Flight Mode Switch Settings" -> Change Flight Mode Pos. 1 from "Manual" to "ROSCotnrolled" 
+7. "Configuration" tab -> "Input" tab (left) -> "Arming Setting" -> Change "Always Disarmed" to "Always Armed" -> Click "Save" -> Click "Apply" 
+8. 
 
 
 
