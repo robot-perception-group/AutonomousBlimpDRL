@@ -5,11 +5,11 @@ with open("README.rst", "r") as longdesc:
 
 setup(
     name="rl",
-    description="rl agents that solve for the blimp tasks",
+    description="rl agents",
     long_description=long_description,
     author="Yu Tang Liu",
     version="0.0.1",
     packages=find_packages(where="rl/"),
     package_dir={"": "rl"},
-    install_requires=["gym"],
+    install_requires=["gym", "stable_baseline3", "sb3-contrib"],
 )
