@@ -23,7 +23,7 @@ See: https://www.gnu.org/licenses/gpl-3.0.en.html
 # Install blimp simulator
 See: https://github.com/robot-perception-group/airship_simulation. 
 
-Note: The default ROS version for the blimp simulator is melodic, you can switch to noetic branch.
+Note: The default ROS version for the blimp simulator is melodic, you should switch to noetic branch.
 
 ## Configure software-in-the-loop firmware
 This step enables ROS control on the firmware.
