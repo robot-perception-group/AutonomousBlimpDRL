@@ -29,7 +29,7 @@ Note: The default ROS version for the blimp simulator is melodic, you can switch
 ```
 git clone https://github.com/robot-perception-group/AutonomousBlimpDRL.git
 ```
-
+preparing...
 
 # Cite
 ```
