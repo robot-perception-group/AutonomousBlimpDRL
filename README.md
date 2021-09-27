@@ -26,9 +26,10 @@ See: https://github.com/robot-perception-group/airship_simulation.
 Note: The default ROS version for the blimp simulator is melodic, you can switch to noetic branch.
 
 # Install RL training environment
-```
+```console
 git clone https://github.com/robot-perception-group/AutonomousBlimpDRL.git
 ```
+
 preparing...
 
 # Cite
