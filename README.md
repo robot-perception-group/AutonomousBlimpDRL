@@ -31,7 +31,7 @@ This step has 2 purposes:
 *  start firmware without Librepilot GUI
 
 
-
+preparnig...
 
 # Install RL training environment
 ```console
