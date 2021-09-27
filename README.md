@@ -30,6 +30,19 @@ This step has 2 purposes:
 *  enable ROS control on the firmware
 *  start firmware without Librepilot GUI
 
+Start the firmware in a terminal
+```
+cd ~/catkin_ws/src/airship_simulation/LibrePilot
+./build/librepilot-gcs_release/bin/librepilot-gcs
+```
+
+In second terminal
+```
+cd ~/catkin_ws/src/airship_simulation/LibrePilot
+./build/firmware/fw_simposix/fw_simposix.elf 0  
+```
+
+
 
 preparnig...
 
