@@ -49,8 +49,15 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 
 # Install RL training environment
 ```console
-cd catkin_ws/src
+cd ~/catkin_ws/src
 git clone https://github.com/robot-perception-group/AutonomousBlimpDRL.git
+cd ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env
+pip install .
+cd ~/catkin_ws/src/AutonomousBlimpDRL/RL
+pip install .
+cd ~/catkin_ws
+catkin_make
+source ~/catkin_ws/devel/setup.bash
 ```
 
 preparing...
