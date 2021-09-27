@@ -34,7 +34,7 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/firmware/fw_simposix/fw_simposix.elf 0  
 ```
 
-2. Start the gcs in the second terminal
+2. Start the GCS in the second terminal
 ```
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/librepilot-gcs_release/bin/librepilot-gcs
@@ -46,7 +46,7 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 6. "Configuration" tab --> "Input" tab (left) --> "Flight Mode Switch Settings" --> Change Flight Mode Pos. 1 from "Manual" to "ROSControlled" 
 7. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Disarmed" to "Always Armed" --> Click "Save" --> Click "Apply" 
 8. Confirm the change by restarting firmware, connecting via gcs, and checking if Flight Mode Pos.1 is changed to "ROSControlled"
-
+9. quit GCS
 
 # Install RL training environment
 ```console
