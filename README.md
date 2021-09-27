@@ -73,15 +73,17 @@ rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.p
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 ```
 
-5. (optional) write path to bashrc
+5. (optional) export path to .bashrc
 ```console
 echo 'PYTHONPATH=$PYTHONPATH:"~/catkin_ws/src/AutonomousBlimpDRL/blimp_env/"' >> ~/.bashrc
 echo 'PYTHONPATH=$PYTHONPATH:"~/catkin_ws/src/AutonomousBlimpDRL/RL/"' >> ~/.bashrc
 export PYTHONPATH
-
 ```
 
-preparing...
+# Start Training
+```console
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
+```
 
 # Cite
 ```
