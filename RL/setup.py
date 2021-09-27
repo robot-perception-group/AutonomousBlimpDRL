@@ -11,5 +11,5 @@ setup(
     version="0.0.1",
     packages=find_packages(where="rl/"),
     package_dir={"": "rl"},
-    install_requires=["gym", "stable_baseline3", "sb3-contrib"],
+    install_requires=["gym", "stable_baselines3", "sb3-contrib"],
 )
