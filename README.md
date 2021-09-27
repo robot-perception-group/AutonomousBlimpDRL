@@ -58,6 +58,8 @@ pip install .
 cd ~/catkin_ws
 catkin_make
 source ~/catkin_ws/devel/setup.bash
+rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 ```
 
 preparing...
