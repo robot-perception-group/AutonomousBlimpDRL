@@ -1,4 +1,4 @@
-![Blimp Description file launch in Gazebo](image/Screen.png)
+![Blimp Description file launch in Gazebo](image/Screenshot.png)
 
 # Autonomous Blimp Control using Deep Reinforcement Learning
 =================================================================
