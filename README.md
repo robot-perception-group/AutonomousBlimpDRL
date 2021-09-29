@@ -82,6 +82,7 @@ source ~/.bashrc
 ```
 
 # Start Training
+This will run QRDQN training for 7 days.
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
 ```
