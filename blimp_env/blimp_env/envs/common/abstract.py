@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" environment abstract """
+""" environment abstract test """
 from __future__ import absolute_import, division, print_function
 
 import os
@@ -206,7 +206,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "enable_meshes": False,
                     "world": "basic",
                     "task": "navigate_goal",
-                    "auto_start_simulation": True,
+                    "auto_start_simulation": False,
                     "update_robotID_on_workerID": True,
                 },
                 "observation": {
@@ -364,15 +364,15 @@ class ROSAbstractEnv(AbstractEnv):
         self._update_goal()
 
     def _reset_gazebo(self):
-        # self.gaz.unpause_sim()
-        # self._check_system_ready()
+        self.gaz.unpause_sim()
+        self._check_system_ready()
         self.gaz.pause_sim()
 
         self.gaz.reset_sim()
 
         self.gaz.unpause_sim()
         self._check_system_ready()
-        # self.gaz.pause_sim()
+        self.gaz.pause_sim()
 
     def _check_system_ready(self):
         self.controllers_object.reset_blimp_joint_controllers()
