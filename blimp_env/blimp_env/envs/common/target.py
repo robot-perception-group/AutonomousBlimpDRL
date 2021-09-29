@@ -22,8 +22,10 @@ class TargetType:
     """abstract target type"""
 
     def __init__(
-        self, env: "AbstractEnv", **kwargs
-    ) -> None:  # pylint: disable=unused-argument
+        self,
+        env: "AbstractEnv",
+        **kwargs,  # pylint: disable=unused-argument
+    ) -> None:
         self.env = env
 
     def space(self) -> spaces.Space:
@@ -354,7 +356,7 @@ class GoalTarget(PathTarget):
                 self.position_cmd_data.value = Point(
                     position.y, position.x, -position.z
                 )
-            except:
+            except TimeoutError:
                 rospy.loginfo(
                     "[ target ] unable to establish ros connection, respawn..."
                 )

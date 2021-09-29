@@ -222,7 +222,7 @@ class KinematicObservation(ObservationType):
                     uav_pose,
                     timeout=50,
                 )
-            except:
+            except TimeoutError:
                 rospy.loginfo("[ observation ] Simulation Crashed...Respawn")
                 reply = respawn_model(**self.env.config["simulation"])
                 rospy.loginfo("[ observation ] Simulation Respawned:", reply)

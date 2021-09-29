@@ -832,7 +832,7 @@ class SimpleDiscreteMetaHoverAction(DiscreteMetaHoverAction):
         return self.cur_act
 
 
-def action_factory(env: "AbstractEnv", config: dict) -> ActionType:
+def action_factory(env: "AbstractEnv", config: dict) -> ActionType: # pylint: disable=too-many-return-statements
     """control action type"""
     if config["type"] == "ContinuousAction":
         return ContinuousAction(env, **config)

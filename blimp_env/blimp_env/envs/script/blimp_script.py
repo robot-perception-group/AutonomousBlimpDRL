@@ -116,7 +116,8 @@ def respawn_target(
     """
     try:
         kill_target_reply = kill_target_screen(robot_id=robot_id)
-    except:
+    except ValueError:
+        print("target screen not found, skip kill")
         kill_target_reply = 1
 
     spawn_goal_reply = spawn_goal(
@@ -171,6 +172,22 @@ def resume_simulation(
     enable_meshes=False,
     **kwargs,  # pylint: disable=unused-argument
 ):
+    """resume simulation
+    first kill all screens
+    then spawn gazebo world and blimp SITL
+
+    Args:
+        robot_id (int, optional): [description]. Defaults to 0.
+        gui (bool, optional): [description]. Defaults to True.
+        world (str, optional): [description]. Defaults to "basic".
+        task (str, optional): [description]. Defaults to "navigate".
+        ros_port ([type], optional): [description]. Defaults to DEFAULT_ROSPORT.
+        gaz_port ([type], optional): [description]. Defaults to DEFAULT_GAZPORT.
+        enable_meshes (bool, optional): [description]. Defaults to False.
+
+    Returns:
+        [type]: [success]
+    """
     kill_reply = kill_all_screen(robot_id=robot_id)
     world_reply = spawn_world(
         robot_id=robot_id, world=world, gui=gui, ros_port=ros_port, gaz_port=gaz_port
@@ -207,8 +224,7 @@ def spawn_world(
     """spawn gazebo world"""
     call_reply = subprocess.check_call(
         str(path)
-        + "/spawn_world.sh %s %s %s %s %s %s %s %s %s %s"
-        % ("-i", robot_id, "-g", gui, "-d", world, "-p", gaz_port, "-r", ros_port),
+        + f"/spawn_world.sh -i {robot_id} -g {gui} -d {world} -p {gaz_port} -r {ros_port}",
         shell=True,
     )
     return call_reply
@@ -361,7 +377,7 @@ def spawn_simulation_on_different_port(
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
     enable_meshes=False,
-    **kwargs,
+    **kwargs,  # pylint: disable=unused-argument
 ):
     """start blimp simulator on different ros or gazbo port"""
     ros_reply = ros_master(robot_id=robot_id, ros_port=ros_port, gaz_port=gaz_port)
@@ -394,7 +410,7 @@ def spawn_simulation_on_marvin(
     task="navigate_goal",
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
-    **kwargs,
+    **kwargs,  # pylint: disable=unused-argument
 ):
     """spawn simulation on another pc"""
     goal_id = task_goal_dict[task]

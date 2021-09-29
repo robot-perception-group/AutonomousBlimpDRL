@@ -243,7 +243,7 @@ class ROSAbstractEnv(AbstractEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         # if rllib parallelization, use worker index as robot_id
         if hasattr(config, "worker_index"):
-            config["robot_id"] = str(config.worker_index - 1)
+            config["robot_id"] = str(config.worker_index - 1)  # type: ignore
 
         super().__init__(config=config)
 

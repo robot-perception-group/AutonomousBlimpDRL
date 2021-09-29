@@ -260,7 +260,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
 
         return obs, reward, terminal, info
 
-    def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
+    def one_step(self, action: Action) -> Tuple[np.ndarray, float, bool, dict]:
         """one agent step
 
         Args:
@@ -274,7 +274,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
         self._simulate(action)
         obs = self.process_obs_and_goal()
         reward = self._reward(obs)
-        terminal = None
+        terminal = False
         info = self._info(obs, action)
         self.step_info.update({"terminal": terminal, "info": info})
 
@@ -308,7 +308,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
 
             self.rate.sleep()
 
-    def process_obs_and_goal(self):
+    def process_obs_and_goal(self) -> np.ndarray:
         """process the difference between observation and goal
 
         Returns:
@@ -452,10 +452,10 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
     def close(self):
         return NotImplementedError
 
-    def _cost(self, action: Action) -> float:
+    def _cost(self, action: Action):
         return NotImplementedError
 
-    def _is_terminal(self) -> bool:
+    def _is_terminal(self):
         return NotImplementedError
 
     def get_available_actions(self):

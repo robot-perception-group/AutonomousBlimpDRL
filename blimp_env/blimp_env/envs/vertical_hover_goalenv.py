@@ -78,7 +78,7 @@ class VerticalHoverGoalEnv(NavigateGoalEnv):
         self,
         achieved_goal: np.ndarray,
         desired_goal: np.ndarray,
-        # info: dict,
+        info: dict,
     ) -> float:
 
         goal_diff = compute_goal_diff(achieved_goal, desired_goal)
@@ -101,6 +101,7 @@ class VerticalHoverGoalEnv(NavigateGoalEnv):
                 "total_rew": total_rew,
                 "track_rew": track_rew,
                 "act_rew": act_rew,
+                "info": info,
             }
         )
         return total_rew

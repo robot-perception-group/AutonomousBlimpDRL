@@ -126,7 +126,7 @@ class NavigateGoalEnv(ROSAbstractEnv, GoalEnv):
         self,
         achieved_goal: np.ndarray,
         desired_goal: np.ndarray,
-        # info: dict,
+        info: dict,
     ) -> float:
         """calculate reward
         total_reward = success_reward + tracking_reward + action_reward
@@ -142,6 +142,7 @@ class NavigateGoalEnv(ROSAbstractEnv, GoalEnv):
         Returns:
             float: [reward]
         """
+
         goal_diff = self.compute_goal_diff(desired_goal, achieved_goal)
 
         ori_type = self.config["target"]["orientation_type"]
@@ -156,7 +157,12 @@ class NavigateGoalEnv(ROSAbstractEnv, GoalEnv):
         )
 
         self.step_info.update(
-            {"total_rew": total_rew, "track_rew": track_rew, "act_rew": act_rew}
+            {
+                "total_rew": total_rew,
+                "track_rew": track_rew,
+                "act_rew": act_rew,
+                "info": info,
+            }
         )
         return total_rew
 
