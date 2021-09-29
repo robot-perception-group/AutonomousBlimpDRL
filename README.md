@@ -86,6 +86,25 @@ source ~/.bashrc
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
 ```
 
+## Reproduction of results:
+--------------------------
+
+--------------
+# Experiment 1
+--------------
+preparing... 
+
+--------------
+# Experiment 2
+--------------
+preparing... 
+
+--------------
+# Experiment 3
+--------------
+preparing... 
+
+
 # Cite
 ```
 @article{Liu2021ABCDRL,
