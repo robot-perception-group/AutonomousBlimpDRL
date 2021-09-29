@@ -11,36 +11,23 @@ ENV = VerticalHoverGoal2ActEnv
 VertiHoverGoalEnv_kwargs = {
     "DBG": True,
     "simulation": {
-        "gui": True,
-        "enable_meshes": True,
         "auto_start_simulation": False,
         "task": "vertical_upward",
     },
     "observation": {
         "type": "KinematicsGoal",
-        "name_space": "machine_",
-        "orientation_type": "euler",
-        "action_feedback": True,
-        "goal_obs_diff_feedback": True,
     },
     "action": {
         "type": "SimpleDiscreteMetaHoverAction",
-        "name_space": "machine_",
     },
     "target": {
         "type": "GOAL",
         "target_name_space": "goal_",
         "orientation_type": "euler",
     },
-    "duration": 200,
-    "reward_type": None,  # "sparse",
-    "reward_weights": (1, 0),
-    "reward_scale": (10, 1.5),
-    "success_goal_reward": 0.9,
 }
 
 KinematicsGoal_kwargs = [
-    {},
     VertiHoverGoalEnv_kwargs,
 ]
 

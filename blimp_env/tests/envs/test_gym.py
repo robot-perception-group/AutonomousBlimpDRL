@@ -1,4 +1,3 @@
-import gym
 import pytest
 from blimp_env.envs import (
     NavigateEnv,
@@ -10,7 +9,6 @@ from blimp_env.envs import (
 )
 
 from blimp_env.envs.common.gazebo_connection import GazeboConnection
-from blimp_env.envs.script import spawn_simulation_for_testing, close_simulation
 
 env_kwargs = {
     "simulation": {
@@ -41,7 +39,3 @@ def test_env_step(env):
     GazeboConnection().unpause_sim()
 
     assert env.observation_space.contains(obs)
-
-
-close_simulation()
-spawn_simulation_for_testing(1, gui=True)

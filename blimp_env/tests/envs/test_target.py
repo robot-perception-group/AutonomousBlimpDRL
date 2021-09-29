@@ -31,21 +31,6 @@ target_kwargs = [
     planar_target_kwargs,
 ]
 
-
-# @pytest.mark.parametrize("target_kwargs", target_kwargs)
-# def test_target(target_kwargs):
-#     target_type = target_factory(target_kwargs)
-#     target_type.check_connection()
-
-#     for _ in range(10):
-#         goal = target_type.sample()
-#         time.sleep(0.1)
-
-#     GazeboConnection().unpause_sim()
-
-#     assert target_type.space().contains(goal[0])
-
-
 vec = [
     (1, 0, 0),
     (-1, 0, 0),
