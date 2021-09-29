@@ -85,6 +85,14 @@ echo 'export PYTHONPATH=$PYTHONPATH:$HOME/catkin_ws/src/AutonomousBlimpDRL/blimp
 source ~/.bashrc
 ```
 
+6. (optional) verify the installation
+
+blimp env comes with a test program to test code integrity.
+```console
+cd ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env
+make checklist
+```
+
 # Start Training
 This will run QRDQN training for 7 days.
 ```console
