@@ -61,7 +61,7 @@ pip install .
 cd ~/catkin_ws/src/AutonomousBlimpDRL/RL
 pip install .
 ```
-3. compile 
+3. compile ROS packages
 ```console
 cd ~/catkin_ws
 catkin_make
@@ -69,22 +69,43 @@ source ~/catkin_ws/devel/setup.bash
 ```
 4. replace some files
 
-SITL uses UDP connection, which can be overflown by messages. The replacement reduces the amount of IMU message by four fold. This modification does not influence real hardware communication but only in simulation.
+SITL uses UDP connection, which can be overflown by messages. The replacement reduces the amount of IMU message by four folds. This modification does not influence real hardware communication but only in simulation. 
 ```console
 rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 ```
 
 5. (optional) export path to .bashrc
+
+Sometimes it is not able to find the package because of the setuptools versions. Then we have to manually setup the environment path.
 ```console
 echo 'export PYTHONPATH=$PYTHONPATH:$HOME/catkin_ws/src/AutonomousBlimpDRL/blimp_env/:$HOME/catkin_ws/src/AutonomousBlimpDRL/RL/' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 # Start Training
+This will run QRDQN training for 7 days.
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
 ```
+
+# Reproduction of results:
+
+--------------
+## Experiment 1
+--------------
+preparing... 
+
+--------------
+## Experiment 2
+--------------
+preparing... 
+
+--------------
+## Experiment 3
+--------------
+preparing... 
+
 
 # Cite
 ```
