@@ -61,7 +61,7 @@ pip install .
 cd ~/catkin_ws/src/AutonomousBlimpDRL/RL
 pip install .
 ```
-3. compile 
+3. compile ROS packages
 ```console
 cd ~/catkin_ws
 catkin_make
