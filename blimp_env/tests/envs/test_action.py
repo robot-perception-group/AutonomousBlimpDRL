@@ -1,5 +1,5 @@
 import pytest
-
+from blimp_env.envs.common.abstract import AbstractEnv
 from blimp_env.envs.common.action import action_factory
 import numpy as np
 
@@ -56,7 +56,7 @@ expect_process_act = [
 @pytest.mark.parametrize("id", [0, 1, 2, 3, 4])
 @pytest.mark.parametrize("all_kwargs", all_kwargs)
 def test_process_action(all_kwargs, id):
-    action_type = action_factory(all_kwargs)
+    action_type = action_factory(AbstractEnv, all_kwargs)
     action_type.act_noise_stdv = 0
 
     test = get_testset_process_action(action_type, id)
@@ -67,14 +67,14 @@ def test_process_action(all_kwargs, id):
 
 @pytest.mark.parametrize("all_kwargs", all_kwargs)
 def test_get_cur_act(all_kwargs):
-    action_type = action_factory(all_kwargs)
+    action_type = action_factory(AbstractEnv, all_kwargs)
     act = action_type.get_cur_act()
     assert act.shape == (8,)
 
 
 @pytest.mark.parametrize("all_kwargs", all_kwargs)
 def test_action_rew(all_kwargs):
-    action_type = action_factory(all_kwargs)
+    action_type = action_factory(AbstractEnv, all_kwargs)
     rew = action_type.action_rew()
     assert isinstance(rew, float)
     assert rew >= 0 and rew <= 1
@@ -85,7 +85,7 @@ def expect_decode_act(kwargs, act):
         expect = {
             0: [0, 0, 0, 0, 0, -1, 0.0, 0.0],
             1: [0, 0, 0, 0, 0, -1, 0.01, 0.01],
-            2: [0, 0, 0, 0, 0, -1, -0.01, -0.01],
+            2: [0, 0, 0, 0, 0, -1, 0.0, 0.0],
             3: [0, 0.025, 0.025, 0, 0, -1, 0, 0],
             4: [0, -0.025, -0.025, 0, 0, -1, 0, 0],
             5: [0.025, 0, 0, 0.025, 0.025, -1, 0, 0],
@@ -109,7 +109,7 @@ def expect_decode_act(kwargs, act):
 @pytest.mark.parametrize("act", [0, 1, 2, 3, 4, 5, 6])
 @pytest.mark.parametrize("kwargs", discrete_kwargs)
 def test_decode_act(kwargs, act):
-    action_type = action_factory(kwargs)
+    action_type = action_factory(AbstractEnv, kwargs)
 
     defined_act = action_type.actions[act]
     assert isinstance(defined_act, str)

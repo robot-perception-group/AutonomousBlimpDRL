@@ -375,22 +375,20 @@ class PlanarGoal(GoalTarget):
     """
 
     def __init__(
-        self, env: "AbstractEnv", name_space, real_experiment, **kwargs
+        self,
+        env: "AbstractEnv",
+        name_space,
+        **kwargs,
     ) -> None:
         super().__init__(env, **kwargs)
         range_dict = KinematicObservation._create_range_obj()
 
         self.machine_position_data = DataObj(Point(), range_dict["position_range"])
-        self.machine_init_position = np.array([0, 0, -100])
 
         self.planar_pos_cmd_rviz_publisher = rospy.Publisher(
             name_space + "/planar_cmd", Point, queue_size=1
         )
         rospy.Subscriber(name_space + "/pose", uav_pose, self._pose_callback)
-        self.real_experiment = real_experiment
-        if real_experiment:
-            self.machine_init_position = np.array([0, 0, -50])
-            rospy.Subscriber(name_space + "/reward", Point, self._reward_callback)
 
     def _pose_callback(self, msg):
         """pose msg callback
@@ -400,19 +398,6 @@ class PlanarGoal(GoalTarget):
         """
 
         self.machine_position_data.value = msg.position
-
-    def _reward_callback(self, msg):
-        """when success, use current position as new init position
-
-        Args:
-            msg ([point]): (success_reward, tracking_reward, action_reward)
-        """
-        success_reward = msg.x
-        if success_reward == 1:
-            print("[ Target ] new init position")
-            self.machine_init_position = self.dataobj_to_array(
-                self.machine_position_data
-            )
 
     def sample(self) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """sample target state

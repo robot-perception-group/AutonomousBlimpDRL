@@ -11,42 +11,32 @@ ENV = NavigateEnv
 NavigateEnv_kwargs = {
     "DBG": True,
     "simulation": {
-        "gui": True,
-        "enable_meshes": True,
         "auto_start_simulation": False,
-    },
-    "observation": {
-        "type": "Kinematics",
-        "name_space": "machine_",
-        "orientation_type": "euler",
-        "real_experiment": False,
-        "DBG_ROS": False,
-        "DBG_OBS": False,
     },
     "action": {
         "type": "ContinuousAction",
-        "name_space": "machine_",
-        "flightmode": 3,
-        "DBG_ACT": False,
-    },
-    "target": {
-        "type": "PATH",
-        "target_name_space": "target_",
-        "orientation_type": "euler",
-        "DBG_ROS": False,
     },
 }
 SimpleContinuousAction_kwargs = {
+    "simulation": {
+        "auto_start_simulation": False,
+    },
     "action": {
         "type": "SimpleContinuousAction",
     },
 }
 DiscreteMetaAction_kwargs = {
+    "simulation": {
+        "auto_start_simulation": False,
+    },
     "action": {
         "type": "DiscreteMetaAction",
     },
 }
 DiscreteMetaHoverAction_kwargs = {
+    "simulation": {
+        "auto_start_simulation": False,
+    },
     "action": {
         "type": "DiscreteMetaHoverAction",
     },

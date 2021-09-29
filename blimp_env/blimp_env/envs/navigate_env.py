@@ -164,9 +164,8 @@ class NavigateEnv(ROSAbstractEnv):
             bool: [episode terminal or not]
         """
         time = False
-        if self.config["robotID"] == "0":  # only call terminal in first environment
-            if self.config["duration"] is not None:
-                time = self.steps >= int(self.config["duration"])
+        if self.config["duration"] is not None:
+            time = self.steps >= int(self.config["duration"])
 
         return time
 
