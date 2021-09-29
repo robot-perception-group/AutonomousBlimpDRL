@@ -69,7 +69,7 @@ source ~/catkin_ws/devel/setup.bash
 ```
 4. replace some files
 
-SITL uses UDP connection, which can be overflown by messages. The replacement reduces the amount of IMU message by four fold. This modification does not influence real hardware communication but only in simulation.
+SITL uses UDP connection, which can be overflown by messages. The replacement reduces the amount of IMU message by four folds. This modification does not influence real hardware communication but only in simulation. 
 ```console
 rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
