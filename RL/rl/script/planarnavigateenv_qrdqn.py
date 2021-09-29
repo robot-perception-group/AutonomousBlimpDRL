@@ -15,7 +15,6 @@ AGENT = QRDQN
 robot_id = 0
 exp_name_posfix = "TrackRew"
 
-task = ENV.default_config()["task"]
 env_name = ENV.__name__
 agent_name = AGENT.__name__
 exp_name = env_name + "_" + agent_name + "_" + exp_name_posfix
