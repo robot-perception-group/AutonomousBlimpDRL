@@ -128,7 +128,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """sample new goal"""
         self.goal = self.target_type.sample()
 
-    def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-differ
+    def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-renamed
         """calculate reward
         total_reward = success_reward + tracking_reward + action_reward
         success_reward: +1 if agent stay in the vicinity of goal
@@ -250,7 +250,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         pass
 
 
-class PlanarNavigateEnv_v2(PlanarNavigateEnv):
+class PlanarNavigateEnv2(PlanarNavigateEnv):
     """include thrust vectoring and when close to target the goal shift to hover mode"""
 
     @classmethod

@@ -126,9 +126,22 @@ class NavigateGoalEnv(ROSAbstractEnv, GoalEnv):
         self,
         achieved_goal: np.ndarray,
         desired_goal: np.ndarray,
-        info: dict,
+        # info: dict,
     ) -> float:
+        """calculate reward
+        total_reward = success_reward + tracking_reward + action_reward
+        success_reward: +1 if agent stay in the vicinity of goal
+        tracking_reward: - L2 distance to goal - psi angle difference
+        action_reward: penalty for motor use
 
+        Args:
+            achieved_goal (np.ndarray): achieved goal or current state
+            desired_goal (np.ndarray): target state
+            info (dict): addition parameters
+
+        Returns:
+            float: [reward]
+        """
         goal_diff = self.compute_goal_diff(desired_goal, achieved_goal)
 
         ori_type = self.config["target"]["orientation_type"]

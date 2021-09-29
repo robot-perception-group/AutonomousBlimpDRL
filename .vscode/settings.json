@@ -1,0 +1,5 @@
+{
+    "python.linting.pylintPath": "~/anaconda3/envs/blimpSB/bin/pylint",
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true
+}

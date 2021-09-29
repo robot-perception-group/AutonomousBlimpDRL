@@ -462,6 +462,223 @@ class DiscreteMetaAction(ActionType):
         )
 
 
+class RealDiscreteMetaAction(ActionType):
+    """encoded discrete actions"""
+
+    ACTION_RANGE = (1000, 2000)
+
+    CRUISE = {
+        0: "IDLE",
+        1: "THRUST+",
+        2: "THRUST-",
+        3: "NOSE_UP",
+        4: "NOSE_DOWN",
+        5: "NOSE_LEFT",
+        6: "NOSE_RIGHT",
+    }
+
+    CRUISE_LOOKUP = {
+        "IDLE": [0, 0, 0, 0, 0, 0, 0.0, 0.0],
+        "THRUST+": [0, 0, 0, 0, 0, 0, 0.01, 0.01],
+        "THRUST-": [0, 0, 0, 0, 0, 0, -0.01, -0.01],
+        "NOSE_UP": [0, 0.025, 0.025, 0, 0, 0, 0, 0],
+        "NOSE_DOWN": [0, -0.025, -0.025, 0, 0, 0, 0, 0],
+        "NOSE_LEFT": [0.025, 0, 0, 0.025, 0.025, 0, 0, 0],
+        "NOSE_RIGHT": [-0.025, 0, 0, -0.025, -0.025, 0, 0, 0],
+    }
+
+    def __init__(
+        self,
+        env: "AbstractEnv",
+        robot_id: str = "0",
+        flightmode: int = 3,
+        action_range: Optional[Tuple[float, float]] = None,
+        name_space: str = "machine_0",
+        dbg_act: bool = False,
+        act_noise_stdv: float = 0.05,
+        **kwargs  # pylint: disable=unused-argument
+    ):
+        super().__init__(env)
+        self.data_processor = DataProcessor()
+        self.robot_id = robot_id
+        self.name_space = name_space
+        self.flightmode = flightmode
+        self.dbg_act = dbg_act
+
+        self.act_dim = 8
+        act_range = action_range if action_range else self.ACTION_RANGE
+        self.action_range = RangeObj(act_range, (-1, 1))
+        self.act_noise_stdv = act_noise_stdv
+
+        self.actions = self.CRUISE
+        self.lookup = self.CRUISE_LOOKUP
+
+        self.cur_act = np.zeros(self.act_dim)
+        self.init_act = np.zeros(self.act_dim)
+        self._create_pub_and_sub()
+
+    def space(self) -> spaces.Space:
+        return spaces.Discrete(len(self.actions))
+
+    def _create_pub_and_sub(self):
+
+        self.action_publisher = rospy.Publisher(
+            self.name_space + "/actuatorcommand", LibrepilotActuators, queue_size=1
+        )
+        self.flightmode_publisher = rospy.Publisher(
+            self.name_space + "/command", uav_pose, queue_size=1
+        )
+        self.rviz_act_publisher = rospy.Publisher(
+            self.name_space + "/output_action", Point, queue_size=1
+        )
+
+    def check_publishers_connection(self) -> None:
+        """check actuator publisher connections"""
+        waiting_time = 0
+        respawn_time = 0
+
+        while self.action_publisher.get_num_connections() == 0:
+            rospy.loginfo("No subscriber to action_publisher yet, wait...")
+            waiting_time += 1
+            time.sleep(1)
+
+            if waiting_time >= 5:
+                rospy.loginfo("respawn model...")
+                respawn_model(**self.env.config["simulation"])
+                respawn_time += 1
+                waiting_time = 0
+
+            if respawn_time > 3:
+                rospy.loginfo("Simulation Crashed...resume simulation")
+                reply = resume_simulation(**self.env.config["simulation"])
+                respawn_time = 0
+                rospy.loginfo("Simulation Resumed:", reply)
+
+        rospy.logdebug("action_publisher connected")
+        return self.action_publisher.get_num_connections() > 0
+
+    def set_init_pose(self) -> None:
+        """set initial actuator"""
+        self.check_publishers_connection()
+        self.cur_act = self.init_act.copy()
+        self.actuator_ctrl(self.cur_act)
+
+    def realworld_set_init_pose(self) -> None:
+        """set initial actuator in realworld mode"""
+        # self.check_publishers_connection()
+        self.cur_act = self.init_act.copy()
+        self.actuator_ctrl(self.cur_act)
+
+    def act(self, action: int) -> None:
+        """encoded action taken from agent
+        decode as actuator command
+
+        Args:
+            action (int): encoded action from agent
+        """
+        self.rviz_act_publisher.publish(Point(action, 0, 0))
+        decoded_action = self.decode_act(self.actions[int(action)])
+        self.actuator_ctrl(decoded_action)
+
+    def decode_act(self, act: str):
+        """decode action
+
+        Args:
+            act (str): action command
+
+        Returns:
+            [np.array]: decoded action command
+        """
+        self.cur_act += self.lookup[act]
+        self.cur_act[5] = -1
+
+        if self.cur_act[6] < 0:
+            # only allow positive thrust
+            self.cur_act[6] = 0
+
+        if self.cur_act[6] > 0.5:
+            # only allow 50% thrust
+            self.cur_act[6] = 0.5
+
+        if self.cur_act[7] < 0:
+            # only allow positive thrust
+            self.cur_act[7] = 0
+
+        if self.cur_act[7] > 0.5:
+            # only allow 50% thrust
+            self.cur_act[7] = 0.5
+
+        self.cur_act = self.data_processor.clip(
+            self.cur_act,
+            self.action_range.get_scale_range(),
+        )
+        return self.cur_act
+
+    def process_action(self, action: np.ndarray):
+        """process action to meet firmware specification
+
+        Args:
+            action ([np.ndarray]): action to be processed
+
+        Returns:
+            [np.ndarray]: processed action
+        """
+        action = self.data_processor.add_noise(action, self.act_noise_stdv)
+        action = self.data_processor.scale_action(action, self.action_range)
+        action = self.data_processor.clip(
+            action,
+            self.action_range.get_range(),
+        )
+        action = self.data_processor.augment_action(action)
+        return action
+
+    def actuator_ctrl(self, action: np.ndarray) -> None:
+        """publish action and execute
+
+        Args:
+            action (np.ndarray): formated action
+        """
+        processed_action = self.process_action(action)
+
+        act_msg = LibrepilotActuators()
+        act_msg.header.stamp = rospy.Time.now()
+        act_msg.data.data = processed_action
+
+        mode = uav_pose()
+        mode.flightmode = self.flightmode
+
+        self.action_publisher.publish(act_msg)
+        self.flightmode_publisher.publish(mode)
+
+        if self.dbg_act:
+            print("[ DiscreteMetaAction ] act: mode:", self.flightmode)
+            print("[ DiscreteMetaAction ] act: action:", action)
+            print("[ DiscreteMetaAction ] act: processed_action:", processed_action)
+
+    def action_rew(self, scale: float = 0.5) -> float:
+        """compute action reward
+
+        Args:
+            scale (float, optional): [scale,
+            the greater this number harder to get reward]. Defaults to 0.5.
+
+        Returns:
+            [float]: [reward of current action state]
+        """
+        motors = self.get_cur_act()[[0, 6, 7]]
+        # motors_rew = np.exp(-scale * np.linalg.norm(motors))
+        motors_rew = -scale * np.linalg.norm(motors)
+        return motors_rew
+
+    def get_cur_act(self):
+        """get current action"""
+        cur_act = self.cur_act.copy()
+        cur_act = self.data_processor.augment_action(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
+        return cur_act.reshape(
+            8,
+        )
+
+
 class DiscreteMetaServoAction(DiscreteMetaAction):
     """similar to discrete meta act but include servo thurst vectoring
     only positive thrust is allowed.
@@ -623,6 +840,8 @@ def action_factory(env: "AbstractEnv", config: dict) -> ActionType:
         return SimpleContinuousAction(env, **config)
     elif config["type"] == "DiscreteMetaAction":
         return DiscreteMetaAction(env, **config)
+    elif config["type"] == "RealDiscreteMetaAction":
+        return RealDiscreteMetaAction(env, **config)
     elif config["type"] == "DiscreteMetaServoAction":
         return DiscreteMetaServoAction(env, **config)
     elif config["type"] == "DiscreteMetaHoverAction":

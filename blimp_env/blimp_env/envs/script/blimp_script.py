@@ -18,7 +18,7 @@ def close_simulation():
     return call_reply
 
 
-def kill_blimp_screen(robot_id):
+def kill_blimp_screen(robot_id: int):
     """kill blimp screen session by specifying screen name and robot_id
 
     Args:
@@ -28,24 +28,32 @@ def kill_blimp_screen(robot_id):
         [str]: [status of the script]
     """
     call_reply = subprocess.check_call(
-        "screen -S %s -X quit" % ("BLIMP_" + robot_id),
+        f"screen -S BLIMP_{robot_id} -X quit",
         shell=True,
     )
     call_reply = subprocess.check_call(
-        "screen -S %s -X quit" % ("FW_" + robot_id),
+        f"screen -S FW_{robot_id} -X quit",
         shell=True,
     )
     return call_reply
 
 
-def kill_target_screen(robot_id):
+def kill_target_screen(robot_id: int):
+    """kill target screen session
+
+    Args:
+        robot_id ([str]): [robot_id]
+
+    Returns:
+        [type]: [description]
+    """
     return subprocess.check_call(
-        "screen -S %s -X quit" % ("GOAL_" + robot_id),
+        f"screen -S GOAL_{robot_id} -X quit",
         shell=True,
     )
 
 
-def kill_all_screen(robot_id):
+def kill_all_screen(robot_id: int):
     """kill all screen session by specifying screen name and robot_id
 
     Args:
@@ -55,19 +63,19 @@ def kill_all_screen(robot_id):
         [str]: [status of the script]
     """
     kill_blimp_reply = subprocess.check_call(
-        "screen -S %s -X quit" % ("BLIMP_" + robot_id),
+        f"screen -S BLIMP_{robot_id} -X quit",
         shell=True,
     )
     kill_fw_reply = subprocess.check_call(
-        "screen -S %s -X quit" % ("FW_" + robot_id),
+        f"screen -S FW_{robot_id} -X quit",
         shell=True,
     )
     kill_goal_reply = subprocess.check_call(
-        "screen -S %s -X quit" % ("GOAL_" + robot_id),
+        f"screen -S GOAL_{robot_id} -X quit",
         shell=True,
     )
     kill_world_reply = subprocess.check_call(
-        "screen -S %s -X quit" % ("WORLD_" + robot_id),
+        f"screen -S WORLD_{robot_id} -X quit",
         shell=True,
     )
     time.sleep(15)
@@ -79,19 +87,33 @@ def kill_all_screen(robot_id):
     }
 
 
-def remove_blimp(robot_id):
+def remove_blimp(robot_id: int):
     """kill model"""
     call_reply = subprocess.check_call(
-        "rosservice call /gazebo/delete_model \"model_name: '%s' \""
-        % ("machine_" + robot_id),
+        f"rosservice call /gazebo/delete_model \"model_name: 'machine_{robot_id}' \"",
         shell=True,
     )
     return call_reply
 
 
 def respawn_target(
-    robot_id=0, goal_id=0, ros_port=DEFAULT_ROSPORT, gaz_port=DEFAULT_GAZPORT, **kwargs
+    robot_id=0,
+    goal_id=0,
+    ros_port=DEFAULT_ROSPORT,
+    gaz_port=DEFAULT_GAZPORT,
+    **kwargs,  # pylint: disable=unused-argument
 ):
+    """respawn target
+
+    Args:
+        robot_id (int, optional): [description]. Defaults to 0.
+        goal_id (int, optional): [description]. Defaults to 0.
+        ros_port ([type], optional): [description]. Defaults to DEFAULT_ROSPORT.
+        gaz_port ([type], optional): [description]. Defaults to DEFAULT_GAZPORT.
+
+    Returns:
+        [type]: [success or not]
+    """
     try:
         kill_target_reply = kill_target_screen(robot_id=robot_id)
     except:
@@ -108,14 +130,14 @@ def respawn_target(
 
 
 def respawn_model(
-    robot_id,
+    robot_id=0,
     enable_meshes=False,
     enable_wind=False,
     wind_direction="1 0",
     wind_speed=1.5,
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
-    **kwargs,
+    **kwargs,  # pylint: disable=unused-argument
 ):
     """respawn model
     first kill the screen session and then remove model from gazebo
@@ -147,7 +169,7 @@ def resume_simulation(
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
     enable_meshes=False,
-    **kwargs,
+    **kwargs,  # pylint: disable=unused-argument
 ):
     kill_reply = kill_all_screen(robot_id=robot_id)
     world_reply = spawn_world(
@@ -206,23 +228,9 @@ def spawn_blimp(
     mesh_arg = "-m" if enable_meshes else ""
     call_reply = subprocess.check_call(
         str(path)
-        + "/spawn_blimp_sitl.sh %s %s %s %s %s %s %s %s %s %s %s %s %s %s"
-        % (
-            "-i",
-            robot_id,
-            mesh_arg,
-            wind_arg,
-            "-wx",
-            wind_direction[0],
-            "-wy",
-            wind_direction[1],
-            "-ws",
-            wind_speed,
-            "-r",
-            ros_port,
-            "-p",
-            gaz_port,
-        ),
+        + f"/spawn_blimp_sitl.sh -i {robot_id} {mesh_arg} {wind_arg}\
+             -wx {wind_direction[0]} -wy {wind_direction[1]} -ws {wind_speed}\
+             -r {ros_port} -p {gaz_port}",
         shell=True,
     )
 
@@ -238,8 +246,7 @@ def spawn_goal(
     """spawn goal type target"""
     call_reply = subprocess.check_call(
         str(path)
-        + "/spawn_goal.sh %s %s %s %s %s %s %s %s"
-        % ("-i", robot_id, "-g", goal_id, "-r", ros_port, "-p", gaz_port),
+        + f"/spawn_goal.sh -i {robot_id} -g {goal_id} -r {ros_port} -p {gaz_port}",
         shell=True,
     )
     return call_reply
@@ -252,9 +259,7 @@ def spawn_square(
 ):
     """spawn goal type target"""
     call_reply = subprocess.check_call(
-        str(path)
-        + "/spawn_square.sh %s %s %s %s %s %s"
-        % ("-i", robot_id, "-r", ros_port, "-p", gaz_port),
+        str(path) + f"/spawn_square.sh -i {robot_id} -r {ros_port} -p {gaz_port}",
         shell=True,
     )
     return call_reply
@@ -263,7 +268,7 @@ def spawn_square(
 def spawn_path(robot_id):
     """spawn path type target"""
     call_reply = subprocess.check_call(
-        str(path) + "/spawn_path.sh %s %s" % ("-i", robot_id),
+        str(path) + f"/spawn_path.sh -i {robot_id}",
         shell=True,
     )
     return call_reply
@@ -299,16 +304,7 @@ def spawn_target(robot_id, task, ros_port=DEFAULT_ROSPORT, gaz_port=DEFAULT_GAZP
 def ros_master(robot_id=0, ros_port=DEFAULT_ROSPORT, gaz_port=DEFAULT_GAZPORT):
     """spawn ros master at specified port number"""
     call_reply = subprocess.check_call(
-        str(path)
-        + "/spawn_rosmaster.sh %s %s %s %s %s %s"
-        % (
-            "-i",
-            robot_id,
-            "-p",
-            gaz_port,
-            "-r",
-            ros_port,
-        ),
+        str(path) + f"/spawn_rosmaster.sh -i {robot_id} -p {gaz_port} -r {ros_port}",
         shell=True,
     )
     return call_reply

@@ -13,6 +13,7 @@ PlanarNavigateEnv_kwargs = {
     "simulation": {
         "gui": True,
         "enable_meshes": True,
+        "auto_start_simulation": False,
     },
     "observation": {
         "type": "PlanarKinematics",
@@ -160,4 +161,4 @@ def exp_env_step(env_kwargs):
     GazeboConnection().unpause_sim()
 
 
-exp_env_step(env_kwargs[0])
+# exp_env_step(env_kwargs[0])

@@ -57,7 +57,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
                     "update_robotID_on_workerID": True,
                 },
                 "observation": {
-                    "type": "PlanarKinematics",
+                    "type": "RealPlanarKinematics",
                     "name_space": "machine_",
                     "orientation_type": "euler",
                     "real_experiment": True,
@@ -66,7 +66,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
                     "DBG_OBS": False,
                 },
                 "action": {
-                    "type": "DiscreteMetaAction",
+                    "type": "RealDiscreteMetaAction",
                     "robot_id": "0",
                     "name_space": "machine_",
                     "flightmode": 3,
@@ -132,7 +132,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
 
         self._create_pubs_subs()
 
-        if self.config["real_experiment"] == False:
+        if self.config["real_experiment"] is False:
             self.gaz = GazeboConnection(
                 start_init_physics_parameters=True, reset_world_or_sim="WORLD"
             )
@@ -218,11 +218,6 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
         self.planar_angle_cmd_rviz_publisher = rospy.Publisher(
             self.config["name_space"] + "/planar_ang_cmd", Point, queue_size=1
         )
-        self.blimp_position_rviz_publisher = rospy.Publisher(
-            self.config["name_space"] + "/blimp_position_rviz",
-            PoseStamped,
-            queue_size=1,
-        )
 
     def reset(self) -> Observation:
         self.time = self.steps = 0
@@ -233,7 +228,7 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
 
     def _reset(self):
         self._update_goal()
-        if self.config["real_experiment"] == False:
+        if self.config["real_experiment"] is False:
             self._reset_gazebo()
         else:
             self.action_type.realworld_set_init_pose()
@@ -266,6 +261,14 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
         return obs, reward, terminal, info
 
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
+        """one agent step
+
+        Args:
+            action (Action): action chosen by the agent
+
+        Returns:
+            Tuple[Observation, float, bool, dict]: a tuple of step informations
+        """
         self.step_info.update({"step": self.steps})
 
         self._simulate(action)
@@ -338,21 +341,13 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
         )
         self.planar_angle_cmd_rviz_publisher.publish(Point(0, 0, psi_diff))
 
-        ps = PoseStamped()
-        ps.header.frame_id = "world"
-        ps.header.stamp = rospy.Time.now()
-        ps.pose.position.x = obs_pos[1]
-        ps.pose.position.y = obs_pos[0]
-        ps.pose.position.z = -obs_pos[2]
-        self.blimp_position_rviz_publisher.publish(ps)
-
         return processed
 
     def _update_goal(self):
         """sample new goal"""
         self.goal = self.target_type.sample()
 
-    def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-differ
+    def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-renamed
         """calculate reward
         total_reward = success_reward + tracking_reward + action_reward
         success_reward: +1 if agent stay in the vicinity of goal
@@ -453,3 +448,18 @@ class RealWorldPlanarNavigateEnv(AbstractEnv):
             ang_diff += 2
 
         return ang_diff
+
+    def close(self):
+        return NotImplementedError
+
+    def _cost(self, action: Action) -> float:
+        return NotImplementedError
+
+    def _is_terminal(self) -> bool:
+        return NotImplementedError
+
+    def get_available_actions(self):
+        return NotImplementedError
+
+    def render(self):
+        return NotImplementedError

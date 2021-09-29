@@ -10,7 +10,12 @@ ENV = VerticalHoverGoal2ActEnv
 
 VertiHoverGoalEnv_kwargs = {
     "DBG": True,
-    "task": "vertical_upward",
+    "simulation": {
+        "gui": True,
+        "enable_meshes": True,
+        "auto_start_simulation": False,
+        "task": "vertical_upward",
+    },
     "observation": {
         "type": "KinematicsGoal",
         "name_space": "machine_",

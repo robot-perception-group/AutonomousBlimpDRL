@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" environment abstract test """
+""" environment abstract """
 from __future__ import absolute_import, division, print_function
 
 import os
@@ -206,7 +206,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "enable_meshes": False,
                     "world": "basic",
                     "task": "navigate_goal",
-                    "auto_start_simulation": False,
+                    "auto_start_simulation": True,
                     "update_robotID_on_workerID": True,
                 },
                 "observation": {

@@ -372,8 +372,6 @@ class PlanarGoal(GoalTarget):
     to path vector and compute the desired z position
     """
 
-    # GOAL_ANG_TARGETS = ["position", "angle"]
-
     def __init__(
         self, env: "AbstractEnv", name_space, real_experiment, **kwargs
     ) -> None:
@@ -421,13 +419,7 @@ class PlanarGoal(GoalTarget):
             np.ndarray: target array
             dict: target info dictionary with key specified by self.target_name
         """
-        # goal_pos_vec = self.dataobj_to_array(self.position_cmd_data)
-        # mac_pos_vec = self.dataobj_to_array(self.machine_position_data)
-        # desired_z = self.compute_desired_z(
-        #     goal_pos_vec, mac_pos_vec, self.machine_init_position
-        # )
         target_position_data = self.position_cmd_data
-        # target_position_data.value.z = desired_z
         target_dict = {
             "position": target_position_data,
             "velocity": self.vel_cmd_data,
@@ -446,28 +438,6 @@ class PlanarGoal(GoalTarget):
         )
 
         return np.array(target), target_info
-
-    @classmethod
-    def compute_desired_z(cls, goal_pos_vec, mac_pos_vec, prev_goal):
-        """compute goal postion in z direction by projection to
-        the path vector
-
-        Args:
-            goal_pos_vec ([numpy array]): [goal position]
-            mac_pos_vec ([numpy array]): [machine position]
-            prev_goal ([numpy array]): [previous goal position]
-
-        Returns:
-            [float]: [desired z command]
-        """
-
-        path_vec = goal_pos_vec - prev_goal
-        cur_vec = mac_pos_vec - prev_goal
-
-        projected_length = np.dot(path_vec, cur_vec) / (np.linalg.norm(path_vec) ** 2)
-        a = projected_length * path_vec[2]
-        b = prev_goal[2]
-        return a + b
 
     @classmethod
     def dataobj_to_array(cls, dataobj):

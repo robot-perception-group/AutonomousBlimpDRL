@@ -433,6 +433,63 @@ class PlanarKinematicsObservation(KinematicObservation):
         )
         if self.action_feedback:
             action = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
+            scaled_observation_dict.update({"action": action})
+
+        observation, obs_info = [], {}
+        for key in self.obs_name:
+            observation.extend(scaled_observation_dict[str(key)])
+            obs_info.update({str(key): scaled_observation_dict[str(key)]})
+
+        if self.dbg_obs:
+            print(
+                "[ KinematicObservation ] observe: observation_dict", observation_dict
+            )
+            print(
+                "[ KinematicObservation ] observe: obs_info",
+                obs_info,
+            )
+
+        return np.array(observation), obs_info
+
+
+class RealPlanarKinematicsObservation(KinematicObservation):
+    """Planar kinematics observation with action feedback"""
+
+    OBS = [
+        "position",
+        "velocity",
+        "linear_acceleration",
+        "angle",
+        "angular_velocity",
+    ]
+
+    def __init__(
+        self, env: "AbstractEnv", action_feedback=True, **kwargs: dict
+    ) -> None:
+        super().__init__(env, **kwargs)
+        self.obs_name = self.OBS
+        self.obs_dim = 5
+
+        self.action_feedback = action_feedback
+        if self.action_feedback:
+            act_dim = 4
+            self.obs_dim += act_dim
+            self.obs_name.append("action")
+
+    def observe(self) -> np.ndarray:
+        observation_dict = {
+            "position": self.position_data,
+            "velocity": self.vel_data,
+            "linear_acceleration": self.acc_data,
+            "orientation": self.ori_data,
+            "angle": self.ang_data,
+            "angular_velocity": self.ang_vel_data,
+        }
+        scaled_observation_dict = self.data_processor.normalize_data_obj_dict(
+            observation_dict
+        )
+        if self.action_feedback:
+            action = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
             action[2] = -1  ## an hack to deceive agent and it always see -1 servo
             scaled_observation_dict.update({"action": action})
 
@@ -461,5 +518,7 @@ def observation_factory(env: "AbstractEnv", config: dict) -> ObservationType:
         return KinematicsGoalObservation(env, **config)
     elif config["type"] == "PlanarKinematics":
         return PlanarKinematicsObservation(env, **config)
+    elif config["type"] == "RealPlanarKinematics":
+        return RealPlanarKinematicsObservation(env, **config)
     else:
         raise ValueError("Unknown observation type")

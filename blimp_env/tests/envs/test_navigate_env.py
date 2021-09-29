@@ -10,6 +10,11 @@ ENV = NavigateEnv
 
 NavigateEnv_kwargs = {
     "DBG": True,
+    "simulation": {
+        "gui": True,
+        "enable_meshes": True,
+        "auto_start_simulation": False,
+    },
     "observation": {
         "type": "Kinematics",
         "name_space": "machine_",
