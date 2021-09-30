@@ -1,10 +1,4 @@
-from blimp_env.envs import (
-    # VerticalHoverGoal2ActEnv,
-    # VerticalHoverGoalEnv,
-    PlanarNavigateEnv,
-    # PlanarNavigateEnv_v2,
-    RealWorldPlanarNavigateEnv,
-)
+from blimp_env.envs import PlanarNavigateEnv
 from blimp_env.envs.common.gazebo_connection import GazeboConnection
 
 from blimp_env.envs.script import close_simulation
@@ -18,7 +12,7 @@ AGENT = QRDQN
 time_steps = 100000
 
 # model
-model_path = "."
+model_path = "RL/rl/trained_model/final_model.zip"
 
 # environments"""
 env_kwargs = {
