@@ -30,8 +30,8 @@ done
 
 Xs=(   0   40   40  -40  -40    0    0   40  -40    0   40   40  -40  -40    0    0   40  -40    0)
 Ys=(   0   40  -40  -40   40   40  -40    0    0    0   40  -40  -40   40   40  -40    0    0    0)
-# Zs=( 100  110  110  110  110  120  120  120  120  130  140  140  140  140  150  150  150  150  160)
-Zs=( 30  110  110  110  110  120  120  120  120  130  140  140  140  140  150  150  150  150  160)
+Zs=( 100  110  110  110  110  120  120  120  120  130  140  140  140  140  150  150  150  150  160)
+# Zs=( 30  110  110  110  110  120  120  120  120  130  140  140  140  140  150  150  150  150  160)
 
 
 # start business logics
@@ -46,7 +46,7 @@ screen -dmS FW_${robotID} screen sh -c "\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\
     export ROS_HOSTNAME=$ROSIP;\
-    cd ~/blimp_ws/src/airship_simulation/LibrePilot;\
+    cd ~/catkin_ws/src/airship_simulation/LibrePilot;\
 	./build/firmware/fw_simposix/fw_simposix.elf ${robotID}; sleep 1"
 sleep 2
 
@@ -56,7 +56,7 @@ screen -dmS BLIMP_${robotID} screen bash -ic "\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\
     export ROS_HOSTNAME=$ROSIP;\
-	source ~/blimp_ws/devel/setup.bash;\
+	source ~/catkin_ws/devel/setup.bash;\
 	roslaunch blimp_description blimp_ros.launch robotID:=${robotID} X:=${Xs[$robotID]} Y:=${Ys[$robotID]} Z:=${Zs[$robotID]}\
     enable_meshes:=${enable_meshes} enable_wind:=${enable_wind} wind_direction_x:=${wind_direction_x} wind_direction_y:=${wind_direction_y} wind_speed_mean:=${wind_speed};"
 sleep 15

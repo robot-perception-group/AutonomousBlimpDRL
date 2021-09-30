@@ -26,7 +26,7 @@ screen -dmS WORLD_${robotID} screen bash -c "\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\
     export ROS_HOSTNAME=$ROSIP;\
-	source ~/blimp_ws/devel/setup.bash;\
+	source ~/catkin_ws/devel/setup.bash;\
 	roslaunch blimp_description world.launch world_name:=$WORLD gui:=$gui"
 sleep 15
 echo "---- Gazebo World Spawned----"

@@ -18,7 +18,7 @@ done
 echo "---- Spawning PATH_${robotID} ----"
 echo "robotID:$robotID"
 screen -dmS PATH_${robotID} screen bash -ic "\
-    source ~/blimp_ws/devel/setup.bash;\
+    source ~/catkin_ws/devel/setup.bash;\
     roslaunch path_planner path.launch robotID:=${robotID};"
 sleep 2
 

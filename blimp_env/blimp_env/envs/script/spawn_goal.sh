@@ -33,7 +33,7 @@ screen -dmS GOAL_${robotID} screen bash -ic "\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\
     export ROS_HOSTNAME=$ROSIP;\
-    source ~/blimp_ws/devel/setup.bash;\
+    source ~/catkin_ws/devel/setup.bash;\
     roslaunch path_planner goal.launch robotID:=${robotID} X:=${Xs[$goalID]} Y:=${Ys[$goalID]} MAX_Z:=${MAX_Zs[$goalID]} MIN_Z:=${MIN_Zs[$goalID]};"
 sleep 5
 echo "---- Spawn GOAL_${robotID} Complete ----"
