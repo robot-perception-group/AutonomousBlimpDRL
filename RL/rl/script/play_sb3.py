@@ -13,7 +13,7 @@ AGENT = QRDQN
 time_steps = 100000
 
 # model
-default_model_path = "RL/rl/trained_model/final_model.zip"
+default_model_path = "RL/rl/trained_model/final_model"
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
