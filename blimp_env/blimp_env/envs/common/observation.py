@@ -438,8 +438,6 @@ class PlanarKinematicsObservation(KinematicObservation):
         observation, obs_info = [], {}
         for key in self.obs_name:
             val = self.data_processor.add_noise(scaled_observation_dict[str(key)])
-            # observation.extend(scaled_observation_dict[str(key)])
-            # obs_info.update({str(key): scaled_observation_dict[str(key)]})
             observation.extend(val)
             obs_info.update({str(key): val})
 
@@ -498,8 +496,9 @@ class RealPlanarKinematicsObservation(KinematicObservation):
 
         observation, obs_info = [], {}
         for key in self.obs_name:
-            observation.extend(scaled_observation_dict[str(key)])
-            obs_info.update({str(key): scaled_observation_dict[str(key)]})
+            val = self.data_processor.add_noise(scaled_observation_dict[str(key)], 0.0)
+            observation.extend(val)
+            obs_info.update({str(key): val})
 
         if self.dbg_obs:
             print(

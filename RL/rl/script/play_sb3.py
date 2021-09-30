@@ -16,8 +16,6 @@ time_steps = 100000
 default_model_path = "RL/rl/trained_model/final_model.zip"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--gui", type=bool, default=True, help="Start with gazebo gui")
-parser.add_argument("--enable_meshes", type=bool, default=True, help="with meshes")
 parser.add_argument(
     "--model_path", type=str, default=default_model_path, help="path to policy model"
 )
@@ -40,8 +38,8 @@ env_kwargs = {
         "robot_id": str(0),
         "ros_port": 11311,
         "gaz_port": 11351,
-        "gui": args.gui,
-        "enable_meshes": args.enable_meshes,
+        "gui": True,
+        "enable_meshes": True,
         "world": "basic",
         "task": args.task,
         "auto_start_simulation": True,
