@@ -68,15 +68,11 @@ pip install .
 
 * ros2roshitl.py: reduec IMU message overhead
 * world.launch: change env easier
-* bilmp_ros:  
+* bilmp_ros: specify wind from launch
 ```console
 rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/world.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/world.launch
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/blimp_ros.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/blimp_ros.launch
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/blimp_only.aunch ~/catkin_ws/src/airship_simulation/blimp_description/launch/blimp_only.launch
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/spawn_uav.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/spawn_uav.launch
-
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/{world.launch, blimp_ros.launch, blimp_only.launch, spawn_uav.launch} ~/catkin_ws/src/airship_simulation/blimp_description/launch/
 ```
 
 4. compile ROS packages
