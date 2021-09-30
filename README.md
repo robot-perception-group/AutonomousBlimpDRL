@@ -74,6 +74,9 @@ rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.p
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/world.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/world.launch
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/blimp_ros.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/blimp_ros.launch
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/blimp_only.aunch ~/catkin_ws/src/airship_simulation/blimp_description/launch/blimp_only.launch
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/spawn_uav.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/spawn_uav.launch
+
 ```
 
 4. compile ROS packages
