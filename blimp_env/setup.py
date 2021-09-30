@@ -11,5 +11,5 @@ setup(
     version="0.0.1",
     packages=find_packages(where="blimp_env/"),
     package_dir={"": "blimp_env"},
-    install_requires=["gym", "numpy"],
+    install_requires=["gym==0.18.0", "numpy==1.19.5"],
 )
