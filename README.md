@@ -51,6 +51,8 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 
 # Install RL training environment
 
+In the same catkin_ws as airship_simulation: 
+
 1. setup bimp_env
 ```console
 cd ~/catkin_ws/src
