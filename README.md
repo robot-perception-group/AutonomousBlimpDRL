@@ -126,7 +126,7 @@ To close the simulation
 ## Experiment 1: navigate square trajectory
 --------------
 ```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --gui False
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square"
 ```
 
 --------------
