@@ -66,14 +66,14 @@ pip install .
 
 3. replace/add some files
 
-* SITL uses UDP connection, which can be overflown by messages. The replacement reduces the amount of IMU message by four folds. This modification does not influence real hardware communication but only in simulation. 
+* ros2roshitl.py: reduec IMU message overhead
+* world.launch: change env easier
+* bilmp_ros:  
 ```console
 rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
-```
-* add world launch flie allows changing gazebo environment easier
-```console
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/world.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/world.launch
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/blimp_ros.launch ~/catkin_ws/src/airship_simulation/blimp_description/launch/blimp_ros.launch
 ```
 
 4. compile ROS packages
