@@ -145,7 +145,7 @@ python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "squa
 ```
 
 --------------
-## Experiment 4: Buoyancy Change
+## Experiment 4: buoyancy change
 --------------
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square" 
