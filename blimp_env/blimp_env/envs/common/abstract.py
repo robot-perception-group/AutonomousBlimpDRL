@@ -204,6 +204,8 @@ class ROSAbstractEnv(AbstractEnv):
                     "gaz_port": 11351,
                     "gui": False,
                     "enable_meshes": False,
+                    "enable_wind": False,
+                    "wind_speed": 2.0,
                     "world": "basic",
                     "task": "navigate_goal",
                     "auto_start_simulation": True,

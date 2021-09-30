@@ -386,6 +386,9 @@ def spawn_simulation_on_different_port(
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
     enable_meshes=False,
+    enable_wind=False,
+    wind_direction=(1, 0),
+    wind_speed=1.5,
     **kwargs,  # pylint: disable=unused-argument
 ):
     """start blimp simulator on different ros or gazbo port"""
@@ -398,6 +401,9 @@ def spawn_simulation_on_different_port(
         ros_port=ros_port,
         gaz_port=gaz_port,
         enable_meshes=enable_meshes,
+        enable_wind=enable_wind,
+        wind_direction=wind_direction,
+        wind_speed=wind_speed,
         task=task,
     )
     target_reply = spawn_target(

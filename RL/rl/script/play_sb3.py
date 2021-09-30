@@ -32,6 +32,19 @@ parser.add_argument(
 parser.add_argument(
     "--task", type=str, default="square", help="square or hover_fixed_goal"
 )
+parser.add_argument(
+    "--enable_wind",
+    dest="enable_wind",
+    action="store_true",
+    help="apply wind to the blimp",
+)
+parser.set_defaults(enable_wind=False)
+parser.add_argument(
+    "--wind_speed",
+    type=float,
+    default=2.0,
+    help="wind speed m/s",
+)
 
 args = parser.parse_args()
 
@@ -45,6 +58,8 @@ env_kwargs = {
         "gaz_port": 11351,
         "gui": True,
         "enable_meshes": True,
+        "enable_wind": args.enable_wind,
+        "wind_speed": args.wind_speed,
         "world": "basic",
         "task": args.task,
         "auto_start_simulation": True,
