@@ -1,4 +1,5 @@
 import argparse
+import os
 from blimp_env.envs import PlanarNavigateEnv
 from blimp_env.envs.common.gazebo_connection import GazeboConnection
 
@@ -13,7 +14,10 @@ AGENT = QRDQN
 time_steps = 100000
 
 # model
-default_model_path = "RL/rl/trained_model/final_model"
+default_model_path = (
+    os.path.expanduser("~")
+    + "/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/final_model"
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -28,6 +32,7 @@ parser.add_argument(
 parser.add_argument(
     "--task", type=str, default="square", help="square or hover_fixed_goal"
 )
+
 args = parser.parse_args()
 
 # environments"""
@@ -43,7 +48,6 @@ env_kwargs = {
         "world": "basic",
         "task": args.task,
         "auto_start_simulation": True,
-        "update_robotID_on_workerID": True,
     },
     "observation": {
         "DBG_OBS": True,
