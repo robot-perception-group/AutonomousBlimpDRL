@@ -41,6 +41,7 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/librepilot-gcs_release/bin/librepilot-gcs
 ```
+3. In "tools" tab --> "options" --> "Environment" --> "General" --> check "Expert Mode"
 3. Select "Connections" (bottom right) --> UDP: localhost --> Click "Connect"
 4. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Armed" to "Always Disarmed" --> Click "Apply"
 5. "HITL" tab --> click "Start" --> check "GCS Control". 
