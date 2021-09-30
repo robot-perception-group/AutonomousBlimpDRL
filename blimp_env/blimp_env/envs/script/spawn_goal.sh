@@ -28,7 +28,7 @@ done
 
 echo "---- Spawning GOAL_${robotID} ----"
 echo "robotID:$robotID goalID:$goalID"
-screen -dmS GOAL_${robotID} screen bash -ic "\
+screen -dmS GOAL_${robotID} screen bash -c "\
     export ROS_MASTER_URI=http://$ROSIP:$ROS_PORT;\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\

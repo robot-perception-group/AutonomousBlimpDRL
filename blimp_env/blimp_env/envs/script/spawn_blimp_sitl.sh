@@ -41,7 +41,7 @@ echo "robotID:$robotID enable_wind:$enable_wind"
 echo "X:=${Xs[$robotID]} Y:=${Ys[$robotID]} Z:=${Zs[$robotID]}"
 
 echo "Start FW_${robotID}"
-screen -dmS FW_${robotID} screen sh -c "\
+screen -dmS FW_${robotID} screen bash -c "\
     export ROS_MASTER_URI=http://$ROSIP:$ROS_PORT;\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\
@@ -51,7 +51,7 @@ screen -dmS FW_${robotID} screen sh -c "\
 sleep 2
 
 echo "Spawning Blimp_${robotID}"
-screen -dmS BLIMP_${robotID} screen bash -ic "\
+screen -dmS BLIMP_${robotID} screen bash -c "\
     export ROS_MASTER_URI=http://$ROSIP:$ROS_PORT;\
     export GAZEBO_MASTER_URI=http://$ROSIP:$GAZ_PORT;\
     export ROS_IP=$ROSIP;\
