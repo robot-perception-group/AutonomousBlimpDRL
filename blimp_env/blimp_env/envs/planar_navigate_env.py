@@ -153,9 +153,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             track_weights[0] += track_weights[2]
             track_weights[2] = 0
 
-        tracking_reward = self.compute_tracking_rew(
-            -np.abs(obs[0:3]), self.config["tracking_reward_weights"]
-        )
+        tracking_reward = self.compute_tracking_rew(-np.abs(obs[0:3]), track_weights)
         action_reward = self.action_type.action_rew(self.config["reward_scale"][1])
 
         reward = np.dot(
