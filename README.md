@@ -96,6 +96,11 @@ This will run QRDQN training for 7 days.
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
 ```
+To close the simulation
+```console
+. ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env/blimp_env/envs/script/cleanup.sh
+```
+
 
 # Reproduction of results:
 
