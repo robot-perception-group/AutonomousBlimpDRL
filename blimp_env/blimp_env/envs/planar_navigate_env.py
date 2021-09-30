@@ -346,7 +346,6 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         track_weights = self.config["tracking_reward_weights"].copy()
         reward_weights = self.config["reward_weights"].copy()
         if success_reward == 1:
-            # switch to hover mode if success, move yaw weight to altitude
             track_weights[0] += track_weights[2]
             track_weights[2] = 0
             reward_weights[1] -= reward_weights[2]

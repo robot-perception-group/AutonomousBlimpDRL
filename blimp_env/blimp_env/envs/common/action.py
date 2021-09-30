@@ -166,12 +166,8 @@ class ContinuousAction(ROSActionType):
             flightmode=flightmode,
             **kwargs,
         )
-        self.data_processor = DataProcessor()
-        # self.robot_id = robot_id
-        # self.name_space = name_space
-        # self.flightmode = flightmode
-
         self.dbg_act = dbg_act
+        self.data_processor = DataProcessor()
 
         self.act_dim = 8
         act_range = action_range if action_range else self.ACTION_RANGE
@@ -180,7 +176,6 @@ class ContinuousAction(ROSActionType):
         self.act_noise_stdv = act_noise_stdv
 
         self.cur_act = self.init_act = np.zeros(self.act_dim)
-        # self._create_pub_and_sub()
 
     def space(self) -> spaces.Box:
         return spaces.Box(

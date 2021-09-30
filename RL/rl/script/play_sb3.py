@@ -72,4 +72,5 @@ def play(env_kwargs, model_path, time_steps):
         GazeboConnection().unpause_sim()
 
 
+print(env_kwargs)
 play(env_kwargs=env_kwargs, model_path=args.model_path, time_steps=args.time_steps)
