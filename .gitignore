@@ -1,5 +1,5 @@
 pylintrc
-
+logs/
 .vscode/
 
 # Byte-compiled / optimized / DLL files

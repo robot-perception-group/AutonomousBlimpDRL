@@ -2,8 +2,6 @@ import datetime
 import os
 
 from blimp_env.envs import PlanarNavigateEnv
-from blimp_env.envs.common.gazebo_connection import GazeboConnection
-from blimp_env.envs.script import spawn_simulation_on_different_port
 from rl.agent.qrdqn_policy import MyQRDQNPolicy
 from rl.script.config import generate_config, save_config
 from sb3_contrib import QRDQN
