@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<launch>
+	<!--********** arg **********-->
+	<arg name="uav_name" default="blimp"/>
+	<arg name="robotID" default="0"/>
+	<arg name="librepilotBasePort" default="9002" />
+	<arg name="librepilotOffset" default="100" />
+	<arg name="librepilotPort" default="$(eval arg('librepilotBasePort') + arg('librepilotOffset')*(arg('robotID')) )" />
+	<arg name="librepilotIP" default="127.0.0.1" />
+
+	<arg name="is_input_joystick" default="false"/>
+	<arg name="enable_meshes" default="True"/>
+	<arg name="enable_wind" default="false"/>
+	<arg name="enable_physics" default="true"/>
+	<arg name="enable_sensors" default="true"/>
+	<arg name="enable_logging" default="false" />
+	<arg name="enable_ground_truth" default="true" />
+	<arg name="enable_mavlink_interface" default="false"/>
+
+	<arg name="world_name" default="basic"/>
+	<arg name="debug" default="false"/>
+	<arg name="gui" default="true"/>
+	<arg name="paused" default="false"/>
+	<arg name="log_file" default="$(arg uav_name)"/>
+	<arg name="wait_to_record_bag" default="false"/>
+	<arg name="verbose" default="true"/>
+	<arg name="rvizconfig" default="$(find blimp_description)/rviz/blimp.rviz" />
+
+	<arg name="X" default="0.0"/>
+	<arg name="Y" default="0.0"/>
+	<arg name="Z" default="1.0"/>
+
+	<arg name="wind_direction_x" default="1"/>
+	<arg name="wind_direction_y" default="0"/>	
+	<arg name="wind_speed_mean" default="1.5"/>
+
+	<!--********** load env **********-->
+ 	<env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+  	<env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+
+	<group ns="machine_$(arg robotID)">
+	    <arg name="name" value="librepilot_node_$(arg robotID)" />
+	    <node name="$(arg name)" pkg="librepilot" type="librepilot_node" output="screen" args="/machine_$(arg robotID) UDP $(arg librepilotIP) $(arg librepilotPort)">
+		    <remap from="/machine_$(arg robotID)/offset" to="/machine_$(arg robotID)/target_tracker/offset" />
+	    </node>
+    </group>
+
+    <!-- the blimp -->
+    <include file="$(find blimp_description)/launch/blimp_only.launch">
+        <arg name="uav_name" value="machine_$(arg robotID)" />
+        <arg name="enable_wind" value="$(arg enable_wind)" />
+        <arg name="enable_meshes" value="$(arg enable_meshes)" />
+		
+        <arg name="X" value="$(arg X)" />
+        <arg name="Y" value="$(arg Y)" />
+        <arg name="Z" value="$(arg Z)" />
+
+        <arg name="wind_direction_x" value="$(arg wind_direction_x)" />
+        <arg name="wind_direction_y" value="$(arg wind_direction_y)" />
+        <arg name="wind_speed_mean" value="$(arg wind_speed_mean)" />
+
+    </include>
+</launch>
+
+
