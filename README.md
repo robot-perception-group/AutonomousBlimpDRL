@@ -144,6 +144,17 @@ python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "hove
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square" --enable_wind --wind_speed 2.0
 ```
 
+--------------
+## Experiment 4: Buoyancy Change
+--------------
+```console
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square" 
+```
+right after blimp_spawned in Gazebo
+```console
+. ~/catkin_ws/src/airship_simulation/deflate_blimp.sh 8 0 0.2 .95
+```
+
 # Cite
 ```
 @article{Liu2021ABCDRL,
