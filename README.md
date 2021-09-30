@@ -123,9 +123,11 @@ To close the simulation
 # Reproduction of results:
 
 --------------
-## Experiment 1
+## Experiment 1: navigate square trajectory
 --------------
-preparing... 
+```console
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --gui False
+```
 
 --------------
 ## Experiment 2
