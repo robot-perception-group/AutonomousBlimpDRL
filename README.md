@@ -131,17 +131,18 @@ python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "squa
 ```
 
 --------------
-## Experiment 2
+## Experiment 2: hover at target position
 --------------
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "hover_fixed_goal"
 ```
 
 --------------
-## Experiment 3
+## Experiment 3: navigate square with wind
 --------------
-preparing... 
-
+```console
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square" --enable_wind --wind_speed 2.0
+```
 
 # Cite
 ```
