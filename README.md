@@ -132,7 +132,9 @@ python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "squa
 --------------
 ## Experiment 2
 --------------
-preparing... 
+```console
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "hover_fixed_goal"
+```
 
 --------------
 ## Experiment 3
