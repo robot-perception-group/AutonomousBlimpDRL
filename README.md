@@ -98,6 +98,21 @@ This will run QRDQN training for 7 days.
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
 ```
+
+Viualize
+* Training progress. In new terminal, enter the log folder and start tensorboard
+```console
+tensorboard --logdir .
+```
+* Gazebo. In new terminal, start gzcilent
+```console
+gzcilent
+```
+* rviz. In new terminal, start rviz and load a configured rviz flie
+```console
+rosrun rviz rviz -d blimp_env/blimp_env/envs/rviz/planar_goal_env.rviz
+```
+
 To close the simulation
 ```console
 . ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env/blimp_env/envs/script/cleanup.sh
