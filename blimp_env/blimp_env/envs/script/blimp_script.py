@@ -238,15 +238,24 @@ def spawn_blimp(
     wind_speed=1.5,
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
+    task="navigate",
 ):
     """spawn blimp software in-the-loop"""
     wind_arg = "-w" if enable_wind else ""
     mesh_arg = "-m" if enable_meshes else ""
+
+    if task == "square":
+        position = (0, 0, 30)
+    elif task == "hover_fixed_goal":
+        position = (0, 0, 50)
+    else:
+        position = (0, 0, 100)
+
     call_reply = subprocess.check_call(
         str(path)
         + f"/spawn_blimp_sitl.sh -i {robot_id} {mesh_arg} {wind_arg}\
              -wx {wind_direction[0]} -wy {wind_direction[1]} -ws {wind_speed}\
-             -r {ros_port} -p {gaz_port}",
+             -r {ros_port} -p {gaz_port} -px {position[0]} -py {position[1]} -pz {position[2]}",
         shell=True,
     )
 
@@ -389,6 +398,7 @@ def spawn_simulation_on_different_port(
         ros_port=ros_port,
         gaz_port=gaz_port,
         enable_meshes=enable_meshes,
+        task=task,
     )
     target_reply = spawn_target(
         robot_id=robot_id, task=task, ros_port=ros_port, gaz_port=gaz_port
