@@ -6,6 +6,7 @@ from blimp_env.envs import (
     VerticalHoverGoalEnv,
     VerticalHoverGoal2ActEnv,
     PlanarNavigateEnv,
+    PlanarNavigateEnv2,
 )
 
 from blimp_env.envs.common.gazebo_connection import GazeboConnection
@@ -25,6 +26,7 @@ envs = [
     VerticalHoverGoalEnv,
     VerticalHoverGoal2ActEnv,
     PlanarNavigateEnv,
+    PlanarNavigateEnv2,
 ]
 
 

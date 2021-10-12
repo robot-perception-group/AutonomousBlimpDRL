@@ -7,11 +7,12 @@
 	<arg name="Y" default="100"/>
 	<arg name="MAX_Z" default="200"/>
 	<arg name="MIN_Z" default="5"/>
+	<arg name="VXY" default="8"/>
 
 
   	<!--********** spawn robot **********-->
 	 <node name="goal_node_$(arg robotID)" pkg="path_planner" type="goal.py" output="screen"
-		args="$(arg robotID) $(arg X) $(arg Y) $(arg MAX_Z) $(arg MIN_Z)">
+		args="$(arg robotID) $(arg X) $(arg Y) $(arg MAX_Z) $(arg MIN_Z) $(arg VXY)">
 	</node> 
 
 

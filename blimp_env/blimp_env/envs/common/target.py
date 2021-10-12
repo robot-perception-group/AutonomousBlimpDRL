@@ -308,8 +308,6 @@ class GoalTarget(PathTarget):
             self.angle_cmd_data.value = Point(*euler)
 
             self.publish_to_rviz()
-        else:
-            pass
 
         if self.dbg_ros:
             print(
@@ -377,27 +375,27 @@ class PlanarGoal(GoalTarget):
     def __init__(
         self,
         env: "AbstractEnv",
-        name_space,
+        name_space="machine_0",
+        enable_velocity_goal=False,
         **kwargs,
     ) -> None:
         super().__init__(env, **kwargs)
-        range_dict = KinematicObservation._create_range_obj()
-
-        self.machine_position_data = DataObj(Point(), range_dict["position_range"])
+        if enable_velocity_goal:
+            self.target_dim += 1
+            self.target_name.append("velocity")
 
         self.planar_pos_cmd_rviz_publisher = rospy.Publisher(
-            name_space + "/planar_cmd", Point, queue_size=1
+            name_space + "/planar_cmd_rviz", Point, queue_size=1
         )
-        rospy.Subscriber(name_space + "/pose", uav_pose, self._pose_callback)
 
-    def _pose_callback(self, msg):
-        """pose msg callback
-
-        Args:
-            msg ([uav_pose]): gcs EKF processed sensor data
-        """
-
-        self.machine_position_data.value = msg.position
+        if enable_velocity_goal:
+            self.target_dim += 1
+            self.target_name.append("velocity")
+            rospy.Subscriber(
+                self.target_name_space + "/AutopilotInfo",
+                AutopilotInfo,
+                self._autopilot_info_callback,
+            )
 
     def sample(self) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
         """sample target state
@@ -406,9 +404,8 @@ class PlanarGoal(GoalTarget):
             np.ndarray: target array
             dict: target info dictionary with key specified by self.target_name
         """
-        target_position_data = self.position_cmd_data
         target_dict = {
-            "position": target_position_data,
+            "position": self.position_cmd_data,
             "velocity": self.vel_cmd_data,
             "orientation": self.orientation_cmd_data,
             "angle": self.angle_cmd_data,
@@ -421,7 +418,7 @@ class PlanarGoal(GoalTarget):
             target_info[key] = scaled_target_dict[str(key)]
 
         self.planar_pos_cmd_rviz_publisher.publish(
-            Point(*self.dataobj_to_array(target_position_data))
+            Point(*self.dataobj_to_array(self.position_cmd_data))
         )
 
         return np.array(target), target_info

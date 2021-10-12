@@ -249,7 +249,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
 
 
 class PlanarNavigateEnv2(PlanarNavigateEnv):
-    """include thrust vectoring and when close to target the goal shift to hover mode"""
+    """include velocity command and change reward function and tracking weight"""
 
     @classmethod
     def default_config(cls) -> dict:
@@ -258,12 +258,15 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
+                "noise_stdv": 0.02,
                 "action_feedback": True,
+                "enable_velocity_goal": True,
             }
         )
         config["action"].update(
             {
-                "type": "DiscreteMetaServoAction",
+                "type": "DiscreteMetaActionV2",  # "DiscreteMetaServoAction"
+                "act_noise_stdv": 0.05,
             }
         )
         config["target"].update(
@@ -271,22 +274,31 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
                 "type": "PlanarGoal",
                 "name_space": "machine_",
                 "target_name_space": "goal_",
+                "enable_velocity_goal": True,
             }
         )
         config.update(
             {
                 "duration": 400,
+                "simulation_frequency": 10,
+                "policy_frequency": 5,
                 "reward_weights": np.array(
-                    [1, 0.95, 0.05]
+                    [1.0, 0.9, 0.1]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
-                    [0.1, 0.7, 0.2]
-                ),  # z_diff, planar_dist, psi_diff
-                "reward_scale": (1, 1),
-                "success_threshhold": 0.06,
+                    [0.2, 0.4, 0.25, 0.15]
+                ),  # z_diff, planar_dist, psi_diff, vel_diff
+                "reward_scale": np.array([1, 1]),
+                "success_threshhold": 0.05,  # scaled distance, i.e. 200*threshold meters
             }
         )
         return config
+
+    def _create_pubs_subs(self):
+        super()._create_pubs_subs()
+        self.planar_u_velocity_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/planar_vel_u_rviz", Point, queue_size=1
+        )
 
     def process_obs_and_goal(self):
         """process the difference between observation and goal
@@ -299,17 +311,25 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
 
         obs_pos, goal_pos = obs_info["position"], goal_info["position"]
         z_diff = obs_pos[2] - goal_pos[2]
-        z_vel = obs_info["velocity"][2]
-        velocity = np.linalg.norm(obs_info["velocity"]) / np.sqrt(3)
         planar_dist = np.linalg.norm((obs_pos[0:2] - goal_pos[0:2])) / np.sqrt(2)
+
+        xy_vel, z_vel, goal_xy_vel = (
+            obs_info["velocity"][0:2],
+            obs_info["velocity"][2],
+            goal_info["velocity"][0:2],
+        )
+        # convert to body frame with assumption, u~xy_vel, and omit velocity direction
+        # since we only care about positional direction
+        u_vel = np.linalg.norm(xy_vel) / np.sqrt(2)
+        goal_u_vel = np.linalg.norm(goal_xy_vel) / np.sqrt(2)
+        u_diff = u_vel - goal_u_vel
+
         psi_diff = self.compute_psi_diff(goal_pos, obs_pos, obs_info["angle"][2])
 
         act = obs_info["action"]
-
-        feature_list = [z_diff, planar_dist, psi_diff, z_vel, velocity, act]
-        processed = np.empty(0)
-        for feature in feature_list:
-            processed = np.append(processed, feature)
+        obs = np.array([z_diff, planar_dist, psi_diff, u_diff, z_vel, u_vel])
+        feature_list = [obs, act]
+        processed = np.concatenate(feature_list)
         processed = np.clip(processed, -1, 1)
 
         self.step_info.update(
@@ -320,6 +340,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
             }
         )
         self.planar_angle_cmd_rviz_publisher.publish(Point(0, 0, psi_diff))
+        self.planar_u_velocity_rviz_publisher.publish(Point(u_vel, goal_u_vel, u_diff))
         return processed
 
     def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-differ
@@ -330,7 +351,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         action_reward: penalty for motor use
 
         Args:
-            action (np.array): []
+            obs (np.array): [z_diff, planar_dist, psi_diff, u_diff, z_vel, u_vel, act]
 
         Returns:
             float: [reward]
@@ -339,26 +360,41 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         goal_info = self.step_info["goal_info"]
         obs_info = self.step_info["obs_info"]
 
+        track_weights = self.config["tracking_reward_weights"].copy()
+        reward_weights = self.config["reward_weights"].copy()
+        reward_scale = self.config["reward_scale"].copy()
+
         success_reward = self.compute_success_rew(
             obs_info["position"], goal_info["position"], k=2
         )
-
-        track_weights = self.config["tracking_reward_weights"].copy()
-        reward_weights = self.config["reward_weights"].copy()
-        if success_reward == 1:
-            track_weights[0] += track_weights[2]
-            track_weights[2] = 0
-            reward_weights[1] -= reward_weights[2]
-            reward_weights[2] += reward_weights[2]
-        tracking_reward = self.compute_tracking_rew(-np.abs(obs[0:3]), track_weights)
-        action_reward = self.action_type.action_rew(self.config["reward_scale"][1])
+        tracking_reward = self.compute_tracking_rew(-np.abs(obs[0:4]), track_weights)
+        action_reward = self.action_type.action_rew(reward_scale[1])
 
         reward = np.dot(
             reward_weights,
             (success_reward, tracking_reward, action_reward),
         )
-
         reward_info = (success_reward, tracking_reward, action_reward)
         self.step_info.update({"reward": reward, "reward_info": reward_info})
 
         return reward
+
+    def _is_terminal(self) -> bool:
+        """if episode terminate
+        - time: episode duration finished
+
+        Returns:
+            bool: [episode terminal or not]
+        """
+        time = False
+        if self.config["duration"] is not None:
+            time = self.steps >= int(self.config["duration"])
+
+        goal_info = self.step_info["goal_info"]
+        obs_info = self.step_info["obs_info"]
+        success_reward = self.compute_success_rew(
+            obs_info["position"], goal_info["position"], k=2
+        )
+        success = success_reward >= 1
+
+        return time or success

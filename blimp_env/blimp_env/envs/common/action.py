@@ -374,21 +374,11 @@ class DiscreteMetaAction(ROSActionType):
         self.cur_act += self.lookup[act]
         self.cur_act[5] = -1
 
+        # only allow positive thrust
         if self.cur_act[6] < 0:
-            # only allow positive thrust
             self.cur_act[6] = 0
-
-        if self.cur_act[6] > 0.5:
-            # only allow 50% thrust
-            self.cur_act[6] = 0.5
-
         if self.cur_act[7] < 0:
-            # only allow positive thrust
             self.cur_act[7] = 0
-
-        if self.cur_act[7] > 0.5:
-            # only allow 50% thrust
-            self.cur_act[7] = 0.5
 
         self.cur_act = self.data_processor.clip(
             self.cur_act,
@@ -505,6 +495,18 @@ class RealDiscreteMetaAction(DiscreteMetaAction):
         return self.cur_act
 
 
+class DiscreteMetaActionV2(DiscreteMetaAction):
+    CRUISE_LOOKUP = {
+        "IDLE": [0, 0, 0, 0, 0, 0, 0.0, 0.0],
+        "THRUST+": [0, 0, 0, 0, 0, 0, 0.004, 0.004],
+        "THRUST-": [0, 0, 0, 0, 0, 0, -0.004, -0.004],
+        "NOSE_UP": [0, 0.025, 0.025, 0, 0, 0, 0, 0],
+        "NOSE_DOWN": [0, -0.025, -0.025, 0, 0, 0, 0, 0],
+        "NOSE_LEFT": [0.025, 0, 0, 0.025, 0.025, 0, 0, 0],
+        "NOSE_RIGHT": [-0.025, 0, 0, -0.025, -0.025, 0, 0, 0],
+    }
+
+
 class DiscreteMetaServoAction(DiscreteMetaAction):
     """similar to discrete meta act but include servo thurst vectoring
     only positive thrust is allowed.
@@ -555,12 +557,10 @@ class DiscreteMetaServoAction(DiscreteMetaAction):
             # servo is only allowed to be negative
             self.cur_act[5] = 0
 
+        # only allow positive thrust
         if self.cur_act[6] < 0:
-            # only allow positive thrust
             self.cur_act[6] = 0
-
         if self.cur_act[7] < 0:
-            # only allow positive thrust
             self.cur_act[7] = 0
 
         self.cur_act = self.data_processor.clip(
@@ -669,6 +669,8 @@ def action_factory(  # pylint: disable=too-many-return-statements
         return SimpleContinuousAction(env, **config)
     elif config["type"] == "DiscreteMetaAction":
         return DiscreteMetaAction(env, **config)
+    elif config["type"] == "DiscreteMetaActionV2":
+        return DiscreteMetaActionV2(env, **config)
     elif config["type"] == "RealDiscreteMetaAction":
         return RealDiscreteMetaAction(env, **config)
     elif config["type"] == "DiscreteMetaServoAction":

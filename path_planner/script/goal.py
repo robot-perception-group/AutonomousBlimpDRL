@@ -35,6 +35,7 @@ from visualization_msgs.msg import *
 from geometry_msgs.msg import Quaternion, Point
 from tf.broadcaster import TransformBroadcaster
 from tf.transformations import quaternion_from_euler
+from librepilot.msg import AutopilotInfo
 
 import rospy
 import copy
@@ -187,20 +188,26 @@ if __name__ == "__main__":
     np.random.seed(123)
 
     robotID = "0"
-    x_max, x_min = 100, -100
-    y_max, y_min = 100, -100
-    z_max, z_min = 200, 5
+    x_max, x_min = 105, -105
+    y_max, y_min = 105, -105
+    z_max, z_min = 210, 5
+    vx_max, vx_min = 8, 0
+    vy_max, vy_min = 8, 0
 
     if len(sys.argv) > 1:
         robotID = sys.argv[1]
         x_max, x_min = float(sys.argv[2]), -float(sys.argv[2])
         y_max, y_min = float(sys.argv[3]), -float(sys.argv[3])
         z_max, z_min = float(sys.argv[4]), float(sys.argv[5])
+        vx_max, vx_min = float(sys.argv[6]), -float(sys.argv[6])
+        vy_max, vy_min = float(sys.argv[6]), -float(sys.argv[6])
 
     rospy.loginfo("[ Goal Node ] Launching...")
     rospy.init_node("GOAL_Node_" + robotID, anonymous=False)
+    vel_cmd_pub = rospy.Publisher(
+        "goal_" + robotID + "/AutopilotInfo", AutopilotInfo, queue_size=1
+    )
     br = TransformBroadcaster()
-
     server = InteractiveMarkerServer("goal_" + robotID)
 
     menu_handler.insert("First Entry", callback=processFeedback)
@@ -216,6 +223,9 @@ if __name__ == "__main__":
         y = np.random.uniform(y_min, y_max)
         z = np.random.uniform(z_min, z_max)
 
+        vx = np.random.uniform(vx_min, vx_max)
+        vy = np.random.uniform(vy_min, vy_max)
+
         phi = 0
         the = 0
         psi = np.random.uniform(-pi, pi)
@@ -223,18 +233,21 @@ if __name__ == "__main__":
 
         rospy.loginfo("[ Goal Node ] -----------------------")
         rospy.loginfo("[ Goal Node ] position = (%2.1f, %2.1f, %2.1f)\n" % (x, y, z))
+        rospy.loginfo("[ Goal Node ] velocity = (%2.1f, %2.1f, %2.1f)\n" % (vx, vy, 0))
         rospy.loginfo(
             "[ Goal Node ] orientation = (%2.1f, %2.1f, %2.1f)]\n" % (phi, the, psi)
         )
 
         position = Point(x, y, z)
+        velocity = Point(vx, vy, 0)
         orientation = Quaternion(q[0], q[1], q[2], q[3])
-        makeQuadrocopterMarker(position, orientation)
-
+        makeQuadrocopterMarker(position=position, orientation=orientation)
         server.applyChanges()
+
+        vel_cmd = AutopilotInfo()
+        vel_cmd.VelocityDesired = velocity
+        vel_cmd_pub.publish(vel_cmd)
 
         rospy.Timer(rospy.Duration(0.01), frameCallback)
 
         time.sleep(200)
-
-    rospy.spin()

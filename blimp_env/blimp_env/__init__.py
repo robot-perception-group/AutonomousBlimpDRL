@@ -31,7 +31,7 @@ register(
 )
 register(
     id="planar_navigate-v2",
-    entry_point="blimp_env.envs:PlanarNavigateEnv_v2",
+    entry_point="blimp_env.envs:PlanarNavigateEnv2",
 )
 register(
     id="realworld_planar_navigate-v0",

@@ -93,7 +93,6 @@ class KinematicObservation(ObservationType):
             "y": RangeObj((-100, 100), scale_min_max),
             "z": RangeObj((-200, 0), scale_min_max),
         }  # NED frame
-
         vel_range = {
             "x": RangeObj((-8, 8), scale_min_max),
             "y": RangeObj((-8, 8), scale_min_max),
@@ -407,9 +406,16 @@ class PlanarKinematicsObservation(KinematicObservation):
     ]
 
     def __init__(
-        self, env: "AbstractEnv", action_feedback=True, **kwargs: dict
+        self,
+        env: "AbstractEnv",
+        noise_stdv=0.02,
+        action_feedback=True,
+        enable_velocity_goal=False,
+        **kwargs: dict
     ) -> None:
         super().__init__(env, **kwargs)
+        self.noise_stdv = noise_stdv
+
         self.obs_name = self.OBS
         self.obs_dim = 5
 
@@ -418,6 +424,9 @@ class PlanarKinematicsObservation(KinematicObservation):
             act_dim = 4
             self.obs_dim += act_dim
             self.obs_name.append("action")
+
+        if enable_velocity_goal:
+            self.obs_dim += 1
 
     def observe(self) -> np.ndarray:
         observation_dict = {
@@ -453,29 +462,8 @@ class PlanarKinematicsObservation(KinematicObservation):
         return np.array(observation), obs_info
 
 
-class RealPlanarKinematicsObservation(KinematicObservation):
+class RealPlanarKinematicsObservation(PlanarKinematicsObservation):
     """Planar kinematics observation with action feedback"""
-
-    OBS = [
-        "position",
-        "velocity",
-        "linear_acceleration",
-        "angle",
-        "angular_velocity",
-    ]
-
-    def __init__(
-        self, env: "AbstractEnv", action_feedback=True, **kwargs: dict
-    ) -> None:
-        super().__init__(env, **kwargs)
-        self.obs_name = self.OBS
-        self.obs_dim = 5
-
-        self.action_feedback = action_feedback
-        if self.action_feedback:
-            act_dim = 4
-            self.obs_dim += act_dim
-            self.obs_name.append("action")
 
     def observe(self) -> np.ndarray:
         observation_dict = {
@@ -496,7 +484,9 @@ class RealPlanarKinematicsObservation(KinematicObservation):
 
         observation, obs_info = [], {}
         for key in self.obs_name:
-            val = self.data_processor.add_noise(scaled_observation_dict[str(key)], 0.0)
+            val = self.data_processor.add_noise(
+                scaled_observation_dict[str(key)], self.noise_stdv
+            )
             observation.extend(val)
             obs_info.update({str(key): val})
 
