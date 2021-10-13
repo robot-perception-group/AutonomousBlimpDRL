@@ -320,9 +320,6 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         self.u_velocity_rviz_publisher = rospy.Publisher(
             self.config["name_space"] + "/rviz_vel_u", Point, queue_size=1
         )
-        self.psi_rviz_publisher = rospy.Publisher(
-            self.config["name_space"] + "/rviz_psi", Point, queue_size=1
-        )
 
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
         self.step_info.update({"step": self.steps})
@@ -391,7 +388,6 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         )
         self.vel_rviz_publisher.publish(Point(*obs_info["velocity"]))
         self.u_velocity_rviz_publisher.publish(Point(u_vel, goal_u_vel, u_diff))
-        self.psi_rviz_publisher.publish(Point())
         return processed
 
     def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-differ
