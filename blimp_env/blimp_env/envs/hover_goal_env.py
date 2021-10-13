@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 from typing import Tuple, Union
 
 import numpy as np
-from .navigate_goalenv import NavigateGoalEnv
+from .navigate_goal_env import NavigateGoalEnv
 
 Observation = Union[np.ndarray, float]
 
