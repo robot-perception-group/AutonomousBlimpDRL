@@ -10,6 +10,35 @@ default_exp_config = {
 
 default_env_config = {}
 
+default_tqc_agent_config = dict(
+    learning_rate=0.0003,
+    buffer_size=1000000,
+    learning_starts=100,
+    batch_size=256,
+    tau=0.005,
+    gamma=0.99,
+    train_freq=1,
+    gradient_steps=1,
+    action_noise=None,
+    replay_buffer_class=None,
+    replay_buffer_kwargs=None,
+    optimize_memory_usage=False,
+    ent_coef="auto",
+    target_update_interval=1,
+    target_entropy="auto",
+    top_quantiles_to_drop_per_net=2,
+    use_sde=False,
+    sde_sample_freq=-1,
+    use_sde_at_warmup=False,
+    tensorboard_log=None,
+    create_eval_env=False,
+    policy_kwargs=None,
+    verbose=1,
+    seed=None,
+    device="auto",
+    _init_setup_model=True,
+)
+
 default_qrdqn_agent_config = dict(
     learning_rate=5e-5,
     buffer_size=int(1e6),
@@ -69,6 +98,8 @@ def generate_config(
         final_agent_config.update(default_qrdqn_agent_config)
     elif agent_name == "PPO":
         final_agent_config.update(default_ppo_agent_config)
+    elif agent_name == "TQC":
+        final_agent_config.update(default_tqc_agent_config)
     final_agent_config.update(agent_config)
 
     meta_config: dict = {}

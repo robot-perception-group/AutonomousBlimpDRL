@@ -320,6 +320,9 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         self.u_velocity_rviz_publisher = rospy.Publisher(
             self.config["name_space"] + "/rviz_vel_u", Point, queue_size=1
         )
+        self.act_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_action", Quaternion, queue_size=1
+        )
 
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
         self.step_info.update({"step": self.steps})
@@ -333,6 +336,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
 
         self._update_goal()
         self.reward_rviz_publisher.publish(Quaternion(*self.step_info["reward_info"]))
+        self.act_rviz_publisher.publish(Quaternion(*action))
 
         if self.dbg:
             print(

@@ -293,16 +293,15 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         self.act_dim = 4
         self.data_processor = SimpleDataProcessor()
 
-        self.diff_act_min = -0.1
-        self.diff_act_max = 0.1
+        self.agent_diff_act_scale = 0.001
 
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
 
     def space(self):
         return spaces.Box(
-            low=np.full((self.act_dim), self.diff_act_min),
-            high=np.full((self.act_dim), self.diff_act_max),
+            low=np.full((self.act_dim), self.action_range.scaled_min),
+            high=np.full((self.act_dim), self.action_range.scaled_max),
             dtype=np.float32,
         )
 
@@ -310,10 +309,9 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         """publish action
 
         Args:
-            action (np.ndarray): agent action [-100, 100]
+            action (np.ndarray): agent action [-1, 1]
         """
-        self.cur_act += action
-        processed_action = self.process_action(self.cur_act.copy())
+        processed_action = self.process_action(action)
 
         act_msg = LibrepilotActuators()
         act_msg.header.stamp = rospy.Time.now()
@@ -332,6 +330,40 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
                 "[ ContinuousDiffAction ] act: processed_action:",
                 processed_action,
             )
+
+    def process_action(self, action: np.array):
+        """map agent action to actuator specification
+
+        Args:
+            action ([np.array]): agent action [-1,1]
+
+        Returns:
+            [np.array]: formated action with 12 channels
+        """
+        self.cur_act += self.agent_diff_act_scale * action
+        self.cur_act = np.clip(self.cur_act, -1, 1)
+        # only allow foward thrust
+        if self.cur_act[3] < 0:
+            self.cur_act[3] = 0
+        # only allow forward servo
+        if self.cur_act[2] > 0:
+            self.cur_act[2] = 0
+
+        action = self.cur_act.copy()
+
+        action = self.data_processor.add_noise(
+            value=action, noise_level=self.act_noise_stdv
+        )
+
+        action = self.data_processor.scale_action(
+            action=action, action_range=self.action_range
+        )
+        action = self.data_processor.clip(
+            action,
+            self.action_range.get_range(),
+        )
+        action = self.data_processor.augment_action(action)
+        return action
 
 
 class DiscreteMetaAction(ROSActionType):
