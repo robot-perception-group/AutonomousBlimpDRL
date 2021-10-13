@@ -105,3 +105,45 @@ class VerticalHoverGoalEnv(NavigateGoalEnv):
             }
         )
         return total_rew
+
+
+class VerticalHoverGoal2ActEnv(VerticalHoverGoalEnv):
+    """a simple one dimensional z control task but only allowed to
+    move only up and down"""
+
+    @classmethod
+    def default_config(cls) -> dict:  # pylint: disable=duplicate-code
+        config = super().default_config()
+
+        config["simulation"].update({"task": "vertical_upward"})
+        config["observation"].update(
+            {
+                "type": "KinematicsGoal",
+                "action_feedback": True,
+                "goal_obs_diff_feedback": True,
+            }
+        )
+        config["action"].update(
+            {
+                "type": "SimpleDiscreteMetaHoverAction",
+            }
+        )
+        config["target"].update(
+            {
+                "type": "GOAL",
+                "target_name_space": "goal_",
+                "orientation_type": "euler",
+            }
+        )
+
+        config.update(
+            {
+                "duration": 200,
+                "reward_type": None,  # "sparse",
+                "reward_weights": (1, 0),
+                "reward_scale": (10, 1.5),
+                "success_goal_reward": 0.9,
+            }
+        )
+
+        return config

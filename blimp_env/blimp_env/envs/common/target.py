@@ -385,7 +385,7 @@ class PlanarGoal(GoalTarget):
             self.target_name.append("velocity")
 
         self.planar_pos_cmd_rviz_publisher = rospy.Publisher(
-            name_space + "/planar_cmd_rviz", Point, queue_size=1
+            name_space + "/rviz_goal_position", Point, queue_size=1
         )
 
         if enable_velocity_goal:

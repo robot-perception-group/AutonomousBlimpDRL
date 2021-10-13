@@ -9,7 +9,7 @@ import numpy as np
 import rospy
 from blimp_env.envs.common.abstract import ROSAbstractEnv
 from blimp_env.envs.common.action import Action
-from geometry_msgs.msg import Point
+from geometry_msgs.msg import Point, Quaternion
 
 Observation = Union[np.ndarray, float]
 
@@ -249,7 +249,16 @@ class PlanarNavigateEnv(ROSAbstractEnv):
 
 
 class PlanarNavigateEnv2(PlanarNavigateEnv):
-    """include velocity command and change reward function and tracking weight"""
+    """
+    similar to v1: state space, goal space
+
+    different from v1:
+    - include velocity command
+    - refined reward function
+    - continuous action space
+    - only navigation task (no hover)
+
+    """
 
     @classmethod
     def default_config(cls) -> dict:
@@ -265,7 +274,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         )
         config["action"].update(
             {
-                "type": "DiscreteMetaActionV2",  # "DiscreteMetaServoAction"
+                "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
             }
         )
@@ -281,7 +290,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
             {
                 "duration": 400,
                 "simulation_frequency": 10,
-                "policy_frequency": 5,
+                "policy_frequency": 4,
                 "reward_weights": np.array(
                     [1.0, 0.9, 0.1]
                 ),  # success, tracking, action
@@ -296,9 +305,46 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
 
     def _create_pubs_subs(self):
         super()._create_pubs_subs()
-        self.planar_u_velocity_rviz_publisher = rospy.Publisher(
-            self.config["name_space"] + "/planar_vel_u_rviz", Point, queue_size=1
+        self.reward_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_reward", Quaternion, queue_size=1
         )
+        self.diff_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_diff", Quaternion, queue_size=1
+        )
+        self.goal_pos_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_goal_pos", Point, queue_size=1
+        )
+        self.vel_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_vel", Point, queue_size=1
+        )
+        self.u_velocity_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_vel_u", Point, queue_size=1
+        )
+        self.psi_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_psi", Point, queue_size=1
+        )
+
+    def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
+        self.step_info.update({"step": self.steps})
+
+        self._simulate(action)
+        obs = self.process_obs_and_goal()
+        reward = self._reward(obs)
+        terminal = self._is_terminal()
+        info = self._info(obs, action)
+        self.step_info.update({"terminal": terminal, "info": info})
+
+        self._update_goal()
+        self.reward_rviz_publisher.publish(Quaternion(*self.step_info["reward_info"]))
+
+        if self.dbg:
+            print(
+                f"================= [ navigate_env ] step {self.steps} ================="
+            )
+            print("STEP INFO:", self.step_info)
+            print("\r")
+
+        return obs, reward, terminal, info
 
     def process_obs_and_goal(self):
         """process the difference between observation and goal
@@ -339,8 +385,13 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
                 "goal_info": goal_info,
             }
         )
-        self.planar_angle_cmd_rviz_publisher.publish(Point(0, 0, psi_diff))
-        self.planar_u_velocity_rviz_publisher.publish(Point(u_vel, goal_u_vel, u_diff))
+
+        self.diff_rviz_publisher.publish(
+            Quaternion(planar_dist, psi_diff, z_diff, u_diff)
+        )
+        self.vel_rviz_publisher.publish(Point(*obs_info["velocity"]))
+        self.u_velocity_rviz_publisher.publish(Point(u_vel, goal_u_vel, u_diff))
+        self.psi_rviz_publisher.publish(Point())
         return processed
 
     def _reward(self, obs: np.array) -> float:  # pylint: disable=arguments-differ
@@ -374,7 +425,8 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
             reward_weights,
             (success_reward, tracking_reward, action_reward),
         )
-        reward_info = (success_reward, tracking_reward, action_reward)
+        reward = np.clip(reward, -1, 1)
+        reward_info = (reward, success_reward, tracking_reward, action_reward)
         self.step_info.update({"reward": reward, "reward_info": reward_info})
 
         return reward

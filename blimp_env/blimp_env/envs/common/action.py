@@ -279,6 +279,61 @@ class SimpleContinuousAction(ContinuousAction):
         )
 
 
+class SimpleContinuousDifferentialAction(ContinuousAction):
+    """simplified action space by binding action that has similar dynamic effect"""
+
+    def __init__(self, *args, **kwargs):
+        """action channel
+        0: back motor + top fin + bot fin
+        1: left fin + right fin
+        2: servo
+        3: left motor + right motor
+        """
+        super().__init__(*args, **kwargs)
+        self.act_dim = 4
+        self.data_processor = SimpleDataProcessor()
+
+        self.diff_act_min = -100
+        self.diff_act_max = 100
+
+        self.init_act = np.zeros(self.act_dim)
+        self.cur_act = np.zeros(self.act_dim)
+
+    def space(self):
+        return spaces.Box(
+            low=np.full((self.act_dim), self.diff_act_min),
+            high=np.full((self.act_dim), self.diff_act_max),
+            dtype=np.float32,
+        )
+
+    def act(self, action: np.ndarray) -> None:
+        """publish action
+
+        Args:
+            action (np.ndarray): agent action [-100, 100]
+        """
+        self.cur_act += action
+        processed_action = self.process_action(self.cur_act.copy())
+
+        act_msg = LibrepilotActuators()
+        act_msg.header.stamp = rospy.Time.now()
+        act_msg.data.data = processed_action
+
+        mode = uav_pose()
+        mode.flightmode = self.flightmode
+
+        self.action_publisher.publish(act_msg)
+        self.flightmode_publisher.publish(mode)
+
+        if self.dbg_act:
+            print("[ ContinuousDiffAction ] act: mode:", self.flightmode)
+            print("[ ContinuousDiffAction ] act: action:", action)
+            print(
+                "[ ContinuousDiffAction ] act: processed_action:",
+                processed_action,
+            )
+
+
 class DiscreteMetaAction(ROSActionType):
     """encoded discrete actions"""
 
@@ -342,7 +397,7 @@ class DiscreteMetaAction(ROSActionType):
 
     def _create_pub_and_sub(self):
         self.rviz_act_publisher = rospy.Publisher(
-            self.name_space + "/output_action", Point, queue_size=1
+            self.name_space + "/rviz_action", Point, queue_size=1
         )
 
     def set_init_pose(self) -> None:
@@ -667,6 +722,8 @@ def action_factory(  # pylint: disable=too-many-return-statements
         return ContinuousAction(env, **config)
     elif config["type"] == "SimpleContinuousAction":
         return SimpleContinuousAction(env, **config)
+    elif config["type"] == "SimpleContinuousDifferentialAction":
+        return SimpleContinuousDifferentialAction(env, **config)
     elif config["type"] == "DiscreteMetaAction":
         return DiscreteMetaAction(env, **config)
     elif config["type"] == "DiscreteMetaActionV2":
