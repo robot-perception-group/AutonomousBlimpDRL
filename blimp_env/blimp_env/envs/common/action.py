@@ -293,7 +293,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         self.act_dim = 4
         self.data_processor = SimpleDataProcessor()
 
-        self.agent_diff_act_scale = 0.001
+        self.agent_diff_act_scale = 0.01
 
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
@@ -364,6 +364,21 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         )
         action = self.data_processor.augment_action(action)
         return action
+
+    def action_rew(self, scale: float = 0.5) -> float:
+        """compute action reward
+
+        Args:
+            scale (float, optional): [scale,
+            the greater this number harder to get reward]. Defaults to 0.5.
+
+        Returns:
+            [float]: [reward of current action state]
+        """
+        motors = self.get_cur_act()[[0, 6, 7]]
+        # motors_rew = np.exp(-scale * np.linalg.norm(motors))
+        motors_rew = -scale * np.linalg.norm(motors)
+        return motors_rew
 
 
 class DiscreteMetaAction(ROSActionType):

@@ -13,10 +13,9 @@ ROS_PORT=11311
 GAZ_PORT=11351
 ROSIP=$(hostname -I | cut -d' ' -f1)
 
-Xs=(   0   40   40  -40  -40    0    0   40  -40    0   40   40  -40  -40    0    0   40  -40    0)
-Ys=(   0   40  -40  -40   40   40  -40    0    0    0   40  -40  -40   40   40  -40    0    0    0)
-Zs=( 100  110  110  110  110  120  120  120  120  130  140  140  140  140  150  150  150  150  160)
-# Zs=( 30  110  110  110  110  120  120  120  120  130  140  140  140  140  150  150  150  150  160)
+Xs=0
+Ys=0
+Zs=100
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -28,9 +27,9 @@ while [[ "$#" -gt 0 ]]; do
         -ws|--wind_speed) wind_speed="$2"; shift ;;
         -p|--gaz_port) GAZ_PORT="$2"; shift ;;
         -r|--ros_port) ROS_PORT="$2"; shift ;;
-        -px|--pos_x) Xs=("$2"); shift ;;
-        -py|--pos_y) Ys=("$2"); shift ;;
-        -pz|--pos_z) Zs=("$2"); shift ;;
+        -px|--pos_x) Xs="$2"; shift ;;
+        -py|--pos_y) Ys="$2"; shift ;;
+        -pz|--pos_z) Zs="$2"; shift ;;
 
         *) echo "Unknown parameter passed: $1";; 
     esac
@@ -41,7 +40,7 @@ done
 
 echo "---- Spawn Blimp_${robotID} ----"
 echo "robotID:$robotID enable_wind:$enable_wind"
-echo "X:=${Xs[$robotID]} Y:=${Ys[$robotID]} Z:=${Zs[$robotID]}"
+echo "X:=${Xs} Y:=${Ys} Z:=${Zs}"
 
 echo "Start FW_${robotID}"
 screen -dmS FW_${robotID} screen bash -c "\
@@ -60,7 +59,7 @@ screen -dmS BLIMP_${robotID} screen bash -c "\
     export ROS_IP=$ROSIP;\
     export ROS_HOSTNAME=$ROSIP;\
 	source ~/catkin_ws/devel/setup.bash;\
-	roslaunch blimp_description blimp_ros.launch robotID:=${robotID} X:=${Xs[$robotID]} Y:=${Ys[$robotID]} Z:=${Zs[$robotID]}\
+	roslaunch blimp_description blimp_ros.launch robotID:=${robotID} X:=${Xs} Y:=${Ys} Z:=${Zs}\
     enable_meshes:=${enable_meshes} enable_wind:=${enable_wind} wind_direction_x:=${wind_direction_x} wind_direction_y:=${wind_direction_y} wind_speed_mean:=${wind_speed};"
 sleep 15
 

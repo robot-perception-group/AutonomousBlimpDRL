@@ -239,6 +239,7 @@ def spawn_blimp(
     ros_port=DEFAULT_ROSPORT,
     gaz_port=DEFAULT_GAZPORT,
     task="navigate",
+    position=(0, 0, 100),
 ):
     """spawn blimp software in-the-loop"""
     wind_arg = "-w" if enable_wind else ""
@@ -249,7 +250,7 @@ def spawn_blimp(
     elif task == "hover_fixed_goal":
         position = (0, 0, 50)
     else:
-        position = (0, 0, 100)
+        position = position
 
     call_reply = subprocess.check_call(
         str(path)
@@ -389,6 +390,7 @@ def spawn_simulation_on_different_port(
     enable_wind=False,
     wind_direction=(1, 0),
     wind_speed=1.5,
+    position=(0, 0, 100),
     **kwargs,  # pylint: disable=unused-argument
 ):
     """start blimp simulator on different ros or gazbo port"""
@@ -405,6 +407,7 @@ def spawn_simulation_on_different_port(
         wind_direction=wind_direction,
         wind_speed=wind_speed,
         task=task,
+        position=position,
     )
     target_reply = spawn_target(
         robot_id=robot_id, task=task, ros_port=ros_port, gaz_port=gaz_port

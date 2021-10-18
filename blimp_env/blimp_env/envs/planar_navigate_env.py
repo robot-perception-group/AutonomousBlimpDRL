@@ -426,6 +426,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
             (success_reward, tracking_reward, action_reward),
         )
         reward = np.clip(reward, -1, 1)
+
         reward_info = (reward, success_reward, tracking_reward, action_reward)
         self.step_info.update({"reward": reward, "reward_info": reward_info})
 

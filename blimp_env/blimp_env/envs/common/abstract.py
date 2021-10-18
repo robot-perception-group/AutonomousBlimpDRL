@@ -245,7 +245,7 @@ class ROSAbstractEnv(AbstractEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         # if rllib parallelization, use worker index as robot_id
         if hasattr(config, "worker_index"):
-            config["robot_id"] = str(config.worker_index - 1)  # type: ignore
+            config["robot_id"] = str(config.worker_index)
 
         super().__init__(config=config)
 
@@ -312,8 +312,12 @@ class ROSAbstractEnv(AbstractEnv):
         master channel to spawn env in parallel.
 
         Args:
-            worker_index (int, optional): [the index of worker or subprocess]. Defaults to 1.
+            worker_index (int, optional): [the index of worker or subprocess]. Defaults to 0.
         """
+        assert (
+            worker_index >= 0
+        ), f"worker index has to be larger than 0, index: {worker_index}"
+
         if worker_index >= 10:
             # spawn env on another pc
             marvin = True
@@ -321,11 +325,11 @@ class ROSAbstractEnv(AbstractEnv):
         else:
             marvin = False
             ros_ip = socket.gethostbyname(socket.gethostname())
-        time.sleep(worker_index)
+
+        time.sleep(int(worker_index))
         ros_port = self.config["simulation"]["ros_port"] + worker_index
         gaz_port = self.config["simulation"]["gaz_port"] + worker_index
         host_addr = "http://" + str(ros_ip) + ":"
-
         os.environ["ROS_MASTER_URI"] = host_addr + str(ros_port) + "/"
         os.environ["GAZEBO_MASTER_URI"] = host_addr + str(gaz_port) + "/"
 

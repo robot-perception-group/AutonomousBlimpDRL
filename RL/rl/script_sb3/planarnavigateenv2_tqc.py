@@ -17,7 +17,7 @@ agent_name = AGENT.__name__
 exp_name = env_name + "_" + agent_name + "_" + exp_name_posfix
 
 POLICY = "MlpPolicy"
-sec = 2
+sec = 10
 hour = 3600 * sec
 day = 24 * hour
 TIMESTEP = 7 * day
@@ -78,16 +78,16 @@ env_config = {
 
 # agent_config
 agent_config = {
-    "learning_rate": 3e-4,
-    "learning_starts": 5e4,
+    "learning_rate": 1e-4,
+    "learning_starts": 1e4,
     "batch_size": 256,
     "tau": 0.005,
     "gamma": 0.999,
     "train_freq": 1,
     "gradient_steps": 1,
     "top_quantiles_to_drop_per_net": 2,
-    "use_sde": False,
-    "use_sde_at_warmup": True,
+    "use_sde": True,
+    "use_sde_at_warmup": False,
     "policy_kwargs": {"net_arch": [64, 64]},
     "tensorboard_log": os.path.join(exp_path, "tb"),
 }
