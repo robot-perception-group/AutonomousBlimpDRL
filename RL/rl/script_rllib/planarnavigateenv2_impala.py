@@ -6,26 +6,25 @@ from blimp_env.envs import PlanarNavigateEnv2
 from blimp_env.envs.script import close_simulation, close_simulation_on_marvin
 import ray
 from ray import tune
-from ray.rllib.agents import sac
+from ray.rllib.agents import impala
 from ray.tune.registry import register_env
 
 # exp setup
 ENV = PlanarNavigateEnv2
-AGENT = sac
-AGENT_NAME = "SAC"
+AGENT = impala
+AGENT_NAME = "IMPALA"
 exp_name_posfix = "test"
 
 ts = 10
 one_day_ts = 24 * 3600 * ts
-days = 5
+days = 6
 TIMESTEP = int(days * one_day_ts)
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=1, help="Number of workers to use"
+    "--num_workers", type=int, default=3, help="Number of workers to use"
 )
 
 parser.add_argument(
@@ -33,6 +32,24 @@ parser.add_argument(
 )
 parser.add_argument(
     "--fcnet_hiddens", type=list, default=[64, 64], help="fully connected layers"
+)
+parser.add_argument(
+    "--vf_share_layers",
+    type=bool,
+    default=False,
+    help="Whether layers should be shared for the value function.",
+)
+parser.add_argument(
+    "--use_lstm",
+    type=bool,
+    default=False,
+    help="Whether to wrap the model with an LSTM",
+)
+parser.add_argument(
+    "--max_seq_len", type=int, default=7, help="Max seq len for training the LSTM"
+)
+parser.add_argument(
+    "--lstm_cell_size", type=int, default=64, help="Size of the LSTM cell"
 )
 
 
@@ -61,22 +78,49 @@ if __name__ == "__main__":
         },
     }
     model_config = {
+        # "custom_model": "my_model",
         "fcnet_hiddens": args.fcnet_hiddens,
-        "free_log_std": True,
+        "fcnet_activation": "tanh",
+        "vf_share_layers": args.vf_share_layers,
+        # == LSTM ==
+        "use_lstm": args.use_lstm,
+        "max_seq_len": args.max_seq_len,
+        "lstm_cell_size": args.lstm_cell_size,
+        "lstm_use_prev_action": True,
+        "lstm_use_prev_reward": True,
+        # == Attention Nets ==
+        "use_attention": False,
+        "attention_dim": 16,
     }
-
     config = AGENT.DEFAULT_CONFIG.copy()
+    rollout_fragment_length = 50
+    train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {
             "env": "my_env",
             "env_config": env_config,
             "num_gpus": args.num_gpus,
+            "model": model_config,
             "num_workers": args.num_workers,  # parallelism
             "num_envs_per_worker": 1,
             "framework": "torch",
             # == AGENT config ==
-            # "Q_model": model_config,
-            # "policy_model": model_config,
+            "rollout_fragment_length": rollout_fragment_length,
+            "vtrace": True,  # vtrace use Importance Sampling to reduce off-policy discrepency
+            "vtrace_clip_rho_threshold": 1.0,  # target or behaviour value func converge to
+            "vtrace_clip_pg_rho_threshold": 1.0,  # convergence speed
+            "train_batch_size": train_batch_size,
+            "minibatch_buffer_size": 1,
+            "num_sgd_iter": 1,
+            "replay_proportion": 0,
+            "replay_buffer_num_slots": 0,
+            "learner_queue_size": 16,
+            "learner_queue_timeout": 1e6,
+            "broadcast_interval": 1,
+            "grad_clip": 40.0,
+            "lr": 3e-4,
+            "lr_schedule": None,
+            "decay": 0.999,
         }
     )
     stop = {
@@ -85,9 +129,8 @@ if __name__ == "__main__":
     }
 
     print(config)
-    if env_config["simulation"]["auto_start_simulation"]:
-        close_simulation()
-        # close_simulation_on_marvin()
+    close_simulation()
+    # close_simulation_on_marvin()
     results = tune.run(
         AGENT_NAME,
         config=config,

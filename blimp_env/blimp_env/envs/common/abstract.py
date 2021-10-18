@@ -245,7 +245,7 @@ class ROSAbstractEnv(AbstractEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         # if rllib parallelization, use worker index as robot_id
         if hasattr(config, "worker_index"):
-            config["robot_id"] = str(config.worker_index)
+            config["robot_id"] = str(config.worker_index - 1)
 
         super().__init__(config=config)
 
@@ -318,7 +318,7 @@ class ROSAbstractEnv(AbstractEnv):
             worker_index >= 0
         ), f"worker index has to be larger than 0, index: {worker_index}"
 
-        if worker_index >= 10:
+        if worker_index >= 3:
             # spawn env on another pc
             marvin = True
             ros_ip = "frg07"

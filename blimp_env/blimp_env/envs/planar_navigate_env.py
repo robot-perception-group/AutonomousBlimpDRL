@@ -288,7 +288,7 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         )
         config.update(
             {
-                "duration": 2000,
+                "duration": 2000,  # [time steps]
                 "simulation_frequency": 50,
                 "policy_frequency": 10,
                 "reward_weights": np.array(
