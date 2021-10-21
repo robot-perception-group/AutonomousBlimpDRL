@@ -36,7 +36,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_action</topic>
-                                    <type>geometry_msgs/Point</type>
+                                    <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
                                     <field>x</field>
@@ -49,7 +49,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_action</topic>
-                                    <type>geometry_msgs/Point</type>
+                                    <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -72,7 +72,7 @@
                                 <type>2</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>output_action</title>
+                            <title>act_cmd</title>
                         </curve_0>
                         <curve_1>
                             <axes>
@@ -123,7 +123,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>actuator_command</title>
+                            <title>m0</title>
                         </curve_1>
                         <curve_2>
                             <axes>
@@ -174,7 +174,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>actuator_command1</title>
+                            <title>m1</title>
                         </curve_2>
                         <curve_3>
                             <axes>
@@ -225,7 +225,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>actuator_command2</title>
+                            <title>m2</title>
                         </curve_3>
                     </curves>
                     <legend>

@@ -318,7 +318,7 @@ class ROSAbstractEnv(AbstractEnv):
             worker_index >= 0
         ), f"worker index has to be larger than 0, index: {worker_index}"
 
-        if worker_index >= 3:
+        if worker_index >= 6:
             # spawn env on another pc
             marvin = True
             ros_ip = "frg07"

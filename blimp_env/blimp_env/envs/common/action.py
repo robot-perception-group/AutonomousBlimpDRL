@@ -293,7 +293,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         self.act_dim = 4
         self.data_processor = SimpleDataProcessor()
 
-        self.agent_diff_act_scale = 0.01
+        self.agent_diff_act_scale = np.array([0.1, 0.1, 0.1, 0.04])
 
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)

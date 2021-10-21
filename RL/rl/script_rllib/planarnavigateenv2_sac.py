@@ -74,6 +74,7 @@ if __name__ == "__main__":
             "num_workers": args.num_workers,  # parallelism
             "num_envs_per_worker": 1,
             "framework": "torch",
+            "store_buffer_in_checkpoints": True,
             # == AGENT config ==
             # "Q_model": model_config,
             # "policy_model": model_config,

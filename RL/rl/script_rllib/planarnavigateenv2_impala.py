@@ -2,6 +2,7 @@ import argparse
 import datetime
 import os
 
+import numpy as np
 from blimp_env.envs import PlanarNavigateEnv2
 from blimp_env.envs.script import close_simulation, close_simulation_on_marvin
 import ray
@@ -15,16 +16,16 @@ AGENT = impala
 AGENT_NAME = "IMPALA"
 exp_name_posfix = "test"
 
-ts = 10
+ts = 5
 one_day_ts = 24 * 3600 * ts
-days = 6
+days = 10
 TIMESTEP = int(days * one_day_ts)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=3, help="Number of workers to use"
+    "--num_workers", type=int, default=4, help="Number of workers to use"
 )
 
 parser.add_argument(
@@ -76,6 +77,14 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
+        "observaion": {
+            "noise_stdv": 0.0,
+        },
+        "success_threshhold": 0.05,
+        "tracking_reward_weights": np.array(
+            [0.2, 0.2, 0.3, 0.3]
+        ),  # z_diff, planar_dist, psi_diff, u_diff
+        "reward_weights": np.array([1.0, 1.0, 0.0]),  # success, tracking, action
     }
     model_config = {
         # "custom_model": "my_model",
@@ -93,7 +102,7 @@ if __name__ == "__main__":
         "attention_dim": 16,
     }
     config = AGENT.DEFAULT_CONFIG.copy()
-    rollout_fragment_length = 50
+    rollout_fragment_length = 1000
     train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {
@@ -110,15 +119,14 @@ if __name__ == "__main__":
             "vtrace_clip_rho_threshold": 1.0,  # target or behaviour value func converge to
             "vtrace_clip_pg_rho_threshold": 1.0,  # convergence speed
             "train_batch_size": train_batch_size,
-            "minibatch_buffer_size": 1,
             "num_sgd_iter": 1,
-            "replay_proportion": 0,
+            "replay_proportion": 0.0,
             "replay_buffer_num_slots": 0,
             "learner_queue_size": 16,
             "learner_queue_timeout": 1e6,
             "broadcast_interval": 1,
             "grad_clip": 40.0,
-            "lr": 3e-4,
+            "lr": 2e-4,
             "lr_schedule": None,
             "decay": 0.999,
         }

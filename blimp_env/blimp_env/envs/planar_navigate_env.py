@@ -288,14 +288,14 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         )
         config.update(
             {
-                "duration": 2000,  # [time steps]
-                "simulation_frequency": 50,
+                "duration": 1000,  # [time steps]
+                "simulation_frequency": 50,  # [hz]
                 "policy_frequency": 10,
                 "reward_weights": np.array(
                     [1.0, 0.9, 0.1]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
-                    [0.2, 0.4, 0.25, 0.15]
+                    [0.20, 0.20, 0.30, 0.30]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
                 "reward_scale": np.array([1, 1]),
                 "success_threshhold": 0.05,  # scaled distance, i.e. 200*threshold meters
