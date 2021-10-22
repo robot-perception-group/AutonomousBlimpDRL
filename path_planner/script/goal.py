@@ -185,8 +185,6 @@ def makeQuadrocopterMarker(position, orientation):
 
 
 if __name__ == "__main__":
-    np.random.seed(123)
-
     robotID = "0"
     x_max, x_min = 105, -105
     y_max, y_min = 105, -105
@@ -201,6 +199,8 @@ if __name__ == "__main__":
         z_max, z_min = float(sys.argv[4]), float(sys.argv[5])
         vx_max, vx_min = float(sys.argv[6]), -float(sys.argv[6])
         vy_max, vy_min = float(sys.argv[6]), -float(sys.argv[6])
+
+    np.random.seed(123 + int(robotID))
 
     rospy.loginfo("[ Goal Node ] Launching...")
     rospy.init_node("GOAL_Node_" + robotID, anonymous=False)
