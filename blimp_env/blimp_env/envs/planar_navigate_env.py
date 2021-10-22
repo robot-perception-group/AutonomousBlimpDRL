@@ -288,9 +288,9 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         )
         config.update(
             {
-                "duration": 1000,  # [time steps]
-                "simulation_frequency": 50,  # [hz]
-                "policy_frequency": 10,
+                "duration": 400,  # [time steps]
+                "simulation_frequency": 10,  # [hz]
+                "policy_frequency": 2,
                 "reward_weights": np.array(
                     [1.0, 0.9, 0.1]
                 ),  # success, tracking, action
@@ -374,9 +374,8 @@ class PlanarNavigateEnv2(PlanarNavigateEnv):
         psi_diff = self.compute_psi_diff(goal_pos, obs_pos, obs_info["angle"][2])
 
         act = obs_info["action"]
-        obs = np.array([z_diff, planar_dist, psi_diff, u_diff, z_vel, u_vel])
-        feature_list = [obs, act]
-        processed = np.concatenate(feature_list)
+        obs = np.array([z_diff, planar_dist, psi_diff, u_diff, u_vel])
+        processed = np.concatenate([obs, act])
         processed = np.clip(processed, -1, 1)
 
         self.step_info.update(

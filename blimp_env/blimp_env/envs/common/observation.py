@@ -446,7 +446,9 @@ class PlanarKinematicsObservation(KinematicObservation):
 
         observation, obs_info = [], {}
         for key in self.obs_name:
-            val = self.data_processor.add_noise(scaled_observation_dict[str(key)])
+            val = self.data_processor.add_noise(
+                scaled_observation_dict[str(key)], self.noise_stdv
+            )
             observation.extend(val)
             obs_info.update({str(key): val})
 
