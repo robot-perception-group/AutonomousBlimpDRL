@@ -210,6 +210,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "task": "navigate_goal",
                     "auto_start_simulation": True,
                     "update_robotID_on_workerID": True,
+                    "maximum_local_worker": 4,
                 },
                 "observation": {
                     "type": "Kinematics",
@@ -263,7 +264,6 @@ class ROSAbstractEnv(AbstractEnv):
             anonymous=True,
             disable_signals=True,
         )
-
         self.gaz = GazeboConnection(
             start_init_physics_parameters=True, reset_world_or_sim="WORLD"
         )
@@ -279,6 +279,7 @@ class ROSAbstractEnv(AbstractEnv):
         self.dbg = self.config["DBG"]
 
         self._create_pubs_subs()
+
         self.gaz.unpause_sim()
         rospy.loginfo("[ RL Node " + str(self.config["robot_id"]) + " ] Initialized")
 
@@ -319,13 +320,9 @@ class ROSAbstractEnv(AbstractEnv):
             worker_index >= 0
         ), f"worker index has to be larger than 0, index: {worker_index}"
 
-        if worker_index >= 6:
-            # spawn env on another pc
-            marvin = True
-            ros_ip = "frg07"
-        else:
-            marvin = False
-            ros_ip = socket.gethostbyname(socket.gethostname())
+        # spawn env on other pc if exceed maximum local worker
+        marvin =  worker_index >= self.config["simulation"]["maximum_local_worker"]:
+        ros_ip = "frg07" if marvin else socket.gethostbyname(socket.gethostname())
 
         time.sleep(int(worker_index))
         ros_port = self.config["simulation"]["ros_port"] + worker_index
@@ -346,9 +343,9 @@ class ROSAbstractEnv(AbstractEnv):
             {"ros_ip": ros_ip, "ros_port": ros_port, "gaz_port": gaz_port}
         )
 
-        self._spawn_env(marvin)
+        self._spawn_sim(marvin)
 
-    def _spawn_env(self, marvin=False):
+    def _spawn_sim(self, marvin=False):
         if marvin:
             spawn_simulation_on_marvin(**self.config["simulation"])
         else:

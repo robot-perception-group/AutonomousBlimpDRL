@@ -276,3 +276,51 @@ class DataObj:
     def get_scaled_value(self):
         """scale the value and get scaled value"""
         raise NotImplementedError
+
+
+def create_range_obj() -> Dict:
+    scale_min_max = (-1, 1)
+    position_range = {
+        "x": RangeObj((-100, 100), scale_min_max),
+        "y": RangeObj((-100, 100), scale_min_max),
+        "z": RangeObj((-200, 0), scale_min_max),
+    }  # NED frame
+    vel_range = {
+        "x": RangeObj((-8, 8), scale_min_max),
+        "y": RangeObj((-8, 8), scale_min_max),
+        "z": RangeObj((-2, 2), scale_min_max),
+    }  # NED frame
+    acc_range = {
+        "x": RangeObj((-5, 5), scale_min_max),
+        "y": RangeObj((-5, 5), scale_min_max),
+        "z": RangeObj((-2, 2), scale_min_max),
+    }
+    ori_range = {
+        "x": RangeObj((-1, 1), scale_min_max),
+        "y": RangeObj((-1, 1), scale_min_max),
+        "z": RangeObj((-1, 1), scale_min_max),
+        "w": RangeObj((-1, 1), scale_min_max),
+    }
+    ang_range = {
+        "x": RangeObj((-3.14, 3.14), scale_min_max),
+        "y": RangeObj((-3.14, 3.14), scale_min_max),
+        "z": RangeObj((-3.14, 3.14), scale_min_max),
+    }
+    ang_vel_range = {
+        "x": RangeObj((-40, 40), scale_min_max),
+        "y": RangeObj((-40, 40), scale_min_max),
+        "z": RangeObj((-30, 30), scale_min_max),
+    }
+    return {
+        "position_range": position_range,
+        "vel_range": vel_range,
+        "acc_range": acc_range,
+        "ori_range": ori_range,
+        "ang_range": ang_range,
+        "ang_vel_range": ang_vel_range,
+    }
+
+
+def lmap(v, x, y) -> float:
+    """Linear map of value v with range x to desired range y."""
+    return y[0] + (v - x[0]) * (y[1] - y[0]) / (x[1] - x[0])
