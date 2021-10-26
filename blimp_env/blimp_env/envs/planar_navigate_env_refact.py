@@ -24,12 +24,14 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
+                "noise_stdv": 0.02,
                 "action_feedback": True,
+                "enable_velocity_goal": True,
             }
         )
         config["action"].update(
             {
-                "type": "DiscreteMetaAction",
+                "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
             }
         )
@@ -38,48 +40,67 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "type": "PlanarGoal",
                 "name_space": "machine_",
                 "target_name_space": "goal_",
+                "enable_velocity_goal": True,
             }
         )
         config.update(
             {
                 "duration": 400,
+                "simulation_frequency": 10,  # [hz]
+                "policy_frequency": 2,
                 "reward_weights": np.array(
                     [1, 0.95, 0.05]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
-                    [0.1, 0.7, 0.2]
-                ),  # z_diff, planar_dist, psi_diff
-                "reward_scale": (1, 1),
-                "success_threshhold": 0.06,
+                    [0.20, 0.20, 0.30, 0.30]
+                ),  # z_diff, planar_dist, psi_diff, vel_diff
+                "reward_scale": np.array([1, 1]),
+                "success_threshhold": 0.05,  # scaled distance, i.e. 200*threshold meters
             }
         )
         return config
 
     def _create_pubs_subs(self):
         super()._create_pubs_subs()
+
         self.planar_angle_cmd_rviz_publisher = rospy.Publisher(
             self.config["name_space"] + "/planar_ang_cmd", Point, queue_size=1
         )
+        self.reward_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_reward", Quaternion, queue_size=1
+        )
+        self.diff_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_diff", Quaternion, queue_size=1
+        )
+        self.goal_pos_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_goal_pos", Point, queue_size=1
+        )
+        self.vel_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_vel", Point, queue_size=1
+        )
+        self.u_velocity_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_vel_u", Point, queue_size=1
+        )
+        self.act_rviz_publisher = rospy.Publisher(
+            self.config["name_space"] + "/rviz_action", Quaternion, queue_size=1
+        )
 
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
-        self.step_info.update({"step": self.steps})
-
+        """perform a step action and observe result"""
         self._simulate(action)
-        obs = self.process_obs_and_goal()
-        reward = self._reward(obs)
+        obs = self.observation_type.observe()
+        reward = self._reward(obs, action)
         terminal = self._is_terminal()
-        info = self._info(obs, action)
-        self.step_info.update({"terminal": terminal, "info": info})
+
+        info = {
+            "step": self.steps,
+            "obs": obs,
+            "act": action,
+            "reward": reward,
+            "terminal": terminal,
+        }
 
         self._update_goal()
-        self.reward_publisher.publish(Point(*self.step_info["reward_info"]))
-
-        if self.dbg:
-            print(
-                f"================= [ navigate_env ] step {self.steps} ================="
-            )
-            print("STEP INFO:", self.step_info)
-            print("\r")
 
         return obs, reward, terminal, info
 
