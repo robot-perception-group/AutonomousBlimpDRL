@@ -41,8 +41,8 @@ class DataProcessor:
         input_mean = (inputs_max + inputs_min) / 2
         output_mean = (outputs_max + outputs_min) / 2
 
-        scale = (inputs_max - inputs_min) / (outputs_max - outputs_min)
-        results = (inputs - input_mean) / scale + output_mean
+        scale = (outputs_max - outputs_min) / (inputs_max - inputs_min)
+        results = (inputs - input_mean) * scale + output_mean
         return results
 
     @classmethod
