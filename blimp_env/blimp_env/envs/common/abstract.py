@@ -54,11 +54,8 @@ class AbstractEnv(gym.Env):
         self.observation_space = None
         # self.define_spaces()
 
-        self.time = 0
         self.steps = 0
         self.done = False
-
-        self.viewer = None
 
     @classmethod
     def default_config(cls) -> dict:
@@ -99,41 +96,14 @@ class AbstractEnv(gym.Env):
         self.observation_space = self.observation_type.space()
         self.action_space = self.action_type.space()
 
-    def _reward(self, action: Action) -> float:
+    def _reward(self, action: Action, observation: Observation) -> float:
         raise NotImplementedError
 
     def _is_terminal(self) -> bool:
         raise NotImplementedError
 
-    def _info(self, obs: Observation, action: Action) -> dict:
-        """
-        Return a dictionary of additional information
-        :param obs: current observation
-        :param action: current action
-        :return: info dict
-        """
-        info = {
-            "observation": obs,
-            "action": action,
-        }
-        try:
-            info["cost"] = self._cost(action)
-        except NotImplementedError:
-            pass
-        return info
-
-    def _cost(self, action: Action) -> float:
-        """
-        A constraint metric, for budgeted MDP.
-        If a constraint is defined, it must be used
-        with an alternate reward that doesn't contain it as a penalty.
-        :param action: the last action performed
-        :return: the constraint signal, the alternate (constraint-free) reward
-        """
-        raise NotImplementedError
-
     def reset(self) -> Observation:
-        self.time = self.steps = 0
+        self.steps = 0
         self.done = False
         self._reset()
         return self.observation_type.observe()
@@ -148,36 +118,21 @@ class AbstractEnv(gym.Env):
         obs = self.observation_type.observe()
         reward = self._reward(action)
         terminal = self._is_terminal()
-        info = self._info(obs, action)
+        info = {"obs": obs, "act": action}
 
         return obs, reward, terminal, info
 
     def _simulate(self, action: Optional[Action] = None) -> None:
         """Perform several steps of simulation with constant action."""
-        for _ in range(
-            int(self.config["simulation_frequency"] // self.config["policy_frequency"])
-        ):
-            if (
-                action is not None
-                and self.time
-                % int(
-                    self.config["simulation_frequency"]
-                    // self.config["policy_frequency"]
-                )
-                == 0
-            ):
+        n_steps = int(
+            self.config["simulation_frequency"] // self.config["policy_frequency"]
+        )
+        for _ in range(n_steps):
+            if (action is not None) and (self.steps % n_steps == 0):
                 self.action_type.act(action)
-
-    def render(self):  # pylint: disable=arguments-differ
-        """render env"""
-        raise NotImplementedError
 
     def close(self):
         """close env"""
-        raise NotImplementedError
-
-    def get_available_actions(self):
-        """get available actions"""
         raise NotImplementedError
 
 
@@ -209,7 +164,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "world": "basic",
                     "task": "navigate_goal",
                     "auto_start_simulation": True,
-                    "update_robotID_on_workerID": True,
+                    "remote_host_name": "frg07",
                     "maximum_local_worker": 4,
                 },
                 "observation": {
@@ -247,18 +202,16 @@ class ROSAbstractEnv(AbstractEnv):
         # if rllib parallelization, use worker index as robot_id
         if hasattr(config, "worker_index"):
             config["robot_id"] = str(config.worker_index - 1)
-            config["seed"] = 123 + int(config.worker_index)
-
+            config["seed"] = int(config.worker_index) + 123
         super().__init__(config=config)
 
         if self.config["simulation"]["auto_start_simulation"]:
             self.setup_env(int(self.config["robot_id"]))
 
         print(self.config)
+        self.dbg = self.config["DBG"]
 
-        rospy.loginfo(
-            "[ RL Node " + str(self.config["robot_id"]) + " ] Initialising..."
-        )
+        rospy.loginfo("[ RL Node " + str(self.config["robot_id"]) + " ] Initialize...")
         rospy.init_node(
             "RL_node_" + str(self.config["robot_id"]),
             anonymous=True,
@@ -274,10 +227,6 @@ class ROSAbstractEnv(AbstractEnv):
         self.data_processor = DataProcessor()
 
         self.define_spaces()
-
-        self.step_info: Dict = {}
-        self.dbg = self.config["DBG"]
-
         self._create_pubs_subs()
 
         self.gaz.unpause_sim()
@@ -285,28 +234,30 @@ class ROSAbstractEnv(AbstractEnv):
 
     def configure(self, config: Optional[Dict[Any, Any]]) -> None:
         if config:
-            config_tmp0 = deepcopy(config)
-            self_config_tmp = deepcopy(self.config)
+            tmp_config = deepcopy(config)
+            tmp_config_ori = deepcopy(self.config)
 
-            self.config.update(config_tmp0)
+            self.config.update(tmp_config)
             for key in ["simulation", "observation", "action", "target"]:
-                self.config[key].update(self_config_tmp[key])
+                self.config[key].update(tmp_config_ori[key])
                 if key in config:
                     self.config[key].update(config[key])
 
-        self._update_config_id()
+        self._update_shared_param_in_config()
 
-    def _update_config_id(self):
+    def _update_shared_param_in_config(self):
         """synchronize parameters across config in all depth"""
-        robot_id = str(self.config["robot_id"])
-        name_space = self.config["name_space"] + robot_id
-        target_name_space = self.config["target"]["target_name_space"] + robot_id
-        real_experiment = self.config["real_experiment"]
+        name_space = self.config["name_space"] + str(self.config["robot_id"])
+        target_name_space = self.config["target"]["target_name_space"] + str(
+            self.config["robot_id"]
+        )
 
-        self.config = update_dict(self.config, "robot_id", robot_id)
+        self.config = update_dict(self.config, "robot_id", str(self.config["robot_id"]))
         self.config = update_dict(self.config, "name_space", name_space)
         self.config = update_dict(self.config, "target_name_space", target_name_space)
-        self.config = update_dict(self.config, "real_experiment", real_experiment)
+        self.config = update_dict(
+            self.config, "real_experiment", self.config["real_experiment"]
+        )
 
     def setup_env(self, worker_index: int = 0):
         """setup gazebo env. Worker index is used to modify env config allowing
@@ -321,8 +272,12 @@ class ROSAbstractEnv(AbstractEnv):
         ), f"worker index has to be larger than 0, index: {worker_index}"
 
         # spawn env on other pc if exceed maximum local worker
-        marvin =  worker_index >= self.config["simulation"]["maximum_local_worker"]:
-        ros_ip = "frg07" if marvin else socket.gethostbyname(socket.gethostname())
+        marvin = worker_index >= self.config["simulation"]["maximum_local_worker"]
+        ros_ip = (
+            self.config["simulation"]["remote_host_name"]
+            if marvin
+            else socket.gethostbyname(socket.gethostname())
+        )
 
         time.sleep(int(worker_index))
         ros_port = self.config["simulation"]["ros_port"] + worker_index
@@ -352,12 +307,10 @@ class ROSAbstractEnv(AbstractEnv):
             spawn_simulation_on_different_port(**self.config["simulation"])
 
     def _create_pubs_subs(self):
-        self.reward_publisher = rospy.Publisher(
-            self.config["name_space"] + "/reward", Point, queue_size=1
-        )
+        pass
 
     def reset(self) -> Observation:
-        self.time = self.steps = 0
+        self.steps = 0
         self.done = False
         self._reset()
         obs, _ = self.observation_type.observe()
@@ -369,16 +322,16 @@ class ROSAbstractEnv(AbstractEnv):
 
     def _reset_gazebo(self):
         self.gaz.unpause_sim()
-        self._check_system_ready()
+        self._reset_joint_and_check_sys()
         self.gaz.pause_sim()
 
         self.gaz.reset_sim()
 
         self.gaz.unpause_sim()
-        self._check_system_ready()
+        self._reset_joint_and_check_sys()
         self.gaz.pause_sim()
 
-    def _check_system_ready(self):
+    def _reset_joint_and_check_sys(self):
         self.controllers_object.reset_blimp_joint_controllers()
         self.action_type.set_init_pose()
         self.observation_type.check_connection()
@@ -393,16 +346,13 @@ class ROSAbstractEnv(AbstractEnv):
         Returns:
             Tuple[Observation, float, bool, dict]: [environment information]
         """
-
-        self.steps += 1
-
         self.gaz.unpause_sim()
         obs, reward, terminal, info = self.one_step(action)
         self.gaz.pause_sim()
 
-        assert isinstance(
-            reward, (float, int)
-        ), "The reward returned by `step()` must be a float"
+        self.steps += 1
+
+        assert isinstance(reward, (float, int)), "The reward must be a float"
         assert isinstance(terminal, bool), "terminal must be a boolean"
         assert isinstance(info, dict), "info must be a dict"
 
@@ -410,46 +360,33 @@ class ROSAbstractEnv(AbstractEnv):
 
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
         """perform a step action and observe result"""
-        self.step_info.update({"step": self.steps})
-
         self._simulate(action)
         obs = self.observation_type.observe()
-        reward = self._reward(action)
+        reward = self._reward(obs, action)
         terminal = self._is_terminal()
-        info = self._info(obs, action)
-        self.step_info.update(
-            {"obs": obs, "reward": reward, "terminal": terminal, "info": info}
-        )
+
+        info = {
+            "step": self.steps,
+            "obs": obs,
+            "act": action,
+            "reward": reward,
+            "terminal": terminal,
+        }
 
         return obs, reward, terminal, info
 
     def _simulate(self, action: Optional[Action] = None) -> None:
         """Perform several steps of simulation with constant action."""
-        for _ in range(
-            int(self.config["simulation_frequency"] // self.config["policy_frequency"])
-        ):
-            if (
-                action is not None
-                and self.time
-                % int(
-                    self.config["simulation_frequency"]
-                    // self.config["policy_frequency"]
-                )
-                == 0
-            ):
+        n_steps = int(
+            self.config["simulation_frequency"] // self.config["policy_frequency"]
+        )
+        for _ in range(n_steps):
+            if (action is not None) and (self.steps % n_steps == 0):
                 self.action_type.act(action)
-                self.step_info.update({"action": action})
-
             self.rate.sleep()
 
     def _update_goal(self):
         raise NotImplementedError
-
-    def render(self) -> None:
-        pass
-
-    def _cost(self, action: Action) -> float:
-        pass
 
     def close(self) -> None:
         rospy.logdebug("Closing RobotGazeboEnvironment")
