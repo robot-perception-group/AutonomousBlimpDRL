@@ -193,11 +193,11 @@ class ContinuousAction(ROSActionType):
         proc = action + np.random.normal(0, self.act_noise_stdv, action.shape)
         proc = utils.lmap(proc, [-1, 1], self.act_range)
         proc = np.clip(proc, -1, 1)
-        proc = self.augment_action(proc)
+        proc = self.match_channel(proc)
         return proc
 
     @classmethod
-    def augment_action(cls, action):
+    def match_channel(cls, action):
         """fill empty channels to fulfill requirement for the gcs
 
         Args:
@@ -259,7 +259,7 @@ class ContinuousAction(ROSActionType):
     def get_cur_act(self):
         """get current action"""
         cur_act = self.cur_act.copy()
-        cur_act = self.augment_action(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
+        cur_act = self.match_channel(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
         return cur_act.reshape(
             8,
         )
@@ -337,13 +337,13 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         action = self.cur_act.copy()
 
         proc = action + np.random.normal(0, self.act_noise_stdv, action.shape)
-        proc = utils.lmap(proc, [-1, 1], self.act_range)
         proc = np.clip(proc, -1, 1)
-        proc = self.augment_action(proc)
+        proc = utils.lmap(proc, [-1, 1], self.act_range)
+        proc = self.match_channel(proc)
 
         return proc
 
-    def augment_action(self, action):
+    def match_channel(self, action):
         """fill empty channels to fulfill requirement for the gcs
 
         Args:
@@ -387,7 +387,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
     def get_cur_act(self):
         """get current action"""
         cur_act = self.cur_act.copy()
-        cur_act = self.augment_action(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
+        cur_act = self.match_channel(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
         return cur_act.reshape(
             8,
         )
