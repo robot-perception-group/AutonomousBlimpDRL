@@ -81,19 +81,6 @@ def processFeedback(feedback):
         )
     elif feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
         rospy.loginfo(s + ": pose changed")
-    # TODO
-    #          << "\nposition = "
-    #          << feedback.pose.position.x
-    #          << ", " << feedback.pose.position.y
-    #          << ", " << feedback.pose.position.z
-    #          << "\norientation = "
-    #          << feedback.pose.orientation.w
-    #          << ", " << feedback.pose.orientation.x
-    #          << ", " << feedback.pose.orientation.y
-    #          << ", " << feedback.pose.orientation.z
-    #          << "\nframe: " << feedback.header.frame_id
-    #          << " time: " << feedback.header.stamp.sec << "sec, "
-    #          << feedback.header.stamp.nsec << " nsec" )
     elif feedback.event_type == InteractiveMarkerFeedback.MOUSE_DOWN:
         rospy.loginfo(s + ": mouse down" + mp + ".")
     elif feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:

@@ -86,10 +86,6 @@ class ROSObservation(ObservationType):
 
         rospy.Subscriber(self.name_space + "/pose", uav_pose, self._pose_callback)
 
-        self.rviz_angle_pub = rospy.Publisher(
-            self.name_space + "/rqt_plot_euler", Point, queue_size=1
-        )
-
     def _imu_callback(self, msg):
         """imu msg callback
 
@@ -123,8 +119,6 @@ class ROSObservation(ObservationType):
         self.ori_data = self.obj2array(msg.orientation)
         self.ang_data = quat2euler(self.ori_data)
         self.ang_vel_data = self.obj2array(msg.angVelocity)
-
-        self.rviz_angle_pub.publish(self.ang_data)
 
         if self.dbg_ros:
             print(
@@ -243,9 +237,11 @@ class PlanarKinematicsObservation(ROSObservation):
         proc_df = pd.DataFrame.from_records([processed_dict])
         processed = np.concatenate(proc_df[self.obs_name].values[0])
 
+        obs_dict.update({"proc_dict": processed_dict})
+        obs_dict.update({"goal_dict": goal_dict})
+
         if self.dbg_obs:
             print("[ observation ] obs dict", obs_dict)
-            print("[ observation ] processed dict", processed_dict)
             print("[ observation ] processed array", processed)
 
         return processed, obs_dict
