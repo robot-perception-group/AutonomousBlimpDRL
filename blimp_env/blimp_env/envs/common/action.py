@@ -1,20 +1,16 @@
 """ action module of the environment """
 #!/usr/bin/env python
-from re import S
+import time
 from typing import TYPE_CHECKING, Optional, Tuple, Union
-from blimp_env.envs.common import utils
 
 import numpy as np
 import rospy
-from blimp_env.envs.common.data_processor import DataProcessor, SimpleDataProcessor
-from blimp_env.envs.common.utils import RangeObj
+from blimp_env.envs.common import utils
 from blimp_env.envs.script import respawn_model, resume_simulation
 from gym import spaces
 from librepilot.msg import LibrepilotActuators
 from rospy.client import ERROR
 from uav_msgs.msg import uav_pose
-from geometry_msgs.msg import Point
-import time
 
 if TYPE_CHECKING:
     from blimp_env.envs.common.abstract import AbstractEnv
@@ -181,7 +177,7 @@ class ContinuousAction(ROSActionType):
             dtype=np.float32,
         )
 
-    def process_action(self, action: np.array):
+    def process_action(self, action: np.array, noise_stdv: float = 0):
         """map agent action to actuator specification
 
         Args:
@@ -190,7 +186,7 @@ class ContinuousAction(ROSActionType):
         Returns:
             [np.array]: formated action with 12 channels
         """
-        proc = action + np.random.normal(0, self.act_noise_stdv, action.shape)
+        proc = action + np.random.normal(0, noise_stdv, action.shape)
         proc = utils.lmap(proc, [-1, 1], self.act_range)
         proc = np.clip(proc, -1, 1)
         proc = self.match_channel(proc)
@@ -225,7 +221,7 @@ class ContinuousAction(ROSActionType):
             action (np.ndarray): agent action
         """
         self.cur_act = action
-        processed_action = self.process_action(action)
+        processed_action = self.process_action(action, self.act_noise_stdv)
 
         act_msg = LibrepilotActuators()
         act_msg.header.stamp = rospy.Time.now()
@@ -285,8 +281,8 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
 
     def space(self):
         return spaces.Box(
-            low=np.full((self.act_dim), self.action_range.scaled_min),
-            high=np.full((self.act_dim), self.action_range.scaled_max),
+            low=np.full((self.act_dim), -1),
+            high=np.full((self.act_dim), 1),
             dtype=np.float32,
         )
 
@@ -294,13 +290,16 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         """publish action
 
         Args:
-            action (np.ndarray): agent action [-1, 1]
+            action (np.ndarray): agent action in range [-1, 1] with shape (4,)
         """
-        processed_action = self.process_action(action)
+        self.cur_act = self.process_action(action, self.cur_act)
+        proc_actuator = self.process_actuator_state(
+            self.cur_act.copy(), self.act_noise_stdv
+        )
 
         act_msg = LibrepilotActuators()
         act_msg.header.stamp = rospy.Time.now()
-        act_msg.data.data = processed_action
+        act_msg.data.data = proc_actuator
 
         mode = uav_pose()
         mode.flightmode = self.flightmode
@@ -309,14 +308,12 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         self.flightmode_publisher.publish(mode)
 
         if self.dbg_act:
-            print("[ ContinuousDiffAction ] act: mode:", self.flightmode)
-            print("[ ContinuousDiffAction ] act: action:", action)
-            print(
-                "[ ContinuousDiffAction ] act: processed_action:",
-                processed_action,
-            )
+            print("[ Action ] mode:", self.flightmode)
+            print("[ Action ] agent action:", action)
+            print("[ Action ] current actuator:", self.cur_act)
+            print("[ Action ] process actuator:", proc_actuator)
 
-    def process_action(self, action: np.array):
+    def process_action(self, action: np.array, cur_act: np.array):
         """map agent action to actuator specification
 
         Args:
@@ -325,22 +322,21 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         Returns:
             [np.array]: formated action with 12 channels
         """
-        self.cur_act += self.diff_act_scale * action
-        self.cur_act = np.clip(self.cur_act, -1, 1)
-        # only allow foward thrust
-        if self.cur_act[3] < 0:
-            self.cur_act[3] = 0
+        cur_act += self.diff_act_scale * action
+        cur_act = np.clip(cur_act, -1, 1)
         # only allow forward servo
-        if self.cur_act[2] > 0:
-            self.cur_act[2] = 0
+        if cur_act[2] > 0:
+            cur_act[2] = 0
+        # only allow foward thrust
+        if cur_act[3] < 0:
+            cur_act[3] = 0
+        return cur_act
 
-        action = self.cur_act.copy()
-
-        proc = action + np.random.normal(0, self.act_noise_stdv, action.shape)
+    def process_actuator_state(self, act_state: np.array, noise_level: float = 0.0):
+        proc = act_state + np.random.normal(0, noise_level, act_state.shape)
         proc = np.clip(proc, -1, 1)
         proc = utils.lmap(proc, [-1, 1], self.act_range)
         proc = self.match_channel(proc)
-
         return proc
 
     def match_channel(self, action):
@@ -370,18 +366,17 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
 
         return aug_action
 
-    def action_rew(self, scale: float = 0.57735) -> float:
+    def action_rew(self, scale: np.array = np.array([0.5, 1, 1])) -> float:
         """compute action reward
 
         Args:
-            scale (float, optional): [scale,
-            the greater this number harder to get reward]. Defaults to 0.57735.
+            scale (np.array, optional): [scale each motor reward].
 
         Returns:
-            [float]: [reward of current action state]
+            [float]: [reward of current action state in range (-1, 1)]
         """
         motors = self.get_cur_act()[[0, 6, 7]]
-        motors_rew = -np.linalg.norm(motors) * scale
+        motors_rew = -np.dot(abs(motors), scale) / scale.sum()
         return motors_rew
 
     def get_cur_act(self):

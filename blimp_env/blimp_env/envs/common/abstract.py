@@ -12,13 +12,8 @@ import gym
 import numpy as np
 import rosgraph
 import rospy
-from blimp_env.envs.common.action import (
-    Action,
-    ActionType,
-    action_factory,
-)
+from blimp_env.envs.common.action import Action, ActionType, action_factory
 from blimp_env.envs.common.controllers_connection import ControllersConnection
-from blimp_env.envs.common.data_processor import DataProcessor
 from blimp_env.envs.common.gazebo_connection import GazeboConnection
 from blimp_env.envs.common.observation import ObservationType, observation_factory
 from blimp_env.envs.common.target import TargetType, target_factory
@@ -27,7 +22,6 @@ from blimp_env.envs.script.blimp_script import (
     spawn_simulation_on_different_port,
     spawn_simulation_on_marvin,
 )
-from geometry_msgs.msg import Point
 from gym.utils import seeding
 
 Observation = Union[np.ndarray, float]
@@ -150,7 +144,6 @@ class ROSAbstractEnv(AbstractEnv):
             {
                 "robot_id": "0",
                 "name_space": "machine_",
-                "real_experiment": False,
                 "DBG": False,
                 "simulation": {
                     "robot_id": "0",
@@ -168,31 +161,28 @@ class ROSAbstractEnv(AbstractEnv):
                     "maximum_local_worker": 4,
                 },
                 "observation": {
-                    "type": "Kinematics",
+                    "type": "PlanarKinematics",
                     "name_space": "machine_",
-                    "orientation_type": "euler",
                     "real_experiment": False,
                     "DBG_ROS": False,
                     "DBG_OBS": False,
                 },
                 "action": {
-                    "type": "ContinuousAction",
+                    "type": "SimpleContinuousDifferentialAction",
                     "robot_id": "0",
                     "name_space": "machine_",
                     "flightmode": 3,
                     "DBG_ACT": False,
                 },
                 "target": {
-                    "type": "PATH",
-                    "target_name_space": "target_",
-                    "orientation_type": "euler",
-                    "real_experiment": False,
+                    "type": "PlanarGoal",
+                    "target_name_space": "goal_",
                     "DBG_ROS": False,
                 },
                 "seed": 123,
                 "simulation_frequency": 10,
                 "policy_frequency": 2,
-                "duration": 2400,
+                "duration": 400,
             }
         )
 
@@ -224,7 +214,6 @@ class ROSAbstractEnv(AbstractEnv):
             namespace=self.config["name_space"]
         )
         self.rate = rospy.Rate(self.config["simulation_frequency"])
-        self.data_processor = DataProcessor()
 
         self.define_spaces()
         self._create_pubs_subs()
@@ -255,9 +244,6 @@ class ROSAbstractEnv(AbstractEnv):
         self.config = update_dict(self.config, "robot_id", str(self.config["robot_id"]))
         self.config = update_dict(self.config, "name_space", name_space)
         self.config = update_dict(self.config, "target_name_space", target_name_space)
-        self.config = update_dict(
-            self.config, "real_experiment", self.config["real_experiment"]
-        )
 
     def setup_env(self, worker_index: int = 0):
         """setup gazebo env. Worker index is used to modify env config allowing
