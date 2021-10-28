@@ -1,19 +1,13 @@
-from typing import List, TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import rospy
-from blimp_env.envs.common.data_processor import DataProcessor
-from blimp_env.envs.common.observation import KinematicObservation
-from blimp_env.envs.common.utils import DataObj
-from geometry_msgs.msg import Point, Quaternion
+from blimp_env.envs.script.blimp_script import respawn_target
+from blimp_env.envs.common import utils
 from gym import spaces
 from librepilot.msg import AutopilotInfo
-from visualization_msgs.msg import InteractiveMarkerInit
-from uav_msgs.msg import uav_pose
-import copy
-from blimp_env.envs.script.blimp_script import respawn_target
 from transforms3d.euler import quat2euler
-
+from visualization_msgs.msg import InteractiveMarkerInit
 
 if TYPE_CHECKING:
     from blimp_env.envs.common.abstract import AbstractEnv
@@ -55,7 +49,7 @@ class ROSTarget(TargetType):
         self.target_dim = 9
 
         self.pos_cmd_data = np.array([0, 0, 0])
-        self.vel_cmd_data = np.array([0, 0, 0])
+        self.vel_cmd_data = 0.0
         self.ang_cmd_data = np.array([0, 0, 0])
 
         self._pub_and_sub = False
@@ -89,11 +83,11 @@ class ROSTarget(TargetType):
         Args:
             msg ([AutopilotInfo]): autopilot command from path planner or task manager
         """
-        self.vel_cmd_data = self.obj2array(msg.VelocityDesired)
+        self.vel_cmd_data = msg.VelocityDesired.x
 
         if self.dbg_ros:
             print(
-                "[ target ] autopilot_info_callback: velocity_cmd",
+                "[ Target ] velocity_cmd: ",
                 self.vel_cmd_data,
             )
 
@@ -110,7 +104,7 @@ class ROSTarget(TargetType):
             pos = pose.position
             self.pos_cmd_data = np.array([pos.y, pos.x, -pos.z])
 
-            quat = self.obj2array(pose.orientation)
+            quat = utils.obj2array(pose.orientation)
             self.ang_cmd_data = quat2euler(quat)
 
         if self.dbg_ros:
@@ -119,22 +113,9 @@ class ROSTarget(TargetType):
                 self.pos_cmd_data,
             )
             print(
-                "[ Target ] angle:",
+                "[ Target ] angle: ",
                 self.ang_cmd_data,
             )
-
-    def obj2array(
-        rosobj,
-        attr_list=["w", "x", "y", "z"],
-    ):
-        val_list = []
-        for attr in attr_list:
-            try:
-                val_list.append(getattr(rosobj, attr))
-            except:
-                pass
-
-        return np.array(val_list)
 
     def check_connection(self):
         raise NotImplementedError
@@ -176,7 +157,7 @@ class PlanarGoal(ROSTarget):
                 break
         rospy.logdebug("target publisher and subscriber started")
 
-        while self.vel_cmd_data == np.array([0.0, 0.0, 0.0]):
+        while self.vel_cmd_data == 0.0:
             try:
                 rospy.logdebug("[ target ] waiting for velocity subscriber")
                 vel_cmd_data = rospy.wait_for_message(
@@ -184,11 +165,11 @@ class PlanarGoal(ROSTarget):
                     AutopilotInfo,
                     timeout=100,
                 )
-                self.vel_cmd_data = self.obj2array(vel_cmd_data.VelocityDesired)
+                self.vel_cmd_data = vel_cmd_data.VelocityDesired.x
             except TimeoutError:
                 self.timeout_handle()
 
-        while self.pos_cmd_data == np.array([0.0, 0.0, 0.0]):
+        while (self.pos_cmd_data == np.array([0.0, 0.0, 0.0])).all():
             try:
                 rospy.logdebug("[ target ] waiting for position subscriber")
                 msg = rospy.wait_for_message(

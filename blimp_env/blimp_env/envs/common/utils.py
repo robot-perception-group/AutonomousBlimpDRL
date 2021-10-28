@@ -1,13 +1,33 @@
 """ env util """
 import os
+from functools import wraps
 from types import LambdaType
 from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
 
 import gym
+import rospy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
-import rospy
-from functools import wraps
+import numpy as np
+
+
+def lmap(v, x, y) -> float:
+    """Linear map of value v with range x to desired range y."""
+    return y[0] + (v - x[0]) * (y[1] - y[0]) / (x[1] - x[0])
+
+
+def obj2array(
+    rosobj,
+    attr_list=["w", "x", "y", "z"],
+):
+    val_list = []
+    for attr in attr_list:
+        try:
+            val_list.append(getattr(rosobj, attr))
+        except:
+            pass
+
+    return np.array(val_list)
 
 
 def with_retry(
@@ -222,105 +242,3 @@ def parallel_vec_env(
     #     [make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs
     # )
     return vec_env_cls([make_env(i + start_index) for i in range(n_envs)])
-
-
-class RangeObj:
-    """obj store min and max value"""
-
-    def __init__(self, attr_min_max, attr_scaled_min_max):
-        self.min = attr_min_max[0]
-        self.max = attr_min_max[1]
-        self.scaled_min = attr_scaled_min_max[0]
-        self.scaled_max = attr_scaled_min_max[1]
-
-    def get_range(self):
-        """get range
-
-        Returns:
-            [list]: [min, max] of type float
-        """
-        return [self.min, self.max]
-
-    def get_scale_range(self):
-        """get scaled range
-
-        Returns:
-            [list]: scaled [min, max] of type float
-        """
-
-        return [self.scaled_min, self.scaled_max]
-
-    def get_all(self):
-        """get range and scaled range
-
-        Returns:
-            [list]: [min, max] and scaled [min, max] of type float
-        """
-
-        return [self.min, self.max, self.scaled_min, self.scaled_max]
-
-
-class DataObj:
-    """data object has value and range"""
-
-    def __init__(self, value=None, vrange: Dict[str, RangeObj] = None):
-        self.value = value
-        self.vrange = vrange
-
-    def get_value(self):
-        """set value as private and use method to
-        get value of DataObj
-        """
-        raise NotImplementedError
-
-    def get_scaled_value(self):
-        """scale the value and get scaled value"""
-        raise NotImplementedError
-
-
-def create_range_obj() -> Dict:
-    scale_min_max = (-1, 1)
-    position_range = {
-        "x": RangeObj((-100, 100), scale_min_max),
-        "y": RangeObj((-100, 100), scale_min_max),
-        "z": RangeObj((-200, 0), scale_min_max),
-    }  # NED frame
-    vel_range = {
-        "x": RangeObj((-8, 8), scale_min_max),
-        "y": RangeObj((-8, 8), scale_min_max),
-        "z": RangeObj((-2, 2), scale_min_max),
-    }  # NED frame
-    acc_range = {
-        "x": RangeObj((-5, 5), scale_min_max),
-        "y": RangeObj((-5, 5), scale_min_max),
-        "z": RangeObj((-2, 2), scale_min_max),
-    }
-    ori_range = {
-        "x": RangeObj((-1, 1), scale_min_max),
-        "y": RangeObj((-1, 1), scale_min_max),
-        "z": RangeObj((-1, 1), scale_min_max),
-        "w": RangeObj((-1, 1), scale_min_max),
-    }
-    ang_range = {
-        "x": RangeObj((-3.14, 3.14), scale_min_max),
-        "y": RangeObj((-3.14, 3.14), scale_min_max),
-        "z": RangeObj((-3.14, 3.14), scale_min_max),
-    }
-    ang_vel_range = {
-        "x": RangeObj((-40, 40), scale_min_max),
-        "y": RangeObj((-40, 40), scale_min_max),
-        "z": RangeObj((-30, 30), scale_min_max),
-    }
-    return {
-        "position_range": position_range,
-        "vel_range": vel_range,
-        "acc_range": acc_range,
-        "ori_range": ori_range,
-        "ang_range": ang_range,
-        "ang_vel_range": ang_vel_range,
-    }
-
-
-def lmap(v, x, y) -> float:
-    """Linear map of value v with range x to desired range y."""
-    return y[0] + (v - x[0]) * (y[1] - y[0]) / (x[1] - x[0])

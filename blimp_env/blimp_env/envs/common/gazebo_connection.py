@@ -2,12 +2,16 @@
 #!/usr/bin/env python
 
 import rospy
-from std_srvs.srv import Empty
 from gazebo_msgs.msg import ODEPhysics
-from gazebo_msgs.srv import SetPhysicsProperties, SetPhysicsPropertiesRequest
-from gazebo_msgs.srv import DeleteModel, SpawnModel
-from std_msgs.msg import Float64
+from gazebo_msgs.srv import (
+    DeleteModel,
+    SetPhysicsProperties,
+    SetPhysicsPropertiesRequest,
+    SpawnModel,
+)
 from geometry_msgs.msg import Vector3
+from std_msgs.msg import Float64
+from std_srvs.srv import Empty
 
 
 class GazeboConnection:

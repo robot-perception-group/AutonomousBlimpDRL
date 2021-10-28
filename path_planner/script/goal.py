@@ -176,16 +176,14 @@ if __name__ == "__main__":
     x_max, x_min = 105, -105
     y_max, y_min = 105, -105
     z_max, z_min = 210, 5
-    vx_max, vx_min = 8, 0
-    vy_max, vy_min = 8, 0
+    v_max, v_min = 8, 0
 
     if len(sys.argv) > 1:
         robotID = sys.argv[1]
         x_max, x_min = float(sys.argv[2]), -float(sys.argv[2])
         y_max, y_min = float(sys.argv[3]), -float(sys.argv[3])
         z_max, z_min = float(sys.argv[4]), float(sys.argv[5])
-        vx_max, vx_min = float(sys.argv[6]), -float(sys.argv[6])
-        vy_max, vy_min = float(sys.argv[6]), -float(sys.argv[6])
+        v_max, v_min = float(sys.argv[6]), 0
 
     np.random.seed(123 + int(robotID))
 
@@ -209,9 +207,7 @@ if __name__ == "__main__":
         x = np.random.uniform(x_min, x_max)
         y = np.random.uniform(y_min, y_max)
         z = np.random.uniform(z_min, z_max)
-
-        vx = np.random.uniform(vx_min, vx_max)
-        vy = np.random.uniform(vy_min, vy_max)
+        v = np.random.uniform(v_min, v_max)
 
         phi = 0
         the = 0
@@ -220,13 +216,13 @@ if __name__ == "__main__":
 
         rospy.loginfo("[ Goal Node ] -----------------------")
         rospy.loginfo("[ Goal Node ] position = (%2.1f, %2.1f, %2.1f)\n" % (x, y, z))
-        rospy.loginfo("[ Goal Node ] velocity = (%2.1f, %2.1f, %2.1f)\n" % (vx, vy, 0))
+        rospy.loginfo("[ Goal Node ] velocity = %2.1f\n" % (v))
         rospy.loginfo(
             "[ Goal Node ] orientation = (%2.1f, %2.1f, %2.1f)]\n" % (phi, the, psi)
         )
 
         position = Point(x, y, z)
-        velocity = Point(vx, vy, 0)
+        velocity = Point(v, 0, 0)
         orientation = Quaternion(q[0], q[1], q[2], q[3])
         makeQuadrocopterMarker(position=position, orientation=orientation)
         server.applyChanges()
@@ -237,4 +233,4 @@ if __name__ == "__main__":
 
         rospy.Timer(rospy.Duration(0.01), frameCallback)
 
-        time.sleep(400)
+        time.sleep(1)  ##TODO:test
