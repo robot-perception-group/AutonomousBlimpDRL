@@ -87,7 +87,18 @@ class PlanarNavigateEnv(ROSAbstractEnv):
 
     # @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
-        """perform a step action and observe result"""
+        """[perform a step action and observe result]
+
+        Args:
+            action (Action): action from the agent [-1,1] with size (4,)
+
+        Returns:
+            Tuple[Observation, float, bool, dict]:
+                obs: np.array [-1,1] with size (9,),
+                reward: scalar,
+                terminal: bool,
+                info: dictionary of all the step info,
+        """
         self._simulate(action)
         obs, obs_info = self.observation_type.observe()
         reward, reward_info = self._reward(obs, action, obs_info)
@@ -157,7 +168,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """sample new goal dictionary"""
         self.goal = self.target_type.sample()
 
-    def _reward(self, obs: np.array, act: np.array, obs_info: dict) -> float:
+    def _reward(
+        self, obs: np.array, act: np.array, obs_info: dict
+    ) -> Tuple[float, dict]:
         """calculate reward
         total_reward = success_reward + tracking_reward + action_reward
         success_reward: +1 if agent stay in the vicinity of goal
@@ -165,12 +178,12 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         action_reward: penalty for motor use
 
         Args:
-            obs (np.array):
-            act (np.array):
-            obs_info (dict):
+            obs (np.array): ("z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "action")
+            act (np.array): agent action [-1,1] with size (4,)
+            obs_info (dict): contain all information of a step
 
         Returns:
-            float: [reward]
+            Tuple[float, dict]: [reward scalar and a detailed reward info]
         """
         track_weights = self.config["tracking_reward_weights"].copy()
         reward_weights = self.config["reward_weights"].copy()

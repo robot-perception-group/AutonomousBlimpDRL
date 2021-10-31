@@ -313,14 +313,14 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
             print("[ Action ] current actuator:", self.cur_act)
             print("[ Action ] process actuator:", proc_actuator)
 
-    def process_action(self, action: np.array, cur_act: np.array):
-        """map agent action to actuator specification
+    def process_action(self, action: np.array, cur_act: np.array) -> np.array:
+        """modify agent action
 
         Args:
             action ([np.array]): agent action [-1,1]
 
         Returns:
-            [np.array]: formated action with 12 channels
+            [np.array]: action with forward servo and thrust
         """
         cur_act += self.diff_act_scale * action
         cur_act = np.clip(cur_act, -1, 1)
@@ -332,21 +332,32 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
             cur_act[3] = 0
         return cur_act
 
-    def process_actuator_state(self, act_state: np.array, noise_level: float = 0.0):
+    def process_actuator_state(
+        self, act_state: np.array, noise_level: float = 0.0
+    ) -> np.array:
+        """map agent action to actuator specification
+
+        Args:
+            act_state (np.array): agent actuator state [-1, 1] with shape (4,)
+            noise_level (float, optional): noise level [0, 1]. Defaults to 0.0.
+
+        Returns:
+            [type]: processed actuator state [1000, 2000] with shape (12,1)
+        """
         proc = act_state + np.random.normal(0, noise_level, act_state.shape)
         proc = np.clip(proc, -1, 1)
         proc = utils.lmap(proc, [-1, 1], self.act_range)
         proc = self.match_channel(proc)
         return proc
 
-    def match_channel(self, action):
+    def match_channel(self, action: np.array) -> np.array:
         """fill empty channels to fulfill requirement for the gcs
 
         Args:
-            action ([np array]): actions with empty action channels
+            action ([np array]): actions with empty action channels [1000, 2000]
 
         Returns:
-            [np array]: actions with all action channels filled
+            [np array]: actions with all action channels filled [1000,2000]
 
         """
         action = action.reshape(4, 1)
@@ -367,7 +378,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         return aug_action
 
     def action_rew(self, scale: np.array = np.array([0.5, 1, 1])) -> float:
-        """compute action reward
+        """compute action reward from actuator state, only motors are considered
 
         Args:
             scale (np.array, optional): [scale each motor reward].
@@ -379,8 +390,8 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         motors_rew = -np.dot(abs(motors), scale) / scale.sum()
         return motors_rew
 
-    def get_cur_act(self):
-        """get current action"""
+    def get_cur_act(self) -> np.array:
+        """get current actuator state"""
         cur_act = self.cur_act.copy()
         cur_act = self.match_channel(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
         return cur_act.reshape(

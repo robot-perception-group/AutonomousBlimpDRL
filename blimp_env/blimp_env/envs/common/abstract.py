@@ -240,7 +240,6 @@ class ROSAbstractEnv(AbstractEnv):
         target_name_space = self.config["target"]["target_name_space"] + str(
             self.config["robot_id"]
         )
-
         self.config = update_dict(self.config, "robot_id", str(self.config["robot_id"]))
         self.config = update_dict(self.config, "name_space", name_space)
         self.config = update_dict(self.config, "target_name_space", target_name_space)

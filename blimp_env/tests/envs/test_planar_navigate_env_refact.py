@@ -19,7 +19,7 @@ env_kwargs = {
     "action": {
         "DBG_ACT": True,
     },
-    "target": {"DBG_ROS": True},
+    "target": {"DBG_ROS": False},
 }
 
 # ============== test env ==============#
@@ -35,12 +35,14 @@ def test_env_step():
     env.reset()
     for _ in range(5):
         action = env.action_space.sample()
-        obs, rew, terminal, _ = env.step(action)
+        obs, rew, terminal, info = env.step(action)
 
         assert env.observation_space.contains(obs)
         assert isinstance(rew, float)
-        assert rew >= -1 and rew <= 1
         assert isinstance(terminal, bool)
+        assert isinstance(info, dict)
+
+        assert rew >= -1 and rew <= 1
 
     GazeboConnection().unpause_sim()
 
@@ -81,12 +83,66 @@ def test_compute_success_rew():
         assert rew == 0.0 or rew == 1.0
 
 
-def test_is_terminal():
-    pass
+def test_is_terminal(mocker):
+    env = ENV(copy.deepcopy(env_kwargs))
+    mock_fn = "blimp_env.envs.planar_navigate_env.PlanarNavigateEnv.compute_success_rew"
+    dummy_obs_info = {"position": np.array([0, 0, 0])}
+
+    env.config["duration"] = 100
+    env.steps = 5
+    mocker.patch(mock_fn, return_value=0.0)
+    result = env._is_terminal(dummy_obs_info)
+    expect = False
+    assert result == expect
+
+    env.config["duration"] = 100
+    env.steps = 5
+    mocker.patch(mock_fn, return_value=1.0)
+    result = env._is_terminal(dummy_obs_info)
+    expect = True
+    assert result == expect
+
+    env.config["duration"] = 100
+    env.steps = 200
+    mocker.patch(mock_fn, return_value=0.0)
+    result = env._is_terminal(dummy_obs_info)
+    expect = True
+    assert result == expect
+
+    env.config["duration"] = 100
+    env.steps = 5
+    mocker.patch(mock_fn, return_value=0.0)
+    result = env._is_terminal(dummy_obs_info)
+    expect = False
+    assert result == expect
 
 
-def test_rew():
-    pass
+def test_rew(mocker):
+    env = ENV(copy.deepcopy(env_kwargs))
+    env.config["tracking_reward_weights"] = np.array([0.20, 0.20, 0.4, 0.20])
+    env.config["reward_weights"] = np.array([1, 0.95, 0.05])
+    mock_fn = "blimp_env.envs.planar_navigate_env.PlanarNavigateEnv.compute_success_rew"
+    dummy_obs_info = {"position": np.array([0, 0, 0])}
+
+    def dummy_act_rew():
+        return 0
+
+    env.action_type.action_rew = dummy_act_rew
+    mocker.patch(mock_fn, return_value=0.0)
+    obs = np.zeros(9)
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = 0
+    np.testing.assert_allclose(result, expect)
+
+    def dummy_act_rew():
+        return -1
+
+    env.action_type.action_rew = dummy_act_rew
+    mocker.patch(mock_fn, return_value=0.0)
+    obs = np.ones(9)
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = -1.0
+    np.testing.assert_allclose(result, expect)
 
 
 # ============== test obs ==============#
@@ -180,7 +236,6 @@ def get_test_scale_obs_dict_io():
             "vel": 1,
         }
     )
-
     in_list.append(
         {
             "z_diff": np.array(-100),
@@ -398,11 +453,64 @@ def test_match_channel():
 
 
 def test_action_rew():
-    pass
+    env = ENV(copy.deepcopy(env_kwargs))
+    fn = env.action_type.action_rew
+    scale = np.array([0.5, 1, 1])
+
+    env.action_type.cur_act = np.array([0, 0, 0, 0])
+    result = fn(scale)
+    expect = 0
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([1, 0, 0, 0])
+    result = fn(scale)
+    expect = -0.2
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([0, 0, 0, 1])
+    result = fn(scale)
+    expect = -0.8
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([1, 0, 0, 1])
+    result = fn(scale)
+    expect = -1
+    np.testing.assert_allclose(result, expect)
 
 
 def test_get_cur_act():
-    pass
+    env = ENV(copy.deepcopy(env_kwargs))
+    fn = env.action_type.get_cur_act
+
+    env.action_type.cur_act = np.array([0, 0, 0, 0])
+    result = fn()
+    expect = np.array([0, 0, 0, 0, 0, 0, 0, 0]).reshape(-1)
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([1, 0, 0, 0])
+    result = fn()
+    expect = np.array([1, 0, 0, 1, 1, 0, 0, 0]).reshape(-1)
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([0, 1, 0, 0])
+    result = fn()
+    expect = np.array([0, 1, 1, 0, 0, 0, 0, 0]).reshape(-1)
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([0, 0, 1, 0])
+    result = fn()
+    expect = np.array([0, 0, 0, 0, 0, 1, 0, 0]).reshape(-1)
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([0, 0, 0, 1])
+    result = fn()
+    expect = np.array([0, 0, 0, 0, 0, 0, 1, 1]).reshape(-1)
+    np.testing.assert_allclose(result, expect)
+
+    env.action_type.cur_act = np.array([1, 1, 1, 1])
+    result = fn()
+    expect = np.array([1, 1, 1, 1, 1, 1, 1, 1]).reshape(-1)
+    np.testing.assert_allclose(result, expect)
 
 
 def test_check_action_publisher_connection():
@@ -414,8 +522,26 @@ def test_check_action_publisher_connection():
 
 # ============== test target ==============#
 def test_sample():
-    pass
+    env = ENV(copy.deepcopy(env_kwargs))
+    fn = env.target_type.sample
+
+    goal = fn()
+    assert isinstance(goal, dict)
+    assert isinstance(goal["position"], np.ndarray)
+    assert isinstance(goal["velocity"], float)
+    assert isinstance(goal["angle"], np.ndarray)
+
+    env.target_type.pos_cmd_data = np.array([1, 2, 3])
+    env.target_type.vel_cmd_data = 5.0
+    env.target_type.ang_cmd_data = np.array([5, 6, 7])
+    goal = fn()
+    np.testing.assert_allclose(goal["position"], np.array([1, 2, 3]))
+    np.testing.assert_allclose(goal["velocity"], 5.0)
+    np.testing.assert_allclose(goal["angle"], np.array([5, 6, 7]))
 
 
 def test_timeout_handle():
-    pass
+    env = ENV(copy.deepcopy(env_kwargs))
+    result = env.target_type.timeout_handle()
+
+    assert result == {"kill_target_reply": 1, "spawn_goal_reply": 1}
