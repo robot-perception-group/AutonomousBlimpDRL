@@ -126,7 +126,7 @@ def respawn_target(
 
     return {
         "kill_target_reply": kill_target_reply,
-        "spawn_model": spawn_goal_reply,
+        "spawn_goal_reply": spawn_goal_reply,
     }
 
 
