@@ -351,7 +351,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         return proc
 
     def match_channel(self, action: np.array) -> np.array:
-        """fill empty channels to fulfill requirement for the gcs
+        """match and fillup empty channels to fulfill input requirement for the gcs
 
         Args:
             action ([np array]): actions with empty action channels [1000, 2000]

@@ -35,11 +35,11 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_action</topic>
+                                    <topic>/machine_0/rviz_act</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>x</field>
+                                    <field>w</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -48,7 +48,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_action</topic>
+                                    <topic>/machine_0/rviz_act</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
@@ -491,7 +491,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
@@ -504,7 +504,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
@@ -542,7 +542,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
@@ -555,7 +555,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
@@ -593,7 +593,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
@@ -606,7 +606,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
@@ -644,7 +644,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
@@ -657,7 +657,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_diff</topic>
+                                    <topic>/machine_0/rviz_state</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
@@ -871,7 +871,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_vel_u</topic>
+                                    <topic>/machine_0/rviz_vel_diff</topic>
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
@@ -884,7 +884,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_vel_u</topic>
+                                    <topic>/machine_0/rviz_vel_diff</topic>
                                     <type>geometry_msgs/Point</type>
                                 </y_axis>
                             </axes>
@@ -922,7 +922,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_vel_u</topic>
+                                    <topic>/machine_0/rviz_vel_diff</topic>
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
@@ -935,7 +935,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_vel_u</topic>
+                                    <topic>/machine_0/rviz_vel_diff</topic>
                                     <type>geometry_msgs/Point</type>
                                 </y_axis>
                             </axes>
@@ -973,7 +973,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_vel_u</topic>
+                                    <topic>/machine_0/rviz_vel_diff</topic>
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
@@ -986,7 +986,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_vel_u</topic>
+                                    <topic>/machine_0/rviz_vel_diff</topic>
                                     <type>geometry_msgs/Point</type>
                                 </y_axis>
                             </axes>
@@ -1100,7 +1100,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_goal_position</topic>
+                                    <topic>/machine_0/rviz_pos_cmd</topic>
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
@@ -1113,7 +1113,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_goal_position</topic>
+                                    <topic>/machine_0/rviz_pos_cmd</topic>
                                     <type>geometry_msgs/Point</type>
                                 </y_axis>
                             </axes>
@@ -1202,7 +1202,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_goal_position</topic>
+                                    <topic>/machine_0/rviz_pos_cmd</topic>
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
@@ -1215,7 +1215,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_goal_position</topic>
+                                    <topic>/machine_0/rviz_pos_cmd</topic>
                                     <type>geometry_msgs/Point</type>
                                 </y_axis>
                             </axes>
@@ -1304,7 +1304,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_goal_position</topic>
+                                    <topic>/machine_0/rviz_pos_cmd</topic>
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
@@ -1317,7 +1317,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_goal_position</topic>
+                                    <topic>/machine_0/rviz_pos_cmd</topic>
                                     <type>geometry_msgs/Point</type>
                                 </y_axis>
                             </axes>

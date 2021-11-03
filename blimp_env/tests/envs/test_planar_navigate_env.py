@@ -544,4 +544,4 @@ def test_timeout_handle():
     env = ENV(copy.deepcopy(env_kwargs))
     result = env.target_type.timeout_handle()
 
-    assert result == {"kill_target_reply": 1, "spawn_goal_reply": 1}
+    assert result == {"kill_goal_reply": 0, "spawn_goal_reply": 0}

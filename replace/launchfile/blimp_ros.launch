@@ -13,6 +13,7 @@
 	<arg name="enable_wind" default="false"/>
 	<arg name="enable_physics" default="true"/>
 	<arg name="enable_sensors" default="true"/>
+	<arg name="enable_camera" default="false"/>
 	<arg name="enable_logging" default="false" />
 	<arg name="enable_ground_truth" default="true" />
 	<arg name="enable_mavlink_interface" default="false"/>
@@ -50,7 +51,7 @@
         <arg name="uav_name" value="machine_$(arg robotID)" />
         <arg name="enable_wind" value="$(arg enable_wind)" />
         <arg name="enable_meshes" value="$(arg enable_meshes)" />
-		
+
         <arg name="X" value="$(arg X)" />
         <arg name="Y" value="$(arg Y)" />
         <arg name="Z" value="$(arg Z)" />

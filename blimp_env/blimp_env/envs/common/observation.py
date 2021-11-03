@@ -193,6 +193,7 @@ class PlanarKinematicsObservation(ROSObservation):
         obs_dict = {
             "position": self.pos_data,
             "velocity": self.vel_data,
+            "velocity_norm": np.linalg.norm(self.vel_data),
             "linear_acceleration": self.acc_data,
             "orientation": self.ori_data,
             "angle": self.ang_data,

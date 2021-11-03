@@ -6,7 +6,7 @@
 	<arg name="X" default="100"/>
 	<arg name="Y" default="100"/>
 	<arg name="MAX_Z" default="200"/>
-	<arg name="MIN_Z" default="5"/>
+	<arg name="MIN_Z" default="10"/>
 	<arg name="V" default="8"/>
 
 

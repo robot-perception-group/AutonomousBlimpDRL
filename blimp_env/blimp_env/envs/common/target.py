@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import rospy
-from blimp_env.envs.script.blimp_script import respawn_target
+from blimp_env.envs.script.blimp_script import respawn_goal
 from blimp_env.envs.common import utils
 from gym import spaces
 from librepilot.msg import AutopilotInfo
@@ -124,13 +124,8 @@ class ROSTarget(TargetType):
         raise NotImplementedError
 
 
-class PlanarGoal(ROSTarget):
-    """planar goal is designed for planar navigate environment
-    goal z position is now modified depend on the path vector
-    between current goal and previous goal
-    this is done by projecting the current machine position vector
-    to path vector and compute the desired z position
-    """
+class Goal(ROSTarget):
+    """a waypoint in 3D space defined by desired position, velocity and yaw angle"""
 
     def sample(self) -> Dict[str, np.ndarray]:
         """sample target state
@@ -185,8 +180,9 @@ class PlanarGoal(ROSTarget):
 
     def timeout_handle(self):
         rospy.logdebug("[ target ] unable to establish ros connection, respawn...")
-        reply = respawn_target(**self.env.config["simulation"])
+        reply = respawn_goal(**self.env.config["simulation"])
         rospy.logdebug("target respawn:", reply)
+        return reply
 
 
 def target_factory(env: "AbstractEnv", config: dict) -> TargetType:
@@ -198,7 +194,7 @@ def target_factory(env: "AbstractEnv", config: dict) -> TargetType:
     Returns:
         TargetType: [a target will generate goal for RL agent]
     """
-    if config["type"] == "PlanarGoal":
-        return PlanarGoal(env, **config)
+    if config["type"] == "Goal":
+        return Goal(env, **config)
     else:
         raise ValueError("Unknown target type")
