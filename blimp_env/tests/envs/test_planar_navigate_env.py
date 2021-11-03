@@ -119,7 +119,7 @@ def test_is_terminal(mocker):
 
 def test_rew(mocker):
     env = ENV(copy.deepcopy(env_kwargs))
-    env.config["tracking_reward_weights"] = np.array([0.20, 0.20, 0.4, 0.20])
+    env.config["tracking_reward_weights"] = np.array([0.1, 0.2, 0.3, 0.4])
     env.config["reward_weights"] = np.array([1, 0.95, 0.05])
     mock_fn = "blimp_env.envs.planar_navigate_env.PlanarNavigateEnv.compute_success_rew"
     dummy_obs_info = {"position": np.array([0, 0, 0])}
@@ -127,9 +127,51 @@ def test_rew(mocker):
     def dummy_act_rew():
         return 0
 
+    mocker.patch(mock_fn, return_value=1.0)
+    obs = np.zeros(9)
+    obs[1] = -1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = 1
+    np.testing.assert_allclose(result, expect)
+
     env.action_type.action_rew = dummy_act_rew
     mocker.patch(mock_fn, return_value=0.0)
     obs = np.zeros(9)
+    obs[1] = -1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = 0
+    np.testing.assert_allclose(result, expect)
+
+    obs = np.zeros(9)
+    obs[0] = 1
+    obs[1] = -1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = -0.1 * 0.95
+    np.testing.assert_allclose(result, expect)
+
+    obs = np.zeros(9)
+    obs[1] = 1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = -0.2 * 0.95
+    np.testing.assert_allclose(result, expect)
+
+    obs = np.zeros(9)
+    obs[2] = 1
+    obs[1] = -1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = -0.3 * 0.95
+    np.testing.assert_allclose(result, expect)
+
+    obs = np.zeros(9)
+    obs[3] = 1
+    obs[1] = -1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = -0.4 * 0.95
+    np.testing.assert_allclose(result, expect)
+
+    obs = np.zeros(9)
+    obs[4] = 1
+    obs[1] = -1
     result, _ = env._reward(obs, [], dummy_obs_info)
     expect = 0
     np.testing.assert_allclose(result, expect)
@@ -142,6 +184,12 @@ def test_rew(mocker):
     obs = np.ones(9)
     result, _ = env._reward(obs, [], dummy_obs_info)
     expect = -1.0
+    np.testing.assert_allclose(result, expect)
+
+    obs = np.zeros(9)
+    obs[1] = -1
+    result, _ = env._reward(obs, [], dummy_obs_info)
+    expect = -0.05
     np.testing.assert_allclose(result, expect)
 
 

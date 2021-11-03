@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=4, help="Number of workers to use"
+    "--num_workers", type=int, default=10, help="Number of workers to use"
 )
 
 parser.add_argument(
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         "attention_dim": 16,
     }
     config = AGENT.DEFAULT_CONFIG.copy()
-    rollout_fragment_length = 400
+    rollout_fragment_length = 2000
     train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {
@@ -123,8 +123,8 @@ if __name__ == "__main__":
             "vtrace_clip_pg_rho_threshold": 1.0,  # convergence speed
             "train_batch_size": train_batch_size,
             "num_sgd_iter": 1,
-            "replay_proportion": 0.0,
-            "replay_buffer_num_slots": 0,
+            "replay_proportion": 2.0,
+            "replay_buffer_num_slots": 10,
             "learner_queue_size": 16,
             "learner_queue_timeout": 1e6,
             "broadcast_interval": 1,

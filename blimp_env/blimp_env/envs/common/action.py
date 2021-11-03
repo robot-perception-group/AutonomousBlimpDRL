@@ -87,23 +87,28 @@ class ROSActionType(ActionType):
         """check actuator publisher connections"""
         waiting_time = 0
         respawn_time = 0
+        resume_time = 0
 
         while self.action_publisher.get_num_connections() == 0:
-            rospy.loginfo("No subscriber to action_publisher yet, wait...")
+            rospy.loginfo("[ Action ] No subscriber to action_publisher yet, wait...")
             waiting_time += 1
             time.sleep(1)
 
+            if resume_time > 0:
+                raise ValueError("Unable to establish action connection")
+
+            if respawn_time > 3:
+                rospy.loginfo("[ Action ] Simulation Crashed...resume simulation")
+                reply = resume_simulation(**self.env.config["simulation"])
+                respawn_time = 0
+                resume_time += 1
+                rospy.loginfo("Simulation Resumed:", reply)
+
             if waiting_time >= 5:
-                rospy.loginfo("respawn model...")
+                rospy.loginfo("[ Action ] respawn model...")
                 respawn_model(**self.env.config["simulation"])
                 respawn_time += 1
                 waiting_time = 0
-
-            if respawn_time > 3:
-                rospy.loginfo("Simulation Crashed...resume simulation")
-                reply = resume_simulation(**self.env.config["simulation"])
-                respawn_time = 0
-                rospy.loginfo("Simulation Resumed:", reply)
 
         rospy.logdebug("action_publisher connected")
         return self.action_publisher.get_num_connections() > 0
