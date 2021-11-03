@@ -268,40 +268,77 @@ def get_test_scale_obs_dict_io():
     in_list, out_list = [], []
     in_list.append(
         {
-            "z_diff": np.array(50),
+            "z_diff": np.array(100),
             "planar_dist": np.array(200 * np.sqrt(2)),
-            "psi_diff": np.array(0.5 * np.pi),
-            "vel_diff": np.array(11.5 / 2),
+            "psi_diff": np.array(np.pi),
+            "vel_diff": np.array(11.5),
             "vel": np.array(11.5),
         }
     )
     out_list.append(
         {
-            "z_diff": 0.5,
+            "z_diff": 1,
             "planar_dist": 1,
-            "psi_diff": 0.5,
-            "vel_diff": 0.5,
+            "psi_diff": 1,
+            "vel_diff": 1,
             "vel": 1,
         }
     )
     in_list.append(
         {
-            "z_diff": np.array(-100),
+            "z_diff": np.array(0),
             "planar_dist": np.array(100 * np.sqrt(2)),
-            "psi_diff": np.array(-np.pi),
-            "vel_diff": np.array(11.5 / 4),
+            "psi_diff": np.array(0),
+            "vel_diff": np.array(0),
             "vel": np.array(11.5 / 2),
         }
     )
     out_list.append(
         {
-            "z_diff": -1,
+            "z_diff": 0,
             "planar_dist": 0,
-            "psi_diff": -1,
-            "vel_diff": 0.25,
+            "psi_diff": 0,
+            "vel_diff": 0,
             "vel": 0,
         }
     )
+    in_list.append(
+        {
+            "z_diff": np.array(-100),
+            "planar_dist": np.array(0),
+            "psi_diff": np.array(-np.pi),
+            "vel_diff": np.array(-11.5),
+            "vel": np.array(0),
+        }
+    )
+    out_list.append(
+        {
+            "z_diff": -1,
+            "planar_dist": -1,
+            "psi_diff": -1,
+            "vel_diff": -1,
+            "vel": -1,
+        }
+    )
+    in_list.append(
+        {
+            "z_diff": np.array(50),
+            "planar_dist": np.array(150 * np.sqrt(2)),
+            "psi_diff": np.array(0.5*np.pi),
+            "vel_diff": np.array(0.5*11.5),
+            "vel": np.array(0.75*11.5),
+        }
+    )
+    out_list.append(
+        {
+            "z_diff": 0.5,
+            "planar_dist": 0.5,
+            "psi_diff": 0.5,
+            "vel_diff": 0.5,
+            "vel": 0.5,
+        }
+    )
+
     return in_list, out_list
 
 
