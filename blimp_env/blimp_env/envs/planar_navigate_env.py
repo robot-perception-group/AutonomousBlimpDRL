@@ -178,7 +178,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """calculate reward
         total_reward = success_reward + tracking_reward + action_reward
         success_reward: +1 if agent stay in the vicinity of goal
-        tracking_reward: - L2 distance to goal - psi angle difference
+        tracking_reward: - L2 distance to goal - psi angle difference - z diff - vel diff
         action_reward: penalty for motor use
 
         Args:
@@ -195,6 +195,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         success_reward = self.compute_success_rew(
             obs_info["position"], self.goal["position"]
         )
+        obs[1] = (obs[1] + 1) / 2  # dist -1 is minimum, +1 to use -abs()
         tracking_reward = np.dot(track_weights, -np.abs(obs[0:4]))
         action_reward = self.action_type.action_rew()
 
@@ -256,7 +257,7 @@ if __name__ == "__main__":
     # 2. in terminal:
     # kernprof -l -v blimp_env/envs/planar_navigate_env.py
 
-    auto_start_simulation = False
+    auto_start_simulation = True
     if auto_start_simulation:
         close_simulation()
 

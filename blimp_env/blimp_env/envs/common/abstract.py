@@ -158,7 +158,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "world": "basic",
                     "auto_start_simulation": True,
                     "remote_host_name": "frg07",
-                    "maximum_local_worker": 4,
+                    "maximum_local_worker": 50,
                 },
                 "observation": {
                     "type": "PlanarKinematics",
