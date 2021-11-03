@@ -1,0 +1,259 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+	<!--***************** property description  *****************-->
+	<xacro:property name="namespace" value="$(arg uav_name)" />
+	<xacro:property name="air_density" value="1.2041"/> <!--[kg/m^3] Temperature 20celsius: 1.2041-->
+
+	<!-- meshes -->
+	<xacro:property name="use_mesh_file" value="$(arg enable_meshes)" />
+  	<xacro:property name="mesh_file_blimp_body" value="package://blimp_description/meshes/blimp_body/blimp_body_v4.dae" />
+	<xacro:property name="mesh_file_blimp_support" value="package://blimp_description/meshes/blimp_support/blimp_support_v5.dae" />
+	<xacro:property name="mesh_file_blimp_gondola" value="package://blimp_description/meshes/blimp_gondola/blimp_gondola_v4.dae" />
+	<xacro:property name="mesh_file_blimp_wing" value="package://blimp_description/meshes/blimp_wing/blimp_wing_v2.dae" />
+	<xacro:property name="mesh_file_blimp_stick" value="package://blimp_description/meshes/blimp_wing/blimp_stick_v2.dae" />
+	<xacro:property name="mesh_file_propeller_cw" value="package://blimp_description/meshes/blimp_propeller/blimp_right_propeller_cw_v3.dae" />
+	<xacro:property name="mesh_file_propeller_ccw" value="package://blimp_description/meshes/blimp_propeller/blimp_left_propeller_ccw_v3.dae" />
+	<xacro:property name="mesh_file_bot_propeller_cw" value="package://blimp_description/meshes/blimp_propeller/blimp_bot_propeller_cw_v3.dae" />
+	<xacro:property name="mesh_file_blimp_rud_part1" value="package://blimp_description/meshes/blimp_fin/blimp_top_rud_part1_v3.dae" />
+	<xacro:property name="mesh_file_blimp_rud_part2" value="package://blimp_description/meshes/blimp_fin/blimp_top_rud_part2_v5.dae" />
+	<xacro:property name="mesh_file_blimp_bot_rud_part1" value="package://blimp_description/meshes/blimp_fin/blimp_bot_rud_part1_v3.dae" />
+
+	<!-- mass [kg] -->
+	<!-- Modified mass for convenience -->
+	<xacro:property name="mass_blimp_body" value="4.622" />
+	<xacro:property name="mass_blimp_body_without_gas" value="2.90" />
+	<xacro:property name="mass_gondola_body" value="1.105" /> <!--battery: 0.51kg + body:0.595kg = 1.105-->
+	<!--<xacro:property name="mass_gondola_body" value="0.845" />--> <!--battery: 0.25kg + body:0.595kg = 0.845-->
+	<xacro:property name="mass_gondola_support" value="0.2" /> <!--guessed 0.2kg-->
+	<xacro:property name="mass_stick" value="0.705" />
+	<xacro:property name="mass_wing" value="0.500" /> <!--guessed 0.5kg-->
+	<xacro:property name="mass_blade" value="0.050" />
+	<xacro:property name="mass_rud_part1" value="0.58" /> <!--part1: 0.162kg + wire: 0.097kg = 0.259 -->
+	<xacro:property name="mass_rud_part2" value="0.113" /> 
+	<xacro:property name="mass_bot_rud_part1" value="0.410" /> <!--part1: 0.120kg + wire: 0.290kg = 0.410 -->
+	<xacro:property name="mass_bot_rud_motor" value="0.127" />
+	<xacro:property name="mass_ballast" value="0.6" /> <!--default: 0.4 -->
+
+	<!-- geometry [m] -->
+	<xacro:property name="radius_blimp_body" value="1.00"/>
+	<xacro:property name="length_blimp_body" value="5.00"/>
+	<xacro:property name="volume_blimp_body" value="10.472"/>
+	<xacro:property name="length_blimp_skin" value="0.0002"/>
+	<xacro:property name="length_gondola_body" value="0.420"/>
+	<xacro:property name="width_gondola_body" value="0.160"/>
+	<xacro:property name="height_gondola_body" value="0.200"/>
+	<xacro:property name="length_gondola_support" value="0.420"/>
+	<xacro:property name="width_gondola_support" value="0.020"/>
+	<xacro:property name="height_gondola_support" value="0.200"/>
+	<xacro:property name="radius_stick" value="0.010"/>
+	<xacro:property name="length_stick" value="0.750"/>
+	<xacro:property name="radius_wing" value="0.215"/>
+	<xacro:property name="length_wing" value="0.030"/>
+	<xacro:property name="length_wing_skin" value="0.015"/>
+	<xacro:property name="radius_blade" value="0.010"/> 
+	<xacro:property name="length_blade" value="0.390"/>
+	<xacro:property name="length_rud_part1" value="0.55"/>
+	<xacro:property name="width_rud_part1" value="0.02"/>
+	<xacro:property name="height_rud_part1" value="0.48"/>
+	<xacro:property name="length_rud_part2" value="0.30"/>
+	<xacro:property name="width_rud_part2" value="0.02"/>
+	<xacro:property name="height_rud_part2" value="0.48"/>
+	<xacro:property name="radius_bot_rud_motor" value="0.005"/>
+	<xacro:property name="length_bot_rud_motor" value="0.250"/>
+	<xacro:property name="radius_ballast" value="0.01"/>
+	<xacro:property name="length_ballast" value="0.05"/>
+
+	<!-- joint parameters -->
+	<xacro:property name="flex_joint_flexibility_factor" value="1.0" />
+	<xacro:property name="flex_joint_flexibility_damping" value="0.5" />
+	<xacro:property name="flex_joint_flexibility_friction" value="0" />
+	<xacro:property name="rotor_velocity_slowdown_sim" value="1" />
+	<xacro:property name="rotor_offset_top" value="0.05" /> <!-- [m] -->
+	<xacro:property name="motor_constant" value="3.71178707e-03" /> <!-- [kg m/s^2] -->
+	<xacro:property name="moment_constant" value="0.016" /> <!-- [m] -->
+	<!--<xacro:property name="time_constant_up" value="0.0125" /> --><!-- [s] -->
+	<!--<xacro:property name="time_constant_down" value="0.025" /> --><!-- [s] -->-->
+	<xacro:property name="time_constant_up" value="1" /> <!-- [s] -->
+	<xacro:property name="time_constant_down" value="1" /> <!-- [s] -->
+	<xacro:property name="max_rot_velocity" value="879.23" /> <!-- [rad/s] -->
+	<xacro:property name="rotor_drag_coefficient" value="8.06428e-05" />
+	<xacro:property name="rolling_moment_coefficient" value="0.000001" />
+	<xacro:property name="area_blade" value="0.0078"/> <!-- [m^2] -->
+	<xacro:property name="effort_stick" value="1000"/> <!-- [J] -->
+	<xacro:property name="velocity_stick" value="2"/> <!-- [rad/s] -->
+	<xacro:property name="max_angle_stick" value="${100 * pi /180.0 }"/> <!-- [rad] -->
+	<xacro:property name="effort_fin" value="500"/> <!-- [J] -->
+	<xacro:property name="velocity_fin" value="2"/> <!-- [rad/s] -->
+	<xacro:property name="max_angle_fin" value="${60 * pi /180.0 }"/> <!-- [rad] 0.087-->
+	<xacro:property name="area_fin" value="0.16"/> <!-- [m^2] -->
+	<xacro:property name="area_fin_front" value="0.01"/> <!-- [m^2] -->
+	<xacro:property name="area_rudder" value="0.16"/> <!-- [m^2] -->
+	<!--<xacro:property name="area_rudder" value="0.5"/>--> <!-- [m^2] -->
+	<xacro:property name="area_body_lift" value="3.14"/> <!-- [m^2] -->
+	<xacro:property name="area_body_front" value="3.14"/> <!-- [m^2] -->
+
+	<!-- inertia [kg m^2] [kg m^2] [kg m^2] [kg m^2] [kg m^2] [kg m^2] -->
+	<xacro:include filename="$(find blimp_description)/urdf/inertia_calculator.xacro"/>
+	<xacro:property name="inertia_blimp_body">
+    		<xacro:hollow_cylinder_inertia r1="${radius_blimp_body - length_blimp_skin}" r2="${radius_blimp_body}" h="${length_blimp_body}" mass="${mass_blimp_body_without_gas}"/> <!--TODO: better use hollow ellipse-->
+	</xacro:property>
+	<xacro:property name="inertia_gondola_body">
+    		<xacro:cuboid_inertia x="${length_gondola_body}" y="${width_gondola_body}" z="${height_gondola_body}" mass="${mass_gondola_body}"/>
+	</xacro:property>
+	<xacro:property name="inertia_gondola_support">
+    		<xacro:cuboid_inertia x="${length_gondola_support}" y="${width_gondola_support}" z="${height_gondola_support}" mass="${mass_gondola_support}"/>
+	</xacro:property>
+	<xacro:property name="inertia_ballast">
+		<xacro:cylinder_inertia r="${radius_ballast}" h="${length_ballast}" mass="${mass_ballast}"/>
+	</xacro:property>
+	<xacro:property name="inertia_stick">
+		<xacro:cylinder_inertia r="${radius_stick}" h="${length_stick}" mass="${mass_stick}"/>
+	</xacro:property>
+	<xacro:property name="inertia_wing">
+		<xacro:hollow_cylinder_inertia r1="${radius_wing - length_wing_skin}" r2="${radius_wing}" h="${length_wing}" mass="${mass_wing}"/>
+	</xacro:property>
+	<xacro:property name="inertia_blade">
+		<xacro:cylinder_inertia r="${radius_blade}" h="${length_blade}" mass="${mass_blade*rotor_velocity_slowdown_sim}"/>
+	</xacro:property>
+	<xacro:property name="inertia_rud_part1">
+		<xacro:cuboid_inertia x="${length_rud_part1}" y="${width_rud_part1}" z="${height_rud_part1}" mass="${mass_rud_part1}"/>
+	</xacro:property>
+	<xacro:property name="inertia_rud_part2">
+		<xacro:cuboid_inertia x="${length_rud_part2}" y="${width_rud_part2}" z="${height_rud_part2}" mass="${mass_rud_part2}"/>
+	</xacro:property>
+	<xacro:property name="inertia_bot_rud_part1">
+		<xacro:cuboid_inertia x="${length_rud_part1}" y="${width_rud_part1}" z="${height_rud_part1}" mass="${mass_bot_rud_part1}"/>
+	</xacro:property>
+	<xacro:property name="inertia_bot_rud_motor">
+		<xacro:cylinder_inertia r="${radius_bot_rud_motor}" h="${length_bot_rud_motor}" mass="${mass_bot_rud_motor*rotor_velocity_slowdown_sim}"/>
+	</xacro:property>
+
+	<!-- origin [m] [m] [m] [rad] [rad] [rad] -->
+	<xacro:property name="origin_blimp_body">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_ballast">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_gondola_body">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_gondola_support">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_stick">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_wing">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_blade">
+		<origin xyz="0  0  0" rpy="${pi/2}  0  0"/> 
+	</xacro:property>
+	<xacro:property name="origin_rud_part1">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_rud_part2">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_bot_rud_part1">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+	<xacro:property name="origin_bot_rud_motor">
+		<origin xyz="0  0  0" rpy="0  0  0"/>
+	</xacro:property>
+
+	<!-- joint origin [m] [m] [m] [rad] [rad] [rad] -->
+
+	<xacro:property name="origin_blimp_body_forward_lift_joint">
+		<origin xyz="0 0 2.0" rpy="0.0 ${-pi/2} ${pi/2}"/>
+	</xacro:property>
+	<xacro:property name="origin_blimp_body_aft_lift_joint">
+		<origin xyz="0 0 -0.3" rpy="0.0 ${-pi/2} ${pi/2}"/>
+	</xacro:property>
+	<xacro:property name="origin_base_gondola_body_joint">
+		<origin xyz="0 0 0.10" rpy="0 0 0"/>
+	</xacro:property>
+	<xacro:property name="origin_base_gondola_left_support_joint">
+		<origin xyz="0.0 0.1 -0.085" rpy="0.4 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_base_gondola_right_support_joint">
+		<origin xyz="0.0 -0.1 -0.085" rpy="0.4 0.0 ${pi}"/>
+	</xacro:property>
+	<xacro:property name="origin_gondola_body_joint_link_joint">
+		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_gondola_joint_blimp_body_joint">
+		<origin xyz="-1.00 0.0 1.05" rpy="0.0 ${pi/2} 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_blimp_body_front_ballast_joint">
+		<origin xyz="0.0 0.0 2.5" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_base_stick_joint">
+		<origin xyz="-0.08 0 0.03" rpy="${pi/2} 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_stick_left_wing_joint">
+		<origin xyz="0.0 0.02 -0.375" rpy="${-pi/2} 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_stick_right_wing_joint">
+		<origin xyz="0.0 0.02 0.375" rpy="${-pi/2} 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_stick_left_blade_joint">
+		<origin xyz="0.0 0.025 -0.375" rpy="${-pi/2} 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_stick_right_blade_joint">
+		<origin xyz="0.0 0.025 0.375" rpy="${-pi/2} 0.0 ${pi}"/>
+	</xacro:property>
+	<xacro:property name="origin_top_rud_base_link_joint">
+		<origin xyz="-0.59 0.0 -1.5" rpy="${pi} ${-pi/2} 0.0"/> 
+	</xacro:property>
+	<xacro:property name="origin_blimp_body_top_rud_part1_joint">
+		<origin xyz="0.0 0.0 -0.24" rpy="0.0 0.0 0.0"/> 
+	</xacro:property>
+	<xacro:property name="origin_top_rud_part1_top_rud_joint_link_joint">
+		<origin xyz="-0.28 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_top_rud_joint_link_top_rud_part2_joint">
+		<origin xyz="-0.125 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_bot_rud_base_link_joint">
+		<origin xyz="0.59 0.0 -1.5" rpy="0.0 ${-pi/2} 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_blimp_body_bot_rud_part1_joint">
+		<origin xyz="0.0 0.0 -0.24" rpy="0.0 0.0 0.0"/> 
+	</xacro:property>
+	<xacro:property name="origin_bot_rud_part1_bot_rud_joint_link_joint">
+		<origin xyz="-0.28 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_bot_rud_joint_link_bot_rud_part2_joint">
+		<origin xyz="-0.125 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_bot_rud_part1_bot_rud_motor_joint">
+		<origin xyz="-0.065 0.01 -0.025" rpy="${-pi/2} 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_left_elv_base_link_joint">
+		<origin xyz="0.0 0.59 -1.5" rpy="0.0 ${-pi/2} ${pi/2}"/> 
+	</xacro:property>
+	<xacro:property name="origin_blimp_body_left_elv_part1_joint">
+		<origin xyz="0.0 0.0 -0.24" rpy="0.0 0.0 0.0"/> 
+	</xacro:property>
+	<xacro:property name="origin_left_elv_part1_left_elv_joint_link_joint">
+		<origin xyz="-0.28 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_left_elv_joint_link_left_elv_part2_joint">
+		<origin xyz="-0.125 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_right_elv_base_link_joint">
+		<origin xyz="0.0 -0.59 -1.5" rpy="0.0 ${-pi/2} ${-pi/2}"/> 
+	</xacro:property>
+	<xacro:property name="origin_blimp_body_right_elv_part1_joint">
+		<origin xyz="0.0 0.0 -0.24" rpy="0.0 0.0 0.0"/> 
+	</xacro:property>
+	<xacro:property name="origin_right_elv_part1_right_elv_joint_link_joint">
+		<origin xyz="-0.28 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+	<xacro:property name="origin_right_elv_joint_link_right_elv_part2_joint">
+		<origin xyz="-0.125 0.0 0.0" rpy="0.0 0.0 0.0"/>
+	</xacro:property>
+
+</robot>

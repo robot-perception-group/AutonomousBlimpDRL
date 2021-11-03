@@ -3,7 +3,7 @@ import datetime
 import os
 
 import numpy as np
-from blimp_env.envs import PlanarNavigateEnv2
+from blimp_env.envs import PlanarNavigateEnv
 from blimp_env.envs.script import close_simulation, close_simulation_on_marvin
 import ray
 from ray import tune
@@ -11,14 +11,14 @@ from ray.rllib.agents import impala
 from ray.tune.registry import register_env
 
 # exp setup
-ENV = PlanarNavigateEnv2
+ENV = PlanarNavigateEnv
 AGENT = impala
 AGENT_NAME = "IMPALA"
 exp_name_posfix = "test"
 
-ts = 5
-one_day_ts = 24 * 3600 * ts
-days = 10
+steps = 2  # steps per second
+one_day_ts = 24 * 3600 * steps
+days = 5
 TIMESTEP = int(days * one_day_ts)
 
 parser = argparse.ArgumentParser()
@@ -77,12 +77,15 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
+        "action": {
+            "act_noise_stdv": 0.0,
+        },
         "observaion": {
             "noise_stdv": 0.0,
         },
-        "success_threshhold": 0.05,
+        "success_threshhold": 20,
         "tracking_reward_weights": np.array(
-            [0.2, 0.2, 0.3, 0.3]
+            [0.2, 0.2, 0.4, 0.2]
         ),  # z_diff, planar_dist, psi_diff, u_diff
         "reward_weights": np.array([1.0, 1.0, 0.0]),  # success, tracking, action
     }
@@ -102,7 +105,7 @@ if __name__ == "__main__":
         "attention_dim": 16,
     }
     config = AGENT.DEFAULT_CONFIG.copy()
-    rollout_fragment_length = 1000
+    rollout_fragment_length = 400
     train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {
@@ -126,7 +129,7 @@ if __name__ == "__main__":
             "learner_queue_timeout": 1e6,
             "broadcast_interval": 1,
             "grad_clip": 40.0,
-            "lr": 2e-4,
+            "lr": 5e-4,
             "lr_schedule": None,
             "decay": 0.999,
         }

@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+<!--TODO: add compass -->
+<!--TODO: add Gimbo Camera -->
+
+	<!-- ground truth imu and odo -->
+	<xacro:if value="$(arg enable_ground_truth)">
+		 <xacro:ground_truth_imu_and_odometry namespace="${namespace}" parent_link="base_link" /> 
+	</xacro:if>
+
+	<xacro:if value="$(arg enable_sensors)">
+		<!-- Mount an ADIS16448 IMU. -->
+		<!--<xacro:default_imu namespace="${namespace}" parent_link="top_rud_part1_link" />-->
+		<!-- Mount a GPS. -->
+		<xacro:default_gps namespace="${namespace}" parent_link="top_rud_part1_link" /> 
+		<!-- more odometry -->
+		 <xacro:tail_imu_and_odometry namespace="${namespace}" parent_link="top_rud_part1_link" /> 
+	</xacro:if>
+
+	<xacro:if value="$(arg enable_camera)">
+		<!-- Mount a VI CAMERA. -->
+		<!-- TODO measure weight, xyz of camera -->
+		<xacro:property name="origin_camera">
+			<origin xyz="0.5  0  -0.1" rpy="0  0.7853  0"/>
+		</xacro:property>
+		<!--<xacro:vi_sensor_camera_macro 
+			namespace="${namespace}" 
+			parent_link="gondola_body_link" 
+			mass="0.425" 
+			camera_suffix="1"
+			frame_rate="60">
+			<xacro:insert_block name="origin_camera" />
+		</xacro:vi_sensor_camera_macro>-->
+
+		<xacro:include filename="$(find blimp_description)/urdf/asus_camera.urdf.xacro" />
+		<xacro:asus_camera
+		    name="xtion"
+		    parent="gondola_body_link">
+		    <origin xyz="0.18 0.0 0.07" rpy="0 0.7853 0"/>
+		</xacro:asus_camera>
+	</xacro:if>
+	
+
+
+
+</robot>

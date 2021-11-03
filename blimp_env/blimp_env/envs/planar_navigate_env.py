@@ -10,6 +10,9 @@ import rospy
 from blimp_env.envs.common.abstract import ROSAbstractEnv
 from blimp_env.envs.common.action import Action
 from geometry_msgs.msg import Point, Quaternion
+import line_profiler
+
+profile = line_profiler.LineProfiler()
 
 Observation = Union[np.ndarray, float]
 
@@ -20,7 +23,6 @@ class PlanarNavigateEnv(ROSAbstractEnv):
     @classmethod
     def default_config(cls) -> dict:
         config = super().default_config()
-        config["simulation"].update({"task": "navigate_goal"})
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
@@ -34,9 +36,11 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "act_noise_stdv": 0.05,
             }
         )
+        target_type = "Goal"
+        config["simulation"].update({"target_type": target_type})
         config["target"].update(
             {
-                "type": "PlanarGoal",
+                "type": target_type,
                 "target_name_space": "goal_",
             }
         )
@@ -85,7 +89,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             queue_size=1,
         )
 
-    # @profile
+    @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
         """[perform a step action and observe result]
 
@@ -139,7 +143,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         self.vel_rviz_pub.publish(Point(*obs_info["velocity"]))
         self.vel_diff_rviz_pub.publish(
             Point(
-                proc_info["vel"],
+                obs_info["velocity_norm"],
                 self.goal["velocity"],
                 proc_info["vel_diff"],
             )
@@ -238,37 +242,51 @@ class PlanarNavigateEnv(ROSAbstractEnv):
 
         return time or success
 
+    def close(self) -> None:
+        return super().close()
+
 
 if __name__ == "__main__":
     import copy
     from blimp_env.envs.common.gazebo_connection import GazeboConnection
+    from blimp_env.envs.script import close_simulation
 
     # ============== profile ==============#
     # 1. pip install line_profiler
-    # 2. in terminal run the command:
+    # 2. in terminal:
     # kernprof -l -v blimp_env/envs/planar_navigate_env.py
+
+    auto_start_simulation = False
+    if auto_start_simulation:
+        close_simulation()
+
     ENV = PlanarNavigateEnv
     env_kwargs = {
         "DBG": True,
         "simulation": {
-            "auto_start_simulation": False,
+            "gui": True,
+            "enable_meshes": True,
+            "auto_start_simulation": auto_start_simulation,
         },
         "observation": {
             "DBG_ROS": False,
-            "DBG_OBS": True,
+            "DBG_OBS": False,
+            "noise_stdv": 0.0,
         },
         "action": {
-            "DBG_ACT": True,
+            "DBG_ACT": False,
+            "act_noise_stdv": 0.0,
         },
-        "target": {"DBG_ROS": True},
+        "target": {"DBG_ROS": False},
     }
 
     @profile
     def env_step():
         env = ENV(copy.deepcopy(env_kwargs))
         env.reset()
-        for _ in range(100):
+        for _ in range(1000):
             action = env.action_space.sample()
+            action = np.array([0, 0, 0, 0])
             obs, reward, terminal, info = env.step(action)
 
         GazeboConnection().unpause_sim()

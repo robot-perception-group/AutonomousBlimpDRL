@@ -9,6 +9,7 @@
 	<arg name="enable_wind" default="true"/>
 	<arg name="enable_physics" default="true"/>
 	<arg name="enable_sensors" default="true"/>
+	<arg name="enable_camera" default="false"/>	
 	<arg name="enable_logging" default="false" />
 	<arg name="enable_ground_truth" default="true" />
 	<arg name="enable_mavlink_interface" default="false"/>
@@ -44,6 +45,7 @@
 			<arg name="enable_wind" value="$(arg enable_wind)"/>
 			<arg name="enable_physics" value="$(arg enable_physics)" />
 			<arg name="enable_sensors" value="$(arg enable_sensors)" />
+			<arg name="enable_camera" value="$(arg enable_camera)" />			
 			<arg name="enable_logging" value="$(arg enable_logging)" />
 			<arg name="enable_ground_truth" value="$(arg enable_ground_truth)" />
 			<arg name="enable_mavlink_interface" value="$(arg enable_mavlink_interface)" />

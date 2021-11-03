@@ -171,6 +171,37 @@ def makeQuadrocopterMarker(position, orientation):
     server.insert(int_marker, processFeedback)
 
 
+def generate_goal(x_min, x_max, y_min, y_max, z_min, z_max, v_min, v_max):
+    x = np.random.uniform(x_min, x_max)
+    y = np.random.uniform(y_min, y_max)
+    z = np.random.uniform(z_min, z_max)
+    v = np.random.uniform(v_min, v_max)
+
+    phi = 0
+    the = 0
+    psi = np.random.uniform(-pi, pi)
+    q = quaternion_from_euler(phi, the, psi)
+    return x, y, z, v, phi, the, psi, q
+
+
+def distance_to_origin_far_enough(position, origin=np.array([100, 100, 100])):
+    dist = np.linalg.norm(position - origin)
+    if dist > 15:
+        return True
+    else:
+        return False
+
+
+def sample_new_goal(x_min, x_max, y_min, y_max, z_min, z_max, v_min, v_max):
+    far_enough = False
+    while far_enough == False:
+        x, y, z, v, phi, the, psi, q = generate_goal(
+            x_min, x_max, y_min, y_max, z_min, z_max, v_min, v_max
+        )
+        far_enough = distance_to_origin_far_enough(np.array([x, y, z]))
+    return x, y, z, v, phi, the, psi, q
+
+
 if __name__ == "__main__":
     robotID = "0"
     x_max, x_min = 105, -105
@@ -203,23 +234,12 @@ if __name__ == "__main__":
         "Second Entry", parent=sub_menu_handle, callback=processFeedback
     )
 
+    times = 0
     while not rospy.is_shutdown():
-        x = np.random.uniform(x_min, x_max)
-        y = np.random.uniform(y_min, y_max)
-        z = np.random.uniform(z_min, z_max)
-        v = np.random.uniform(v_min, v_max)
-
-        phi = 0
-        the = 0
-        psi = np.random.uniform(-pi, pi)
-        q = quaternion_from_euler(phi, the, psi)
-
-        rospy.loginfo("[ Goal Node ] -----------------------")
-        rospy.loginfo("[ Goal Node ] position = (%2.1f, %2.1f, %2.1f)\n" % (x, y, z))
-        rospy.loginfo("[ Goal Node ] velocity = %2.1f\n" % (v))
-        rospy.loginfo(
-            "[ Goal Node ] orientation = (%2.1f, %2.1f, %2.1f)]\n" % (phi, the, psi)
-        )
+        if times % 180 == 0:
+            x, y, z, v, phi, the, psi, q = sample_new_goal(
+                x_min, x_max, y_min, y_max, z_min, z_max, v_min, v_max
+            )
 
         position = Point(x, y, z)
         velocity = Point(v, 0, 0)
@@ -233,4 +253,12 @@ if __name__ == "__main__":
 
         rospy.Timer(rospy.Duration(0.01), frameCallback)
 
-        time.sleep(1)  ##TODO:test
+        rospy.loginfo("[ Goal Node ] -----------------------")
+        rospy.loginfo("[ Goal Node ] position = (%2.1f, %2.1f, %2.1f)\n" % (x, y, z))
+        rospy.loginfo("[ Goal Node ] velocity = %2.1f\n" % (v))
+        rospy.loginfo(
+            "[ Goal Node ] orientation = (%2.1f, %2.1f, %2.1f)]\n" % (phi, the, psi)
+        )
+
+        times += 1
+        time.sleep(1)

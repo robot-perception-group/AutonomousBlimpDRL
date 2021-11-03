@@ -21,6 +21,7 @@ from blimp_env.envs.common.utils import update_dict
 from blimp_env.envs.script.blimp_script import (
     spawn_simulation_on_different_port,
     spawn_simulation_on_marvin,
+    kill_all_screen,
 )
 from gym.utils import seeding
 
@@ -155,7 +156,6 @@ class ROSAbstractEnv(AbstractEnv):
                     "enable_wind": False,
                     "wind_speed": 2.0,
                     "world": "basic",
-                    "task": "navigate_goal",
                     "auto_start_simulation": True,
                     "remote_host_name": "frg07",
                     "maximum_local_worker": 4,
@@ -175,7 +175,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "DBG_ACT": False,
                 },
                 "target": {
-                    "type": "PlanarGoal",
+                    "type": "Goal",
                     "target_name_space": "goal_",
                     "DBG_ROS": False,
                 },
@@ -365,9 +365,12 @@ class ROSAbstractEnv(AbstractEnv):
         n_steps = int(
             self.config["simulation_frequency"] // self.config["policy_frequency"]
         )
+        step = 0
         for _ in range(n_steps):
-            if (action is not None) and (self.steps % n_steps == 0):
+            if (action is not None) and (step % n_steps == 0):
                 self.action_type.act(action)
+
+            step += 1
             self.rate.sleep()
 
     def _update_goal(self):
@@ -376,3 +379,5 @@ class ROSAbstractEnv(AbstractEnv):
     def close(self) -> None:
         rospy.logdebug("Closing RobotGazeboEnvironment")
         rospy.signal_shutdown("Closing RobotGazeboEnvironment")
+        kill_reply = kill_all_screen()
+        print("kill screen reply:", kill_reply)
