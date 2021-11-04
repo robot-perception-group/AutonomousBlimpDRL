@@ -158,7 +158,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "world": "basic",
                     "auto_start_simulation": True,
                     "remote_host_name": "frg07",
-                    "maximum_local_worker": 50,
+                    "maximum_local_worker": 10,
                 },
                 "observation": {
                     "type": "PlanarKinematics",
@@ -180,9 +180,9 @@ class ROSAbstractEnv(AbstractEnv):
                     "DBG_ROS": False,
                 },
                 "seed": 123,
-                "simulation_frequency": 10,
-                "policy_frequency": 2,
-                "duration": 400,
+                "simulation_frequency": 30,
+                "policy_frequency": 6,
+                "duration": 1200,
             }
         )
 
@@ -264,7 +264,9 @@ class ROSAbstractEnv(AbstractEnv):
             else socket.gethostbyname(socket.gethostname())
         )
 
-        time.sleep(int(worker_index))
+        time.sleep(
+            2 * int(worker_index)
+        )  # spawn at different time increase spawn stability
         ros_port = self.config["simulation"]["ros_port"] + worker_index
         gaz_port = self.config["simulation"]["gaz_port"] + worker_index
         host_addr = "http://" + str(ros_ip) + ":"
@@ -379,5 +381,5 @@ class ROSAbstractEnv(AbstractEnv):
     def close(self) -> None:
         rospy.logdebug("Closing RobotGazeboEnvironment")
         rospy.signal_shutdown("Closing RobotGazeboEnvironment")
-        kill_reply = kill_all_screen()
+        kill_reply = kill_all_screen(int(self.config["robot_id"]))
         print("kill screen reply:", kill_reply)

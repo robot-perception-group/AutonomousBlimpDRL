@@ -324,9 +324,9 @@ def get_test_scale_obs_dict_io():
         {
             "z_diff": np.array(50),
             "planar_dist": np.array(150 * np.sqrt(2)),
-            "psi_diff": np.array(0.5*np.pi),
-            "vel_diff": np.array(0.5*11.5),
-            "vel": np.array(0.75*11.5),
+            "psi_diff": np.array(0.5 * np.pi),
+            "vel_diff": np.array(0.5 * 11.5),
+            "vel": np.array(0.75 * 11.5),
         }
     )
     out_list.append(
@@ -342,7 +342,9 @@ def get_test_scale_obs_dict_io():
     return in_list, out_list
 
 
-@pytest.mark.parametrize("idx", [0, 1])
+@pytest.mark.parametrize(
+    "idx", [i for i in range(len(get_test_scale_obs_dict_io()[0]))]
+)
 def test_scale_obs_dict(idx):
     env = ENV(copy.deepcopy(env_kwargs))
     fn = env.observation_type.scale_obs_dict
@@ -396,7 +398,7 @@ def get_test_process_obs_io():
     return in_list, out_list
 
 
-@pytest.mark.parametrize("idx", [0, 1])
+@pytest.mark.parametrize("idx", [i for i in range(len(get_test_process_obs_io()[0]))])
 def test_process_obs(idx):
     env = ENV(copy.deepcopy(env_kwargs))
     fn = env.observation_type.process_obs

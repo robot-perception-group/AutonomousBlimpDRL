@@ -95,16 +95,16 @@ class ROSActionType(ActionType):
             time.sleep(1)
 
             if resume_time > 0:
-                raise ValueError("Unable to establish action connection")
+                raise ValueError("[ Action ] Unable to establish action connection")
 
-            if respawn_time > 3:
+            if respawn_time > 0:
                 rospy.loginfo("[ Action ] Simulation Crashed...resume simulation")
                 reply = resume_simulation(**self.env.config["simulation"])
                 respawn_time = 0
                 resume_time += 1
                 rospy.loginfo("Simulation Resumed:", reply)
 
-            if waiting_time >= 5:
+            if waiting_time >= 10:
                 rospy.loginfo("[ Action ] respawn model...")
                 respawn_model(**self.env.config["simulation"])
                 respawn_time += 1

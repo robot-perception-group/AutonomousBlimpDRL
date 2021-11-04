@@ -37,7 +37,12 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             }
         )
         target_type = "Goal"
-        config["simulation"].update({"target_type": target_type})
+        config["simulation"].update(
+            {
+                "target_type": target_type,
+                "target_position_range": (100, 100, 10, 200),
+            }
+        )
         config["target"].update(
             {
                 "type": target_type,
@@ -46,16 +51,14 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         config.update(
             {
-                "duration": 2000,
-                "simulation_frequency": 50,  # [hz]
-                "policy_frequency": 10,
-                "reward_weights": np.array(
-                    [1, 0.95, 0.05]
-                ),  # success, tracking, action
+                "duration": 1000,
+                "simulation_frequency": 25,  # [hz]
+                "policy_frequency": 5,  # [hz] has to be greater than 5
+                "reward_weights": np.array([1, 0.8, 0.2]),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.20, 0.20, 0.4, 0.20]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
-                "success_threshhold": 10,  # [meters]
+                "success_threshhold": 5,  # [meters]
             }
         )
         return config
@@ -257,7 +260,7 @@ if __name__ == "__main__":
     # 2. in terminal:
     # kernprof -l -v blimp_env/envs/planar_navigate_env.py
 
-    auto_start_simulation = True
+    auto_start_simulation = False
     if auto_start_simulation:
         close_simulation()
 
