@@ -198,6 +198,8 @@ def spawn_simulation_on_different_port(
     wind_speed: float = 1.5,
     position: tuple = (0, 0, 100),
     target_type: str = "Goal",
+    target_position_range: tuple = (100, 100, 10, 200),
+    target_velocity_range: tuple = 8,
     **kwargs,  # pylint: disable=unused-argument
 ) -> dict:
     """start blimp simulator on different ros or gazbo port"""
@@ -222,6 +224,8 @@ def spawn_simulation_on_different_port(
         ros_port=ros_port,
         gaz_port=gaz_port,
         target_type=target_type,
+        position_range=target_position_range,
+        velocity_range=target_velocity_range,
     )
     proc_result = {
         "ros_reply": ros_reply,
@@ -304,14 +308,24 @@ def kill_blimp_screen(robot_id: int) -> Tuple[int]:
     Returns:
         [Tuple[int]]: [status of the script]
     """
-    kill_blimp_reply = subprocess.check_call(
-        f"screen -S BLIMP_{robot_id} -X quit",
-        shell=True,
-    )
-    kill_fw_reply = subprocess.check_call(
-        f"screen -S FW_{robot_id} -X quit",
-        shell=True,
-    )
+    try:
+        kill_fw_reply = subprocess.check_call(
+            f"screen -S FW_{robot_id} -X quit",
+            shell=True,
+        )
+    except:
+        print("fw screen not found, skip kill")
+        kill_fw_reply = 1
+
+    try:
+        kill_blimp_reply = subprocess.check_call(
+            f"screen -S BLIMP_{robot_id} -X quit",
+            shell=True,
+        )
+    except:
+        print("blimp screen not found, skip kill")
+        kill_blimp_reply = 1
+
     return int(kill_blimp_reply), int(kill_fw_reply)
 
 
@@ -324,12 +338,15 @@ def kill_goal_screen(robot_id: int) -> int:
     Returns:
         [int]: [status of the script]
     """
-    return int(
-        subprocess.check_call(
+    try:
+        reply = subprocess.check_call(
             f"screen -S GOAL_{robot_id} -X quit",
             shell=True,
         )
-    )
+    except:
+        print("goal screen not found, skip kill")
+        reply = 1
+    return int(reply)
 
 
 def kill_world_screen(robot_id: int) -> int:
@@ -341,12 +358,35 @@ def kill_world_screen(robot_id: int) -> int:
     Returns:
         [int]: [status of the script]
     """
-    return int(
-        subprocess.check_call(
+    try:
+        reply = subprocess.check_call(
             f"screen -S WORLD_{robot_id} -X quit",
             shell=True,
         )
-    )
+    except:
+        print("world screen not found, skip kill")
+        reply = 1
+    return int(reply)
+
+
+def kill_master_screen(robot_id: int) -> int:
+    """kill ros master screen session
+
+    Args:
+        robot_id ([str]): [robot_id]
+
+    Returns:
+        [int]: [status of the script]
+    """
+    try:
+        reply = subprocess.check_call(
+            f"screen -S ROSMASTER_{robot_id} -X quit",
+            shell=True,
+        )
+    except:
+        print("master screen not found, skip kill")
+        reply = 1
+    return int(reply)
 
 
 def kill_all_screen(robot_id: int) -> dict:
@@ -358,15 +398,17 @@ def kill_all_screen(robot_id: int) -> dict:
     Returns:
         [str]: [status of the script]
     """
-    kill_blimp_reply, kill_fw_reply = kill_blimp_screen(robot_id)
     kill_goal_reply = kill_goal_screen(robot_id)
+    kill_blimp_reply, kill_fw_reply = kill_blimp_screen(robot_id)
     kill_world_reply = kill_world_screen(robot_id)
+    kill_master_reply = kill_master_screen(robot_id)
     time.sleep(15)
     return {
+        "kill_goal_reply": kill_goal_reply,
         "kill_blimp_reply": kill_blimp_reply,
         "kill_fw_reply": kill_fw_reply,
-        "kill_goal_reply": kill_goal_reply,
         "kill_world_reply": kill_world_reply,
+        "kill_master_reply": kill_master_reply,
     }
 
 
@@ -401,11 +443,7 @@ def respawn_goal(
     Returns:
         [type]: [success or not]
     """
-    try:
-        kill_goal_reply = kill_goal_screen(robot_id=robot_id)
-    except ValueError:
-        print("target screen not found, skip kill")
-        kill_goal_reply = 1
+    kill_goal_reply = kill_goal_screen(robot_id=robot_id)
 
     spawn_goal_reply = spawn_goal(
         robot_id=robot_id,

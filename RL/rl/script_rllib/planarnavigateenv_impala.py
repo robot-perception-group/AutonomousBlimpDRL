@@ -16,9 +16,9 @@ AGENT = impala
 AGENT_NAME = "IMPALA"
 exp_name_posfix = "test"
 
-steps = 2  # steps per second
-one_day_ts = 24 * 3600 * steps
-days = 5
+freq = 5  # steps per second
+one_day_ts = 24 * 3600 * freq
+days = 30
 TIMESTEP = int(days * one_day_ts)
 
 parser = argparse.ArgumentParser()
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         "attention_dim": 16,
     }
     config = AGENT.DEFAULT_CONFIG.copy()
-    rollout_fragment_length = 2000
+    rollout_fragment_length = ENV.default_config()["duration"]
     train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {
@@ -123,13 +123,13 @@ if __name__ == "__main__":
             "vtrace_clip_pg_rho_threshold": 1.0,  # convergence speed
             "train_batch_size": train_batch_size,
             "num_sgd_iter": 1,
-            "replay_proportion": 2.0,
-            "replay_buffer_num_slots": 10,
+            "replay_proportion": 0.0,
+            "replay_buffer_num_slots": 0,
             "learner_queue_size": 16,
             "learner_queue_timeout": 1e6,
             "broadcast_interval": 1,
             "grad_clip": 40.0,
-            "lr": 5e-4,
+            "lr": 1e-4,
             "lr_schedule": None,
             "decay": 0.999,
         }
