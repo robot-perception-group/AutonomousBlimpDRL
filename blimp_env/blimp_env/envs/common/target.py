@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import rospy
-from blimp_env.envs.script.blimp_script import respawn_goal
+from blimp_env.envs.script.blimp_script import respawn_target
 from blimp_env.envs.common import utils
 from gym import spaces
 from librepilot.msg import AutopilotInfo
@@ -180,7 +180,7 @@ class Goal(ROSTarget):
 
     def timeout_handle(self):
         rospy.logdebug("[ target ] unable to establish ros connection, respawn...")
-        reply = respawn_goal(**self.env.config["simulation"])
+        reply = respawn_target(**self.env.config["simulation"])
         rospy.logdebug("target respawn:", reply)
         return reply
 

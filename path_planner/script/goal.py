@@ -184,7 +184,7 @@ def generate_goal(x_min, x_max, y_min, y_max, z_min, z_max, v_min, v_max):
     return x, y, z, v, phi, the, psi, q
 
 
-def distance_to_origin_far_enough(position, origin=np.array([100, 100, 100])):
+def distance_to_origin_far_enough(position, origin=np.array([0, 0, 100])):
     dist = np.linalg.norm(position - origin)
     if dist > 30:
         return True

@@ -16,7 +16,7 @@ AGENT = impala
 AGENT_NAME = "IMPALA"
 exp_name_posfix = "test"
 
-freq = 5  # steps per second
+freq = 6  # steps per second
 one_day_ts = 24 * 3600 * freq
 days = 30
 TIMESTEP = int(days * one_day_ts)
@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=10, help="Number of workers to use"
+    "--num_workers", type=int, default=5, help="Number of workers to use"
 )
 
 parser.add_argument(
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         },
         "success_threshhold": 20,
         "tracking_reward_weights": np.array(
-            [0.2, 0.2, 0.4, 0.2]
+            [0.0, 0.0, 1.0, 0.0]
         ),  # z_diff, planar_dist, psi_diff, u_diff
         "reward_weights": np.array([1.0, 1.0, 0.0]),  # success, tracking, action
     }
@@ -104,8 +104,8 @@ if __name__ == "__main__":
         "use_attention": False,
         "attention_dim": 16,
     }
-    config = AGENT.DEFAULT_CONFIG.copy()
-    rollout_fragment_length = ENV.default_config()["duration"]
+    config =AGENT.DEFAULT_CONFIG.copy()
+    rollout_fragment_length = 240
     train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {
@@ -123,25 +123,23 @@ if __name__ == "__main__":
             "vtrace_clip_pg_rho_threshold": 1.0,  # convergence speed
             "train_batch_size": train_batch_size,
             "num_sgd_iter": 1,
-            "replay_proportion": 0.0,
-            "replay_buffer_num_slots": 0,
+            "replay_proportion": 1.0,
+            "replay_buffer_num_slots": 10,
             "learner_queue_size": 16,
             "learner_queue_timeout": 1e6,
             "broadcast_interval": 1,
             "grad_clip": 40.0,
-            "lr": 1e-4,
+            "lr": 5e-4,
             "lr_schedule": None,
-            "decay": 0.999,
+            "decay": 0.99,
         }
     )
     stop = {
         "timesteps_total": args.stop_timesteps,
-        # "episode_reward_mean": args.stop_reward,
     }
 
     print(config)
     close_simulation()
-    # close_simulation_on_marvin()
     results = tune.run(
         AGENT_NAME,
         config=config,
