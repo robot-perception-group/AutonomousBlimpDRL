@@ -51,9 +51,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         config.update(
             {
-                "duration": 1000,
-                "simulation_frequency": 25,  # [hz]
-                "policy_frequency": 5,  # [hz] has to be greater than 5
+                "duration": 1200,
+                "simulation_frequency": 30,  # [hz]
+                "policy_frequency": 6,  # [hz] has to be greater than 5
                 "reward_weights": np.array([1, 0.8, 0.2]),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.20, 0.20, 0.4, 0.20]

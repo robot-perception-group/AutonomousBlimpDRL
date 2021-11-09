@@ -279,7 +279,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         super().__init__(*args, **kwargs)
         self.act_dim = 4
 
-        self.diff_act_scale = np.array([0.1, 0.1, 0.1, 0.04])
+        self.diff_act_scale = np.array([0.1, 0.1, 0.1, 0.04]) 
 
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
@@ -332,6 +332,9 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         # only allow forward servo
         if cur_act[2] > 0:
             cur_act[2] = 0
+        # disable servo
+        cur_act[2] = -1
+
         # only allow foward thrust
         if cur_act[3] < 0:
             cur_act[3] = 0
