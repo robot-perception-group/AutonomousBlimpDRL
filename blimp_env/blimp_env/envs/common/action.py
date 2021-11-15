@@ -269,6 +269,9 @@ class ContinuousAction(ROSActionType):
 class SimpleContinuousDifferentialAction(ContinuousAction):
     """simplified action space by binding action that has similar dynamic effect"""
 
+    DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04]) 
+    ACT_DIM = 4
+
     def __init__(self, *args, **kwargs):
         """action channel
         0: back motor + top fin + bot fin
@@ -277,10 +280,9 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         3: left motor + right motor
         """
         super().__init__(*args, **kwargs)
-        self.act_dim = 4
-
-        self.diff_act_scale = np.array([0.1, 0.1, 0.1, 0.04]) 
-
+        self.act_dim = self.ACT_DIM
+        self.diff_act_scale = self.DIFF_ACT_SCALE
+        
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
 
