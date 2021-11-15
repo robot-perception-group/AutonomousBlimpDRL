@@ -1,6 +1,7 @@
 import argparse
 import datetime
 import os
+import random
 
 from blimp_env.envs import PlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
@@ -11,6 +12,9 @@ from ray import tune
 from ray.rllib.agents import sac
 from ray.tune.registry import register_env
 from ray.rllib.models import ModelCatalog
+from ray.tune.schedulers import PopulationBasedTraining
+from ray.tune import run, sample_from
+
 import numpy as np 
 
 # exp setup
@@ -35,19 +39,26 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
+parser.add_argument("--t_ready", type=int, default=50000)
+parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
+parser.add_argument(
+    "--criteria", type=str,
+    default="timesteps_total")  # "training_iteration", "time_total_s"
 
 
 def env_creator(env_config):
     return ENV(env_config)
 
+# Postprocess the perturbed config to ensure it's still valid used if PBT.
+def explore(config):
+    if config["tau"] > 1:
+        config["tau"] = 1
+    return config
 
 if __name__ == "__main__":
-
     env_name = ENV.__name__
     agent_name = AGENT_NAME
     exp_name = env_name + "_" + agent_name + "_" + exp_name_posfix
-    exp_time = datetime.datetime.now().strftime("%c")
-    exp_path = os.path.join("./logs", exp_name, exp_time)
 
     args = parser.parse_args()
     print(f"Running with following CLI options: {args}")
@@ -70,7 +81,7 @@ if __name__ == "__main__":
         "tracking_reward_weights": np.array(
             [0.0, 0.0, 1.0, 0.0]
         ),  # z_diff, planar_dist, psi_diff, u_diff
-        "reward_weights": np.array([1.0, 1.0, 0.0]),  # success, tracking, action
+        "reward_weights": np.array([0.0, 1.0, 0.0]),  # success, tracking, action
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -86,7 +97,7 @@ if __name__ == "__main__":
     config = AGENT.DEFAULT_CONFIG.copy()
     config.update(
         {
-            "env": "my_env",
+            "env": env_name,
             "env_config": env_config,
             "num_gpus": args.num_gpus,
             "num_workers": args.num_workers,  # parallelism
@@ -95,7 +106,7 @@ if __name__ == "__main__":
             # == AGENT config ==
             "Q_model": Q_model_config,
             "policy_model": policy_model_config,
-            "tau": 5e-3,
+            "tau": sample_from(lambda spec: random.uniform(1e-1, 1e-3)),
             # === Replay buffer ===
             "buffer_size": int(1e6),
             "store_buffer_in_checkpoints": True,
@@ -108,14 +119,30 @@ if __name__ == "__main__":
             },
             "grad_clip": None,
             "learning_starts": 1e3,
-            "rollout_fragment_length": 1,
+            "rollout_fragment_length": sample_from(
+                lambda spec: random.randint(1, 10)),
             "train_batch_size": 256,
-            "target_network_update_freq": 0,
+            "target_network_update_freq": sample_from(
+                lambda spec: random.randint(0, 10)),
         }
     )
     stop = {
         "timesteps_total": args.stop_timesteps,
     }
+
+    pbt = PopulationBasedTraining(
+        time_attr=args.criteria,
+        metric="episode_reward_mean",
+        mode="max",
+        perturbation_interval=args.t_ready,
+        resample_probability=args.perturb,
+        quantile_fraction=args.perturb,  # copy bottom % with top %
+        hyperparam_mutations={
+            "tau": lambda: random.uniform(1e-1, 1e-3),
+            "rollout_fragment_length": lambda: random.randint(1, 100),
+            "target_network_update_freq": lambda: random.randint(0, 100),
+        },
+        custom_explore_fn=explore)
 
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
@@ -123,13 +150,14 @@ if __name__ == "__main__":
     results = tune.run(
         AGENT_NAME,
         name=exp_name,
+        scheduler=pbt,
         config=config,
         stop=stop,
-        # local_dir=exp_path,
         checkpoint_freq=5000,
         checkpoint_at_end=True,
         reuse_actors=False,
-        max_failure=5,
+        max_failures=5,
         restore=restore,
+        verbose=1,
     )
     ray.shutdown()

@@ -16,7 +16,7 @@ AGENT = impala
 AGENT_NAME = "IMPALA"
 exp_name_posfix = "test"
 
-freq = 6  # steps per second
+freq = 30  # steps per second
 one_day_ts = 24 * 3600 * freq
 days = 30
 TIMESTEP = int(days * one_day_ts)
@@ -59,8 +59,6 @@ def env_creator(env_config):
 
 
 if __name__ == "__main__":
-    register_env("my_env", env_creator)
-
     env_name = ENV.__name__
     agent_name = AGENT_NAME
     exp_name = env_name + "_" + agent_name + "_" + exp_name_posfix
@@ -71,6 +69,7 @@ if __name__ == "__main__":
     print(f"Running with following CLI options: {args}")
     ray.init(local_mode=False)
 
+    register_env(env_name, env_creator)
     env_config = {
         "seed": 123,
         "simulation": {
@@ -105,7 +104,7 @@ if __name__ == "__main__":
         "attention_dim": 16,
     }
     config =AGENT.DEFAULT_CONFIG.copy()
-    rollout_fragment_length = 240
+    rollout_fragment_length = 1200
     train_batch_size = args.num_workers * rollout_fragment_length
     config.update(
         {

@@ -53,7 +53,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             {
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
-                "policy_frequency": 6,  # [hz] has to be greater than 5
+                "policy_frequency": 6,  # [hz] has to be greater than 20 to overwrite backup controller
                 "reward_weights": np.array([1, 0.8, 0.2]),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.20, 0.20, 0.4, 0.20]
@@ -237,7 +237,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """
         time = False
         if self.config["duration"] is not None:
-            time = self.steps >= int(self.config["duration"])
+            time = self.steps >= int(self.config["duration"])-1
 
         success_reward = self.compute_success_rew(
             obs_info["position"], self.goal["position"]
