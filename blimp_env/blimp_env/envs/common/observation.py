@@ -187,9 +187,18 @@ class PlanarKinematicsObservation(ROSObservation):
         self.obs_name = self.OBS
         self.obs_dim = 9
         self.range_dict = self.OBS_range
-
-    # @profile
+    
     def observe(self) -> np.ndarray:
+        obs, obs_dict = self._observe()
+        while np.isnan(obs).any():
+            print("[ observation ] obs corrupted by NA")
+            reply = respawn_model(**self.env.config["simulation"])
+            print("[ observation ] respawn model status ",reply)
+            obs, obs_dict = self._observe()
+        return obs, obs_dict
+
+
+    def _observe(self) -> np.ndarray:
         obs_dict = {
             "position": self.pos_data,
             "velocity": self.vel_data,

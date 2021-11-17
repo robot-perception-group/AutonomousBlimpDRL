@@ -3,19 +3,18 @@ import datetime
 import os
 import random
 
+import numpy as np
+import ray
 from blimp_env.envs import PlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
-from rl.rllib_script.agent.model import TorchBatchNormModel
-
-import ray
 from ray import tune
 from ray.rllib.agents import sac
-from ray.tune.registry import register_env
 from ray.rllib.models import ModelCatalog
-from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune import run, sample_from
-
-import numpy as np 
+from ray.tune.registry import register_env
+from ray.tune.schedulers import PopulationBasedTraining
+from ray.tune.schedulers.pb2 import PB2
+from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
 ENV = PlanarNavigateEnv
@@ -39,7 +38,7 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=50000)
+parser.add_argument("--t_ready", type=int, default=12000)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str,
@@ -48,12 +47,6 @@ parser.add_argument(
 
 def env_creator(env_config):
     return ENV(env_config)
-
-# Postprocess the perturbed config to ensure it's still valid used if PBT.
-def explore(config):
-    if config["tau"] > 1:
-        config["tau"] = 1
-    return config
 
 if __name__ == "__main__":
     env_name = ENV.__name__
@@ -77,7 +70,7 @@ if __name__ == "__main__":
         "observaion": {
             "noise_stdv": 0.0,
         },
-        "success_threshhold": 20,
+        "success_threshhold": 1,
         "tracking_reward_weights": np.array(
             [0.0, 0.0, 1.0, 0.0]
         ),  # z_diff, planar_dist, psi_diff, u_diff
@@ -113,9 +106,9 @@ if __name__ == "__main__":
             "prioritized_replay": True,
             # === Optimization ===
             "optimization": {
-                "actor_learning_rate": 1e-4,
-                "critic_learning_rate": 1e-4,
-                "entropy_learning_rate": 1e-4,
+                "actor_learning_rate": 2e-4,
+                "critic_learning_rate": 2e-4,
+                "entropy_learning_rate": 2e-4,
             },
             "grad_clip": None,
             "learning_starts": 1e3,
@@ -130,19 +123,18 @@ if __name__ == "__main__":
         "timesteps_total": args.stop_timesteps,
     }
 
-    pbt = PopulationBasedTraining(
+    pb2 = PB2(
         time_attr=args.criteria,
         metric="episode_reward_mean",
         mode="max",
         perturbation_interval=args.t_ready,
-        resample_probability=args.perturb,
         quantile_fraction=args.perturb,  # copy bottom % with top %
-        hyperparam_mutations={
-            "tau": lambda: random.uniform(1e-1, 1e-3),
-            "rollout_fragment_length": lambda: random.randint(1, 100),
-            "target_network_update_freq": lambda: random.randint(0, 100),
-        },
-        custom_explore_fn=explore)
+        # Specifies the hyperparam search space
+        hyperparam_bounds={
+            "tau": [1e-1, 1e-3],
+            "rollout_fragment_length": [1, 100],
+            "target_network_update_freq": [0, 100],
+        })
 
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
@@ -150,7 +142,7 @@ if __name__ == "__main__":
     results = tune.run(
         AGENT_NAME,
         name=exp_name,
-        scheduler=pbt,
+        scheduler=pb2,
         config=config,
         stop=stop,
         checkpoint_freq=5000,

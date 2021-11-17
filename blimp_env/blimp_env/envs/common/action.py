@@ -272,17 +272,20 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
     DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04]) 
     ACT_DIM = 4
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, env: "AbstractEnv", forward_servo:bool=True, disable_servo:bool=True, **kwargs:dict)->None:
         """action channel
         0: back motor + top fin + bot fin
         1: left fin + right fin
         2: servo
         3: left motor + right motor
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(env,**kwargs)
         self.act_dim = self.ACT_DIM
         self.diff_act_scale = self.DIFF_ACT_SCALE
-        
+
+        self.forward_servo=forward_servo
+        self.disable_servo=disable_servo
+
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
 
@@ -331,15 +334,15 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         """
         cur_act += self.diff_act_scale * action
         cur_act = np.clip(cur_act, -1, 1)
-        # only allow forward servo
-        if cur_act[2] > 0:
+        
+        if cur_act[2] > 0 and self.forward_servo: # only allow forward servo
             cur_act[2] = 0
-        # disable servo
-        cur_act[2] = -1
-
-        # only allow foward thrust
-        if cur_act[3] < 0:
+        if self.disable_servo:
+            cur_act[2] = -1
+        
+        if cur_act[3] < 0: # only allow foward thrust
             cur_act[3] = 0
+
         return cur_act
 
     def process_actuator_state(

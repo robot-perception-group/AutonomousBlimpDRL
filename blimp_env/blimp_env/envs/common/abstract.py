@@ -144,6 +144,8 @@ class ROSAbstractEnv(AbstractEnv):
         config.update(
             {
                 "robot_id": "0",
+                "ros_port": 11311,
+                "gaz_port": 11351,
                 "name_space": "machine_",
                 "DBG": False,
                 "simulation": {
@@ -175,8 +177,11 @@ class ROSAbstractEnv(AbstractEnv):
                     "DBG_ACT": False,
                 },
                 "target": {
-                    "type": "Goal",
+                    "type": "InteractiveGoal",
                     "target_name_space": "goal_",
+                    "robot_id": "0",
+                    "ros_port": 11311,
+                    "gaz_port": 11351,
                     "DBG_ROS": False,
                 },
                 "seed": 123,
@@ -241,6 +246,8 @@ class ROSAbstractEnv(AbstractEnv):
             self.config["robot_id"]
         )
         self.config = update_dict(self.config, "robot_id", str(self.config["robot_id"]))
+        self.config = update_dict(self.config, "ros_port", int(self.config["ros_port"]))
+        self.config = update_dict(self.config, "gaz_port", int(self.config["gaz_port"]))
         self.config = update_dict(self.config, "name_space", name_space)
         self.config = update_dict(self.config, "target_name_space", target_name_space)
 
