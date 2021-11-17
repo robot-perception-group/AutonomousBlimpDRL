@@ -442,6 +442,8 @@ def test_process_action(idx):
     env = ENV(copy.deepcopy(env_kwargs))
     fn = env.action_type.process_action
 
+    env.action_type.forward_servo=True
+    env.action_type.disable_servo=False
     input, expect = get_test_process_action_io()
     result = fn(
         *input[idx],

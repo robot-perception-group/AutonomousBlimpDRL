@@ -10,6 +10,7 @@ import rospy
 from blimp_env.envs.common.abstract import ROSAbstractEnv
 from blimp_env.envs.common.action import Action
 from geometry_msgs.msg import Point, Quaternion
+from blimp_env.envs.script.blimp_script import respawn_model
 import line_profiler
 
 profile = line_profiler.LineProfiler()
@@ -34,19 +35,14 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             {
                 "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
-            }
-        )
-        target_type = "Goal"
-        config["simulation"].update(
-            {
-                "target_type": target_type,
-                "target_position_range": (100, 100, 10, 200),
+                "disable_servo": True,
             }
         )
         config["target"].update(
             {
-                "type": target_type,
+                "type": "RandomGoal",
                 "target_name_space": "goal_",
+                "new_target_every_ts": 1200,
             }
         )
         config.update(

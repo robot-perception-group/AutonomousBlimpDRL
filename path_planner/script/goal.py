@@ -235,8 +235,7 @@ if __name__ == "__main__":
     )
 
     times = 0
-    # while not rospy.is_shutdown():
-    while True:
+    while not rospy.is_shutdown():
         if times % 180 == 0:
             x, y, z, v, phi, the, psi, q = sample_new_goal(
                 x_min, x_max, y_min, y_max, z_min, z_max, v_min, v_max

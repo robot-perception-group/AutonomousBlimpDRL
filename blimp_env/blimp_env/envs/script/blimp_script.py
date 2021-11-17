@@ -61,6 +61,7 @@ def spawn_goal(
     gaz_port: int = DEFAULT_GAZPORT,
     target_position_range: tuple = (100, 100, 10, 200),
     target_velocity_range: float = 8,
+    **kwargs,
 ) -> int:
     """spawn goal type target"""
     range_x, range_y, min_z, max_z = target_position_range
@@ -99,36 +100,31 @@ def spawn_target(
     robot_id: int = 0,
     ros_port: int = DEFAULT_ROSPORT,
     gaz_port: int = DEFAULT_GAZPORT,
-    target_type: str = "Goal",
-    target_position_range: tuple = (100, 100, 10, 200),
-    target_velocity_range: float = 8,
+    target_type: str = "InteractiveGoal",
     **kwargs,
 ) -> int:
     """spawn target"""
-    if target_type == "Path":
-        call_reply = spawn_path(
-            robot_id=robot_id,
-            ros_port=ros_port,
-            gaz_port=gaz_port,
-        )
+    if target_type == "InteractiveGoal":
+        spawn_fn = spawn_goal
+    elif target_type == "RandomGoal":
+        spawn_fn = None
+    elif target_type == "Path":
+        spawn_fn = spawn_path
     elif target_type == "Square":
-        call_reply = spawn_square(
-            robot_id=robot_id,
-            ros_port=ros_port,
-            gaz_port=gaz_port,
-        )
-    elif target_type == "Goal":
-        call_reply = spawn_goal(
-            robot_id=robot_id,
-            ros_port=ros_port,
-            gaz_port=gaz_port,
-            target_position_range=target_position_range,
-            target_velocity_range=target_velocity_range,
-        )
+        spawn_fn = spawn_square
     else:
         raise ValueError("Unknown target type")
 
-    return int(call_reply)
+    if spawn_fn is not None:
+        spawn_target_reply = spawn_fn(
+            robot_id=robot_id,
+            ros_port=ros_port,
+            gaz_port=gaz_port,
+            **kwargs
+        )
+        return int(spawn_target_reply)
+    else:
+        return None
 
 
 def spawn_ros_master(
@@ -144,48 +140,6 @@ def spawn_ros_master(
 
 # ============ Composite Spawn Script ============#
 
-
-def spawn_simulation(
-    n_env: int = 1,
-    gui: bool = True,
-    world: str = "basic",
-    target_type: str = "Goal",
-) -> dict:
-    """start one or multiple blimp in one gazebo environment"""
-    world_reply = spawn_world(world=world, gui=gui)
-    for robot_id in range(n_env):
-        blimp_reply = spawn_blimp(
-            robot_id=robot_id,
-        )
-        target_reply = spawn_target(robot_id=robot_id, target_type=target_type)
-
-    return {
-        "world_reply": world_reply,
-        "blimp_reply": blimp_reply,
-        "target_reply": target_reply,
-    }
-
-
-def spawn_parallel_simulation(
-    n_envs: int = 1,
-    gui: bool = True,
-    world: str = "basic",
-) -> dict:
-    """start blimp simulator on same ros port but different gazebo port"""
-    for robot_id in range(n_envs):
-        blimp_reply = spawn_simulation_on_different_port(
-            robot_id=robot_id,
-            gui=gui,
-            world=world,
-            ros_port=DEFAULT_ROSPORT + robot_id,
-            gaz_port=DEFAULT_GAZPORT + robot_id,
-        )
-
-    return {
-        "blimp_reply": blimp_reply,
-    }
-
-
 def spawn_simulation_on_different_port(
     robot_id: int = 0,
     gui: bool = True,
@@ -197,9 +151,6 @@ def spawn_simulation_on_different_port(
     wind_direction: tuple = (1, 0),
     wind_speed: float = 1.5,
     position: tuple = (0, 0, 100),
-    target_type: str = "Goal",
-    target_position_range: tuple = (100, 100, 10, 200),
-    target_velocity_range: tuple = 8,
     **kwargs,  # pylint: disable=unused-argument
 ) -> dict:
     """start blimp simulator on different ros or gazbo port"""
@@ -219,19 +170,10 @@ def spawn_simulation_on_different_port(
         wind_speed=wind_speed,
         position=position,
     )
-    target_reply = spawn_target(
-        robot_id=robot_id,
-        ros_port=ros_port,
-        gaz_port=gaz_port,
-        target_type=target_type,
-        target_position_range=target_position_range,
-        target_velocity_range=target_velocity_range,
-    )
     proc_result = {
         "ros_reply": ros_reply,
         "world_reply": world_reply,
         "blimp_reply": blimp_reply,
-        "target_reply": target_reply,
     }
     print("spawn process result:", proc_result)
     return proc_result
@@ -241,7 +183,7 @@ def spawn_simulation_on_marvin(
     robot_id: int = 0,
     gui: bool = False,
     world: str = "basic",
-    target_type: str = "Goal",
+    target_type: str = "InteractiveGoal",
     ros_port: int = DEFAULT_ROSPORT,
     gaz_port: int = DEFAULT_GAZPORT,
     host_id: str = "yliu2@frg07.ifr.uni-stuttgart.de",
@@ -267,28 +209,6 @@ def close_simulation_on_marvin(
     exe = f"ssh {host_id} -L {host_ip} "
     msg = exe + cmd + args
     os.system(msg)
-
-
-def spawn_simulation_for_testing(
-    n_env: int = 1,
-    gui: bool = False,
-    world: str = "basic",
-    enable_wind: bool = False,
-) -> dict:
-    """only for testing purpose"""
-    close_simulation()
-    world_reply = spawn_world(world=world, gui=gui)
-    for robot_id in range(n_env):
-        blimp_reply = spawn_blimp(robot_id=robot_id, enable_wind=enable_wind)
-        path_reply = spawn_path(robot_id=robot_id)
-        goal_reply = spawn_goal(robot_id=robot_id)
-
-    return {
-        "world_reply": world_reply,
-        "blimp_reply": blimp_reply,
-        "path_reply": path_reply,
-        "goal_reply": goal_reply,
-    }
 
 
 # ============ Kill Script ============#
@@ -428,42 +348,17 @@ def respawn_target(
     robot_id: int = 0,
     ros_port: int = DEFAULT_ROSPORT,
     gaz_port: int = DEFAULT_GAZPORT,
-    target_type: str = "Goal",
-    target_position_range: tuple = (100, 100, 10, 200),
-    target_velocity_range: float = 8,
+    target_type: str = "InteractiveGoal",
     **kwargs,
 ) -> int:
-    """spawn target"""
-    if target_type == "Path":
-        kill_goal_reply = kill_goal_screen(robot_id=robot_id)
-        spawn_target_reply = spawn_path(
-            robot_id=robot_id,
-            ros_port=ros_port,
-            gaz_port=gaz_port,
-        )
-    elif target_type == "Square":
-        kill_goal_reply = kill_goal_screen(robot_id=robot_id)
-        spawn_target_reply = spawn_square(
-            robot_id=robot_id,
-            ros_port=ros_port,  
-            gaz_port=gaz_port,
-        )
-    elif target_type == "Goal":
-        kill_goal_reply = kill_goal_screen(robot_id=robot_id)
-        spawn_target_reply = spawn_goal(
-            robot_id=robot_id,
-            ros_port=ros_port,
-            gaz_port=gaz_port,
-            target_position_range=target_position_range,
-            target_velocity_range=target_velocity_range,
-        )
-    else:
-        raise ValueError("Unknown target type")
-
-    return {
-        "kill_goal_reply": kill_goal_reply,
-        "spawn_target_reply": spawn_target_reply,
-    }
+    kill_reply=kill_goal_screen(robot_id=robot_id)
+    spawn_target_reply=spawn_target(robot_id=robot_id,
+    ros_port=ros_port,
+    gaz_port=gaz_port,
+    target_type=target_type,
+    **kwargs,
+    )
+    return {"kill_reply": kill_reply, "spawn_target_reply":spawn_target_reply}
 
 def respawn_model(
     robot_id: int = 0,
