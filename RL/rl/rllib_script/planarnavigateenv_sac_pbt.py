@@ -24,7 +24,7 @@ exp_name_posfix = "test"
 
 ts = 6
 one_day_ts = 24 * 3600 * ts
-days = 30
+days = 20
 TIMESTEP = int(days * one_day_ts)
 
 restore=None
@@ -38,7 +38,7 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=12000)
+parser.add_argument("--t_ready", type=int, default=30000)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str,
@@ -96,22 +96,26 @@ if __name__ == "__main__":
             "num_workers": args.num_workers,  # parallelism
             "num_envs_per_worker": 1,
             "framework": "torch",
-            # == AGENT config ==
+            # == Model ==
             "Q_model": Q_model_config,
             "policy_model": policy_model_config,
-            "tau": sample_from(lambda spec: random.uniform(1e-1, 1e-3)),
+            # == Learning ==
+            "tau": 5e-3,
+            "n_step": 1,
+            "timesteps_per_iteration": 1200, # 100
             # === Replay buffer ===
             "buffer_size": int(1e6),
             "store_buffer_in_checkpoints": True,
             "prioritized_replay": True,
             # === Optimization ===
             "optimization": {
-                "actor_learning_rate": 2e-4,
-                "critic_learning_rate": 2e-4,
-                "entropy_learning_rate": 2e-4,
+                "actor_learning_rate": 1e-4, # 3e-4
+                "critic_learning_rate": 1e-4, # 3e-4
+                "entropy_learning_rate": 1e-4, # 3e-4
             },
-            "grad_clip": None,
-            "learning_starts": 1e3,
+            "grad_clip": sample_from(
+                lambda spec: random.randint(1, 40)),
+            "learning_starts": TIMESTEP*0.1,
             "rollout_fragment_length": sample_from(
                 lambda spec: random.randint(1, 10)),
             "train_batch_size": 256,
@@ -131,7 +135,7 @@ if __name__ == "__main__":
         quantile_fraction=args.perturb,  # copy bottom % with top %
         # Specifies the hyperparam search space
         hyperparam_bounds={
-            "tau": [1e-1, 1e-3],
+            "grad_clip": [1, 40], 
             "rollout_fragment_length": [1, 100],
             "target_network_update_freq": [0, 100],
         })
