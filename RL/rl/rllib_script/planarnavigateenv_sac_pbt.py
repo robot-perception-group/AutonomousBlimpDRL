@@ -38,7 +38,7 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=30000)
+parser.add_argument("--t_ready", type=int, default=2000)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str,
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         "tracking_reward_weights": np.array(
             [0.0, 0.0, 1.0, 0.0]
         ),  # z_diff, planar_dist, psi_diff, u_diff
-        "reward_weights": np.array([0.0, 1.0, 0.0]),  # success, tracking, action
+        "reward_weights": np.array([0.0, 0.9, 0.0, 0.1]),  # success, tracking, action, psi_bonus
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -101,7 +101,6 @@ if __name__ == "__main__":
             "policy_model": policy_model_config,
             # == Learning ==
             "tau": 5e-3,
-            "n_step": 1,
             "timesteps_per_iteration": 1200, # 100
             # === Replay buffer ===
             "buffer_size": int(1e6),
@@ -113,8 +112,7 @@ if __name__ == "__main__":
                 "critic_learning_rate": 1e-4, # 3e-4
                 "entropy_learning_rate": 1e-4, # 3e-4
             },
-            "grad_clip": sample_from(
-                lambda spec: random.randint(1, 40)),
+            "grad_clip": 5,
             "learning_starts": TIMESTEP*0.1,
             "rollout_fragment_length": sample_from(
                 lambda spec: random.randint(1, 10)),
@@ -135,9 +133,8 @@ if __name__ == "__main__":
         quantile_fraction=args.perturb,  # copy bottom % with top %
         # Specifies the hyperparam search space
         hyperparam_bounds={
-            "grad_clip": [1, 40], 
-            "rollout_fragment_length": [1, 100],
-            "target_network_update_freq": [0, 100],
+            "rollout_fragment_length": [1, 10],
+            "target_network_update_freq": [0, 10],
         })
 
     print(config)
@@ -149,7 +146,7 @@ if __name__ == "__main__":
         scheduler=pb2,
         config=config,
         stop=stop,
-        checkpoint_freq=5000,
+        checkpoint_freq=2000,
         checkpoint_at_end=True,
         reuse_actors=False,
         max_failures=5,

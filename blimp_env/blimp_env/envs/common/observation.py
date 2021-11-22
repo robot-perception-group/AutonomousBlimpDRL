@@ -168,13 +168,14 @@ class ROSObservation(ObservationType):
 class PlanarKinematicsObservation(ROSObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "action"]
+    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "psi_vel","action"]
     OBS_range = {
         "z_diff": [-100, 100],
         "planar_dist": [0, 200 * np.sqrt(2)],
         "psi_diff": [-np.pi, np.pi],
         "vel_diff": [-11.5, 11.5],
         "vel": [0, 11.5],
+        "psi_vel": [-15, 15],
     }
 
     def __init__(
@@ -185,7 +186,7 @@ class PlanarKinematicsObservation(ROSObservation):
         self.scale_obs = scale_obs
 
         self.obs_name = self.OBS
-        self.obs_dim = 9
+        self.obs_dim = 10
         self.range_dict = self.OBS_range
     
     def observe(self) -> np.ndarray:
@@ -242,6 +243,7 @@ class PlanarKinematicsObservation(ROSObservation):
             "psi_diff": psi_diff,
             "vel_diff": vel - goal_vel,
             "vel": vel,
+            "psi_vel": obs_dict["angular_velocity"][2],
         }
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
