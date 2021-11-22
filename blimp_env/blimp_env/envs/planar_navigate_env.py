@@ -50,9 +50,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 6,  # [hz] has to be greater than 5 to overwrite backup controller
-                "reward_weights": np.array([1, 0.8, 0.2]),  # success, tracking, action
+                "reward_weights": np.array([1, 0.7, 0.2, 0.1]),  # success, tracking, action, psi_bonus
                 "tracking_reward_weights": np.array(
-                    [0.20, 0.20, 0.4, 0.20]
+                    [0.25, 0.25, 0.25, 0.25]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
                 "success_threshhold": 5,  # [meters]
             }
@@ -63,6 +63,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         super()._create_pubs_subs()
         self.rew_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_reward", Quaternion, queue_size=1
+        )
+        self.rew_psi_bonus_rviz_pub = rospy.Publisher(
+            self.config["name_space"] + "/rviz_reward_psi_bonus", Point, queue_size=1
         )
         self.state_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_state", Quaternion, queue_size=1
@@ -78,6 +81,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         self.ang_diff_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_ang_diff", Point, queue_size=1
+        )
+        self.ang_vel_rviz_pub = rospy.Publisher(
+            self.config["name_space"] + "/rviz_ang_vel", Point, queue_size=1
         )
         self.act_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_act", Quaternion, queue_size=1
@@ -130,7 +136,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         obs_info = info["obs_info"]
         proc_info = obs_info["proc_dict"]
 
-        self.rew_rviz_pub.publish(Quaternion(*info["reward_info"]))
+        self.rew_rviz_pub.publish(Quaternion(*info["reward_info"]["rew_info"]))
+        self.rew_psi_bonus_rviz_pub.publish(Point(*info["reward_info"]["psi_bonus_info"]))
         self.state_rviz_pub.publish(
             Quaternion(
                 proc_info["planar_dist"],
@@ -149,6 +156,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         self.ang_rviz_pub.publish(Point(*obs_info["angle"]))
         self.ang_diff_rviz_pub.publish(Point(0, 0, proc_info["psi_diff"]))
+        self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["psi_vel"]))
         self.act_rviz_pub.publish(Quaternion(*info["act"]))
 
         self.pos_cmd_pub.publish(Point(*self.goal["position"]))
@@ -181,7 +189,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         action_reward: penalty for motor use
 
         Args:
-            obs (np.array): ("z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "action")
+            obs (np.array): ("z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "psi_vel" "action")
             act (np.array): agent action [-1,1] with size (4,)
             obs_info (dict): contain all information of a step
 
@@ -194,16 +202,23 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         success_reward = self.compute_success_rew(
             obs_info["position"], self.goal["position"]
         )
-        obs[1] = (obs[1] + 1) / 2  # dist -1 is minimum, +1 to use -abs()
+        obs[1] = (obs[1] + 1) / 2  # dist -1 should have max reward
         tracking_reward = np.dot(track_weights, -np.abs(obs[0:4]))
         action_reward = self.action_type.action_rew()
 
+        psi_diff, psi_vel, psi_acc = obs[2], obs[5], -obs[6]
+        psi_sign_bonus = 0.5*np.abs(psi_diff)*(np.sign(psi_diff)*(0.7*np.sign(psi_vel)+0.3*np.sign(psi_acc))-1)
+        # psi_vel_bonus = (np.abs(psi_diff)-1)*np.abs(psi_vel)
+        psi_bonus = psi_sign_bonus
+
         reward = np.dot(
             reward_weights,
-            (success_reward, tracking_reward, action_reward),
+            (success_reward, tracking_reward, action_reward, psi_bonus),
         )
         reward = np.clip(reward, -1, 1)
-        reward_info = (reward, success_reward, tracking_reward, action_reward)
+        rew_info = (reward, success_reward, tracking_reward, action_reward)
+        psi_bonus_info = (psi_bonus, psi_sign_bonus, 0)
+        reward_info = {"rew_info": rew_info, "psi_bonus_info": psi_bonus_info}
 
         return reward, reward_info
 
@@ -286,7 +301,7 @@ if __name__ == "__main__":
         env.reset()
         for _ in range(1000):
             action = env.action_space.sample()
-            action = np.array([0, 0, 0, 0])
+            action = np.array([-0.1, 0, 0, 0]) # [yaw, pitch, servo, thrust]
             obs, reward, terminal, info = env.step(action)
 
         GazeboConnection().unpause_sim()
