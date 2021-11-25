@@ -272,7 +272,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
     DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04]) 
     ACT_DIM = 4
 
-    def __init__(self, env: "AbstractEnv", forward_servo:bool=True, disable_servo:bool=True, **kwargs:dict)->None:
+    def __init__(self, env: "AbstractEnv", disable_servo:bool=False, max_servo:float=-0.4 ,max_thrust:float=0.6,**kwargs:dict)->None:
         """action channel
         0: back motor + top fin + bot fin
         1: left fin + right fin
@@ -283,8 +283,9 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         self.act_dim = self.ACT_DIM
         self.diff_act_scale = self.DIFF_ACT_SCALE
 
-        self.forward_servo=forward_servo
         self.disable_servo=disable_servo
+        self.max_servo=max_servo
+        self.max_thrust=max_thrust
 
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
@@ -335,13 +336,12 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         cur_act += self.diff_act_scale * action
         cur_act = np.clip(cur_act, -1, 1)
         
-        if cur_act[2] > 0 and self.forward_servo: # only allow forward servo
-            cur_act[2] = 0
+        if cur_act[2] > self.max_servo: # only allow forward servo
+            cur_act[2] = self.max_servo
         if self.disable_servo:
             cur_act[2] = -1
         
-        if cur_act[3] < 0: # only allow foward thrust
-            cur_act[3] = 0
+        cur_act[3] = np.clip(cur_act[3], 0, self.max_thrust) # only allow foward thrust and 50% max thrust
 
         return cur_act
 

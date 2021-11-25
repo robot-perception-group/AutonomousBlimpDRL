@@ -53,7 +53,7 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#000000</custom_color>
+                                <custom_color>#204a87</custom_color>
                                 <type>1</type>
                             </color>
                             <data>
@@ -104,7 +104,7 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#75507b</custom_color>
+                                <custom_color>#3465a4</custom_color>
                                 <type>1</type>
                             </color>
                             <data>
@@ -114,7 +114,7 @@
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
-                                <pen_style>1</pen_style>
+                                <pen_style>2</pen_style>
                                 <pen_width>3</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
@@ -155,7 +155,7 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#3465a4</custom_color>
+                                <custom_color>#75507b</custom_color>
                                 <type>1</type>
                             </color>
                             <data>
@@ -165,7 +165,7 @@
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
-                                <pen_style>1</pen_style>
+                                <pen_style>2</pen_style>
                                 <pen_width>3</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
@@ -216,7 +216,7 @@
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
-                                <pen_style>1</pen_style>
+                                <pen_style>3</pen_style>
                                 <pen_width>3</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
@@ -257,7 +257,7 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#888a85</custom_color>
+                                <custom_color>#a40000</custom_color>
                                 <type>1</type>
                             </color>
                             <data>
@@ -308,6 +308,57 @@
                                 </y_axis>
                             </axes>
                             <color>
+                                <custom_color>#73d216</custom_color>
+                                <type>1</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>3</pen_style>
+                                <pen_width>3</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>s</title>
+                        </curve_5>
+                        <curve_6>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>z</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </y_axis>
+                            </axes>
+                            <color>
                                 <custom_color>#4e9a06</custom_color>
                                 <type>1</type>
                             </color>
@@ -324,11 +375,11 @@
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
                                 <sticks_orientation>2</sticks_orientation>
-                                <type>0</type>
+                                <type>2</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>s</title>
-                        </curve_5>
+                            <title>s_cmd</title>
+                        </curve_6>
                     </curves>
                     <legend>
                         <visible>true</visible>

@@ -150,7 +150,7 @@ class RandomGoal(TargetType):
         self.x_range = [-105, 105]
         self.y_range = [-105, 105]
         self.z_range = [-5, -210]
-        self.v_range = [0, 8]
+        self.v_range = [1, 8]
 
         self._pub_and_sub = False
         self._create_pub_and_sub()
