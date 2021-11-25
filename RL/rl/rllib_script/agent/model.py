@@ -26,7 +26,7 @@ class TorchBatchNormModel(TorchModelV2, nn.Module):
 
 
         # Create layers 0 to second-last.
-        for size in [64,64]:
+        for size in [128,128]:
             layers.append(
                 SlimFC(
                     in_size=prev_layer_size,

@@ -261,6 +261,119 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         return super().close()
 
 
+class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
+    @classmethod
+    def default_config(cls) -> dict:
+        config = super().default_config()
+        config["observation"].update(
+            {
+                "type": "PlanarKinematics",
+                "noise_stdv": 0.02,
+                "scale_obs": True,
+            }
+        )
+        config["action"].update(
+            {
+                "type": "SimpleContinuousDifferentialAction",
+                "act_noise_stdv": 0.05,
+                "disable_servo": False,
+            }
+        )
+        config["target"].update(
+            {
+                "type": "RandomGoal",
+                "target_name_space": "goal_",
+                "new_target_every_ts": 1200,
+            }
+        )
+        config.update(
+            {
+                "duration": 1200,
+                "simulation_frequency": 30,  # [hz]
+                "policy_frequency": 6,  # [hz] has to be greater than 5 to overwrite backup controller
+                "reward_weights": np.array([1, 0.7, 0.2, 0.1]),  # success, tracking, action, psi_bonus
+                "tracking_reward_weights": np.array(
+                    [0.25, 0.25, 0.25, 0.25]
+                ),  # z_diff, planar_dist, psi_diff, vel_diff
+                "success_threshhold": 5,  # [meters]
+            }
+        )
+        return config
+
+    def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
+        super().__init__(config=config)
+
+        self.delta_t=0.01
+        self.psi_err_i, self.alt_err_i, self.vel_err_i = 0, 0, 0
+        self.prev_psi, self.prev_alt, self.prev_vel = 0, 0, 0
+
+    @profile
+    def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
+        """[perform a step action and observe result]
+
+        Args:
+            action (Action): action from the agent [-1,1] with size (4,)
+
+        Returns:
+            Tuple[Observation, float, bool, dict]:
+                obs: np.array [-1,1] with size (9,),
+                reward: scalar,
+                terminal: bool,
+                info: dictionary of all the step info,
+        """
+        residual_act = self.residual_ctrl()
+        joint_act = 0.5*action+0.5*residual_act
+        self._simulate(joint_act)
+        obs, obs_info = self.observation_type.observe()
+        reward, reward_info = self._reward(obs, joint_act, obs_info)
+        terminal = self._is_terminal(obs_info)
+        info = {
+            "step": self.steps,
+            "obs": obs,
+            "obs_info": obs_info,
+            "act": action,
+            "residual_act": residual_act,
+            "joint_act": joint_act,
+            "reward": reward,
+            "reward_info": reward_info,
+            "terminal": terminal,
+        }
+
+        self._update_goal()
+        self._step_info(info)
+
+        return obs, reward, terminal, info
+    
+    def residual_ctrl(self):
+        """      
+        use PID controller to generate a residual signal
+        """
+        obs, _ = self.observation_type.observe()
+
+        psi_ctrl, self.psi_err_i, self.prev_psi = self.pid_ctrl(-obs[2], self.psi_err_i, self.prev_psi, np.array([1,.0,.5]))
+        alt_ctrl, self.alt_err_i, self.prev_alt = self.pid_ctrl(obs[0], self.alt_err_i, self.prev_alt)
+        vel_ctrl, self.vel_err_i, self.prev_vel = self.pid_ctrl(-obs[3], self.vel_err_i, self.prev_vel)
+        ser_ctrl = 0
+        
+        residual_act = np.array([psi_ctrl, alt_ctrl, ser_ctrl, vel_ctrl])
+        residual_act = np.clip(residual_act, -1, 1) 
+        return residual_act
+    
+    def clear_integrater(self):
+        self.psi_err_i, self.alt_err_i, self.vel_err_i = 0, 0, 0
+        self.prev_psi, self.prev_alt, self.prev_vel = 0, 0, 0
+    
+    def pid_ctrl(self, err, err_i, err_prev, pid_coeff=np.array([1, 0.5, 0.3])):
+        err_i += err*self.delta_t
+        err_i = np.clip(err_i, -1, 1)
+        err_d = (err-err_prev)/self.delta_t
+        ctrl = np.dot(pid_coeff, np.array([err, err_i, err_d]))
+        return ctrl, err_i, err
+
+    def reset(self) -> Observation:
+        self.clear_integrater()
+        return super().reset()
+
 if __name__ == "__main__":
     import copy
     from blimp_env.envs.common.gazebo_connection import GazeboConnection
@@ -275,7 +388,8 @@ if __name__ == "__main__":
     if auto_start_simulation:
         close_simulation()
 
-    ENV = PlanarNavigateEnv
+    # ENV = PlanarNavigateEnv
+    ENV = ResidualPlanarNavigateEnv
     env_kwargs = {
         "DBG": True,
         "simulation": {
@@ -301,9 +415,11 @@ if __name__ == "__main__":
         env.reset()
         for _ in range(1000):
             action = env.action_space.sample()
-            action = np.array([-0.1, 0, 0, 0]) # [yaw, pitch, servo, thrust]
+            action = np.array([0.0, 0, 0, 0]) # [yaw, pitch, servo, thrust]
             obs, reward, terminal, info = env.step(action)
 
         GazeboConnection().unpause_sim()
 
     env_step()
+
+

@@ -5,7 +5,7 @@ import random
 
 import numpy as np
 import ray
-from blimp_env.envs import PlanarNavigateEnv
+from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import sac
@@ -17,7 +17,7 @@ from ray.tune.schedulers.pb2 import PB2
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
-ENV = PlanarNavigateEnv
+ENV = ResidualPlanarNavigateEnv
 AGENT = sac
 AGENT_NAME = "SAC"
 exp_name_posfix = "test"
@@ -38,7 +38,7 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=2000)
+parser.add_argument("--t_ready", type=int, default=1e4)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str,
@@ -64,17 +64,6 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
-        "action": {
-            "act_noise_stdv": 0.05,
-        },
-        "observaion": {
-            "noise_stdv": 0.01,
-        },
-        "success_threshhold": 15,
-        "tracking_reward_weights": np.array(
-            [0.25, 0.25, 0.25, 0.25]
-        ),  # z_diff, planar_dist, psi_diff, u_diff
-        "reward_weights": np.array([1.0, 0.8, 0.1, 0.1]),  # success, tracking, action, psi_bonus
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -101,7 +90,7 @@ if __name__ == "__main__":
             "policy_model": policy_model_config,
             # == Learning ==
             "tau": 5e-3,
-            "timesteps_per_iteration": 100, 
+            "timesteps_per_iteration": 600, 
             # === Replay buffer ===
             "buffer_size": int(1e6),
             "store_buffer_in_checkpoints": True,
@@ -146,7 +135,7 @@ if __name__ == "__main__":
         scheduler=pb2,
         config=config,
         stop=stop,
-        checkpoint_freq=5000,
+        checkpoint_freq=2500,
         checkpoint_at_end=True,
         reuse_actors=False,
         max_failures=5,
