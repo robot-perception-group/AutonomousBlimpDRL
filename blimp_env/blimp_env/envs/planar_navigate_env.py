@@ -268,7 +268,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
-                "noise_stdv": 0.02,
+                "noise_stdv": 0.01,
                 "scale_obs": True,
             }
         )
@@ -290,12 +290,12 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             {
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
-                "policy_frequency": 6,  # [hz] has to be greater than 5 to overwrite backup controller
-                "reward_weights": np.array([1, 0.7, 0.2, 0.1]),  # success, tracking, action, psi_bonus
+                "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
+                "reward_weights": np.array([200, 0.8, 0.1, 0.1]),  # success, tracking, action, psi_bonus
                 "tracking_reward_weights": np.array(
-                    [0.25, 0.25, 0.25, 0.25]
+                    [0.25, 0.45, 0.15, 0.15]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
-                "success_threshhold": 5,  # [meters]
+                "success_threshhold": 10,  # [meters]
             }
         )
         return config

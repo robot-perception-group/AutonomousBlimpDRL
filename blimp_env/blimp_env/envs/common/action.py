@@ -272,7 +272,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
     DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04]) 
     ACT_DIM = 4
 
-    def __init__(self, env: "AbstractEnv", disable_servo:bool=False, max_servo:float=-0.4 ,max_thrust:float=0.6,**kwargs:dict)->None:
+    def __init__(self, env: "AbstractEnv", disable_servo:bool=False, max_servo:float=-0.5 ,max_thrust:float=0.6,**kwargs:dict)->None:
         """action channel
         0: back motor + top fin + bot fin
         1: left fin + right fin

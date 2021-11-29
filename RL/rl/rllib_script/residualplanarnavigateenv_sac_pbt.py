@@ -38,11 +38,11 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=1e4)
+parser.add_argument("--t_ready", type=int, default=100)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str,
-    default="timesteps_total")  # "training_iteration", "time_total_s"
+    default="timesteps_total")  # "training_iteration", "time_total_s",  "timesteps_total"
 
 
 def env_creator(env_config):
@@ -64,6 +64,7 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
+        "action": {"disable_servo":True,},
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -89,6 +90,7 @@ if __name__ == "__main__":
             "Q_model": Q_model_config,
             "policy_model": policy_model_config,
             # == Learning ==
+            "gamma": 0.999,
             "tau": 5e-3,
             "timesteps_per_iteration": 600, 
             # === Replay buffer ===
@@ -97,12 +99,12 @@ if __name__ == "__main__":
             "prioritized_replay": True,
             # === Optimization ===
             "optimization": {
-                "actor_learning_rate": 3e-4, 
-                "critic_learning_rate": 3e-4, 
-                "entropy_learning_rate": 3e-4, 
+                "actor_learning_rate": 5e-5, 
+                "critic_learning_rate": 5e-5, 
+                "entropy_learning_rate": 5e-5,  
             },
             "grad_clip": 5,
-            "learning_starts": TIMESTEP*0.05,
+            "learning_starts": TIMESTEP*0.08,
             "rollout_fragment_length": sample_from(
                 lambda spec: random.randint(1, 5)),
             "train_batch_size": 256,
@@ -135,7 +137,7 @@ if __name__ == "__main__":
         scheduler=pb2,
         config=config,
         stop=stop,
-        checkpoint_freq=2500,
+        checkpoint_freq=2000,
         checkpoint_at_end=True,
         reuse_actors=False,
         max_failures=5,
