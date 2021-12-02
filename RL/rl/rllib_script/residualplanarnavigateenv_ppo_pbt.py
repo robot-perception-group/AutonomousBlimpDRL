@@ -1,14 +1,11 @@
 import argparse
-import datetime
-import os
 import random
 
-import numpy as np
 import ray
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
-from ray.rllib.agents import sac
+from ray.rllib.agents import ppo
 from ray.rllib.models import ModelCatalog
 from ray.tune import run, sample_from
 from ray.tune.registry import register_env
@@ -18,16 +15,16 @@ from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
 ENV = ResidualPlanarNavigateEnv
-AGENT = sac
-AGENT_NAME = "SAC"
+AGENT = ppo
+AGENT_NAME = "PPO"
 exp_name_posfix = "test"
 
-ts = 10
+ts = ENV.default_config()["policy_frequency"]
 one_day_ts = 24 * 3600 * ts
 days = 28
 TIMESTEP = int(days * one_day_ts)
 
-restore="/home/yliu2/ray_results/ResidualPlanarNavigateEnv_SAC_test/SAC_ResidualPlanarNavigateEnv_401a5_00000_0_rollout_fragment_length=2,target_network_update_freq=4_2021-11-29_14-21-24/checkpoint_014000"
+restore=None
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -38,7 +35,7 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=100)
+parser.add_argument("--t_ready", type=int, default=50000)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str,
@@ -68,48 +65,39 @@ if __name__ == "__main__":
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
-    Q_model_config = {
+    model_config = {
         "custom_model": "bn_model",  
         "custom_model_config": {},
-    }
-    policy_model_config = {
-        "custom_model": "bn_model", 
-        "custom_model_config": {},
+        "vf_share_layers": False,
     }
 
     config = AGENT.DEFAULT_CONFIG.copy()
+    rollout_fragment_length = 200
+    train_batch_size=args.num_workers*rollout_fragment_length
     config.update(
         {
             "env": env_name,
             "env_config": env_config,
+            "log_level": "INFO",
             "num_gpus": args.num_gpus,
             "num_workers": args.num_workers,  # parallelism
             "num_envs_per_worker": 1,
             "framework": "torch",
-            # == Model ==
-            "Q_model": Q_model_config,
-            "policy_model": policy_model_config,
+            "model": model_config,
             # == Learning ==
-            "gamma": 0.999,
-            "tau": 5e-3,
-            "timesteps_per_iteration": 600, 
-            # === Replay buffer ===
-            "buffer_size": int(1e6),
-            "store_buffer_in_checkpoints": True,
-            "prioritized_replay": True,
-            # === Optimization ===
-            "optimization": {
-                "actor_learning_rate": 5e-5, 
-                "critic_learning_rate": 5e-5, 
-                "entropy_learning_rate": 5e-5,  
-            },
-            "grad_clip": 10,
-            "learning_starts": TIMESTEP*0.08,
-            "rollout_fragment_length": sample_from(
-                lambda spec: random.randint(1, 5)),
-            "train_batch_size": 256,
-            "target_network_update_freq": sample_from(
-                lambda spec: random.randint(0, 5)),
+            "lambda": sample_from(lambda spec: random.uniform(0.9, 1.0)),
+            "kl_coeff": 0.2,
+            "horizon": ENV.default_config()["duration"],
+            "rollout_fragment_length": rollout_fragment_length,
+            "train_batch_size": train_batch_size,
+            "sgd_minibatch_size": 128,
+            "shuffle_sequences": True,
+            "num_sgd_iter": 10,
+            "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
+            "lr_schedule": None,
+            "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
+            "vf_clip_param": 10.0,
+            "observation_filter": "MeanStdFilter",
         }
     )
     stop = {
@@ -124,8 +112,9 @@ if __name__ == "__main__":
         quantile_fraction=args.perturb,  # copy bottom % with top %
         # Specifies the hyperparam search space
         hyperparam_bounds={
-            "rollout_fragment_length": [1, 5],
-            "target_network_update_freq": [0, 5],
+            "lambda": [0.9, 1.0],
+            "clip_param": [0.1, 0.5],
+            "lr": [1e-4, 1e-5],
         })
 
     print(config)
@@ -143,5 +132,6 @@ if __name__ == "__main__":
         max_failures=5,
         restore=restore,
         verbose=1,
+        simple_optimizer=True,
     )
     ray.shutdown()

@@ -50,7 +50,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 6,  # [hz] has to be greater than 5 to overwrite backup controller
-                "reward_weights": np.array([1, 0.7, 0.2, 0.1]),  # success, tracking, action, psi_bonus
+                "reward_weights": np.array([1, 0.7, 0.2]),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.25, 0.25, 0.25, 0.25]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
@@ -63,9 +63,6 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         super()._create_pubs_subs()
         self.rew_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_reward", Quaternion, queue_size=1
-        )
-        self.rew_psi_bonus_rviz_pub = rospy.Publisher(
-            self.config["name_space"] + "/rviz_reward_psi_bonus", Point, queue_size=1
         )
         self.state_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_state", Quaternion, queue_size=1
@@ -81,9 +78,6 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         self.ang_diff_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_ang_diff", Point, queue_size=1
-        )
-        self.ang_vel_rviz_pub = rospy.Publisher(
-            self.config["name_space"] + "/rviz_ang_vel", Point, queue_size=1
         )
         self.act_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_act", Quaternion, queue_size=1
@@ -137,7 +131,6 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         proc_info = obs_info["proc_dict"]
 
         self.rew_rviz_pub.publish(Quaternion(*info["reward_info"]["rew_info"]))
-        self.rew_psi_bonus_rviz_pub.publish(Point(*info["reward_info"]["psi_bonus_info"]))
         self.state_rviz_pub.publish(
             Quaternion(
                 proc_info["planar_dist"],
@@ -156,7 +149,6 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         self.ang_rviz_pub.publish(Point(*obs_info["angle"]))
         self.ang_diff_rviz_pub.publish(Point(0, 0, proc_info["psi_diff"]))
-        self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["psi_vel"]))
         self.act_rviz_pub.publish(Quaternion(*info["act"]))
 
         self.pos_cmd_pub.publish(Point(*self.goal["position"]))
@@ -206,19 +198,13 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         tracking_reward = np.dot(track_weights, -np.abs(obs[0:4]))
         action_reward = self.action_type.action_rew()
 
-        psi_diff, psi_vel, psi_acc = obs[2], obs[5], -obs[6]
-        psi_sign_bonus = 0.5*np.abs(psi_diff)*(np.sign(psi_diff)*(0.7*np.sign(psi_vel)+0.3*np.sign(psi_acc))-1)
-        # psi_vel_bonus = (np.abs(psi_diff)-1)*np.abs(psi_vel)
-        psi_bonus = psi_sign_bonus
-
         reward = np.dot(
             reward_weights,
-            (success_reward, tracking_reward, action_reward, psi_bonus),
+            (success_reward, tracking_reward, action_reward, ),
         )
         reward = np.clip(reward, -1, 1)
         rew_info = (reward, success_reward, tracking_reward, action_reward)
-        psi_bonus_info = (psi_bonus, psi_sign_bonus, 0)
-        reward_info = {"rew_info": rew_info, "psi_bonus_info": psi_bonus_info}
+        reward_info = {"rew_info": rew_info}
 
         return reward, reward_info
 
@@ -235,7 +221,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """
         return (
             1.0
-            if np.linalg.norm(pos - goal_pos) < self.config["success_threshhold"]
+            if np.linalg.norm(pos[0:2] - goal_pos[0:2]) < self.config["success_threshhold"]
             else 0.0
         )
 
@@ -268,7 +254,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
-                "noise_stdv": 0.01,
+                "noise_stdv": 0.015,
                 "scale_obs": True,
             }
         )
@@ -291,9 +277,9 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
-                "reward_weights": np.array([200, 0.8, 0.1, 0.1]),  # success, tracking, action, psi_bonus
+                "reward_weights": np.array([100, 0.8, 0.1, 0.1]),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array(
-                    [0.25, 0.45, 0.15, 0.15]
+                    [0.25, 0.35, 0.25, 0.15]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
                 "success_threshhold": 10,  # [meters]
             }
@@ -306,6 +292,18 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.delta_t=0.01
         self.psi_err_i, self.alt_err_i, self.vel_err_i = 0, 0, 0
         self.prev_psi, self.prev_alt, self.prev_vel = 0, 0, 0
+
+    def _create_pubs_subs(self):
+        self.rew_bonus_rviz_pub = rospy.Publisher(
+            self.config["name_space"] + "/rviz_reward_psi_bonus", Point, queue_size=1
+        )
+        self.ang_vel_rviz_pub = rospy.Publisher(
+            self.config["name_space"] + "/rviz_ang_vel", Point, queue_size=1
+        )
+        self.residual_act_rviz_pub = rospy.Publisher(
+            self.config["name_space"] + "/rviz_residual_act", Quaternion, queue_size=1
+        )
+        return super()._create_pubs_subs()
 
     @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
@@ -322,7 +320,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 info: dictionary of all the step info,
         """
         residual_act = self.residual_ctrl()
-        joint_act = 0.5*action+0.5*residual_act
+        joint_act = self.mixer(action, residual_act)
         self._simulate(joint_act)
         obs, obs_info = self.observation_type.observe()
         reward, reward_info = self._reward(obs, joint_act, obs_info)
@@ -343,6 +341,20 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self._step_info(info)
 
         return obs, reward, terminal, info
+    
+    def _step_info(self, info: dict):
+        obs_info = info["obs_info"]
+        proc_info = obs_info["proc_dict"]
+
+        self.rew_bonus_rviz_pub.publish(Point(*info["reward_info"]["bonus_info"]))
+        self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["psi_vel"]))
+        self.residual_act_rviz_pub.publish(Quaternion(*info["residual_act"]))
+        return super()._step_info(info)
+    
+    def mixer(self, action, residual_act):
+        joint_act = 0.5*action+0.5*residual_act
+        joint_act[2] = action[2]
+        return joint_act
     
     def residual_ctrl(self):
         """      
@@ -373,6 +385,92 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
     def reset(self) -> Observation:
         self.clear_integrater()
         return super().reset()
+
+    def _reward(
+        self, obs: np.array, act: np.array, obs_info: dict
+    ) -> Tuple[float, dict]:
+        """calculate reward
+        total_reward = success_reward + tracking_reward + action_reward
+        success_reward: +1 if agent stay in the vicinity of goal
+        tracking_reward: - L2 distance to goal - psi angle difference - z diff - vel diff
+        action_reward: penalty for motor use
+
+        Args:
+            obs (np.array): ("z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "psi_vel" "action")
+            act (np.array): agent action [-1,1] with size (4,)
+            obs_info (dict): contain all information of a step
+
+        Returns:
+            Tuple[float, dict]: [reward scalar and a detailed reward info]
+        """
+        track_weights = self.config["tracking_reward_weights"].copy()
+        reward_weights = self.config["reward_weights"].copy()
+
+        success_reward = self.compute_success_rew(
+            obs_info["position"], self.goal["position"]
+        )
+
+        obs[1] = (obs[1] + 1) / 2  # dist -1 should have max reward
+        tracking_reward = np.dot(track_weights, -np.abs(obs[0:4]))
+        
+        action_reward = self.action_type.action_rew()
+
+        psi_diff, psi_vel, psi_acc = obs[2], obs[5], -obs[6]
+        psi_sign_bonus = 0.5*np.abs(psi_diff)*(np.sign(psi_diff)*(0.7*np.sign(psi_vel)+0.3*np.sign(psi_acc))-1)
+        psi_close_bonus = -5*int(self.psi_close_to_pi())
+        bonus = psi_sign_bonus+psi_close_bonus
+
+        reward = np.dot(
+            reward_weights,
+            (success_reward, tracking_reward, action_reward, bonus),
+        )
+        # reward = np.clip(reward, -1, 1)
+        rew_info = (reward, success_reward, tracking_reward, action_reward)
+        bonus_info = (bonus, psi_sign_bonus, psi_close_bonus)
+        reward_info = {"rew_info": rew_info, "bonus_info": bonus_info}
+
+        return reward, reward_info
+
+    def _is_terminal(self, obs_info: dict) -> bool:
+        """if episode terminate
+        - time: episode duration finished
+
+        Returns:
+            bool: [episode terminal or not]
+        """
+        time = False
+        if self.config["duration"] is not None:
+            time = self.steps >= int(self.config["duration"])-1
+
+        success_reward = self.compute_success_rew(
+            obs_info["position"], self.goal["position"]
+        )
+        success = success_reward >= 1
+
+        early_stopping = bool(self.psi_change())
+
+        return time or success or early_stopping
+
+    def psi_change(self):
+        """[detect if psi changes from -pi to pi and vice versa]
+
+        Returns:
+            [bool]: [if psi changes from -pi to pi and vice versa]
+        """
+        obs, _ = self.observation_type.observe()
+        return np.abs(-obs[2]-self.prev_psi)>1.9 
+
+    def psi_close_to_pi(self):
+        """[detect if psi is close to pi and -pi]
+
+        Returns:
+            [bool]: []
+        """
+        obs, _ = self.observation_type.observe()
+        return np.abs(np.abs(obs[2])-1)<0.05
+
+
+        
 
 if __name__ == "__main__":
     import copy
