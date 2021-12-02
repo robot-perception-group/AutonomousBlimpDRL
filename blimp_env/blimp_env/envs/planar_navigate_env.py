@@ -281,7 +281,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "tracking_reward_weights": np.array(
                     [0.25, 0.35, 0.25, 0.15]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
-                "success_threshhold": 10,  # [meters]
+                "success_threshhold": 5,  # [meters]
             }
         )
         return config
