@@ -1637,7 +1637,7 @@
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>x</field>
+                                    <field>y</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -1739,7 +1739,7 @@
                                     <type>geometry_msgs/Point</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>y</field>
+                                    <field>z</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -1772,7 +1772,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>psi_change</title>
+                            <title>psi_close</title>
                         </curve_3>
                     </curves>
                     <legend>
