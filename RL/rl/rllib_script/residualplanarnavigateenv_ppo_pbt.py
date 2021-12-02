@@ -44,15 +44,6 @@ parser.add_argument(
 def env_creator(env_config):
     return ENV(env_config)
 
-def explore(config):
-    # Ensure we collect enough timesteps to do sgd.
-    if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
-        config["train_batch_size"] = config["sgd_minibatch_size"] * 2
-    # Ensure we run at least one sgd iter.
-    if config["lambda"] > 1:
-        config["lambda"] = 1
-    config["train_batch_size"] = int(config["train_batch_size"])
-    return config
 
 if __name__ == "__main__":
     env_name = ENV.__name__
@@ -100,10 +91,8 @@ if __name__ == "__main__":
             "rollout_fragment_length": rollout_fragment_length,
             "train_batch_size": train_batch_size,
             "sgd_minibatch_size": 128,
-            "shuffle_sequences": True,
             "num_sgd_iter": 10,
             "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
-            "lr_schedule": None,
             "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
             "vf_clip_param": 10.0,
             "observation_filter": "MeanStdFilter",
@@ -124,8 +113,7 @@ if __name__ == "__main__":
             "lambda": [0.9, 1.0],
             "clip_param": [0.1, 0.5],
             "lr": [1e-4, 1e-5],
-        },
-        custom_explore_fn=explore)
+        })
 
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
@@ -142,6 +130,5 @@ if __name__ == "__main__":
         max_failures=5,
         restore=restore,
         verbose=1,
-        simple_optimizer=True,
     )
     ray.shutdown()
