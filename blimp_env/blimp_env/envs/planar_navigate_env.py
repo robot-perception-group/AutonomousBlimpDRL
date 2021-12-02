@@ -277,7 +277,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
-                "reward_weights": np.array([100, 0.8, 0.1, 0.1]),  # success, tracking, action, bonus
+                "reward_weights": np.array([20, 0.8, 0.1, 0.1]),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array(
                     [0.25, 0.35, 0.25, 0.15]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff

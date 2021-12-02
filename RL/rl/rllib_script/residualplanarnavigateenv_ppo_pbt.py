@@ -7,9 +7,8 @@ from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
 from ray.rllib.models import ModelCatalog
-from ray.tune import run, sample_from
+from ray.tune import sample_from
 from ray.tune.registry import register_env
-from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.schedulers.pb2 import PB2
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
@@ -44,6 +43,16 @@ parser.add_argument(
 
 def env_creator(env_config):
     return ENV(env_config)
+
+def explore(config):
+    # Ensure we collect enough timesteps to do sgd.
+    if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
+        config["train_batch_size"] = config["sgd_minibatch_size"] * 2
+    # Ensure we run at least one sgd iter.
+    if config["lambda"] > 1:
+        config["lambda"] = 1
+    config["train_batch_size"] = int(config["train_batch_size"])
+    return config
 
 if __name__ == "__main__":
     env_name = ENV.__name__
@@ -115,7 +124,8 @@ if __name__ == "__main__":
             "lambda": [0.9, 1.0],
             "clip_param": [0.1, 0.5],
             "lr": [1e-4, 1e-5],
-        })
+        },
+        custom_explore_fn=explore)
 
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
