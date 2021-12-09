@@ -27,7 +27,7 @@ one_day_ts = 24 * 3600 * ts
 days = 21
 TIMESTEP = int(days * one_day_ts)
 
-restore=None
+restore = None
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -41,12 +41,13 @@ parser.add_argument(
 parser.add_argument("--t_ready", type=int, default=2000)
 parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
-    "--criteria", type=str,
-    default="timesteps_total")  # "training_iteration", "time_total_s"
+    "--criteria", type=str, default="timesteps_total"
+)  # "training_iteration", "time_total_s"
 
 
 def env_creator(env_config):
     return ENV(env_config)
+
 
 if __name__ == "__main__":
     env_name = ENV.__name__
@@ -74,16 +75,18 @@ if __name__ == "__main__":
         "tracking_reward_weights": np.array(
             [0.25, 0.25, 0.25, 0.25]
         ),  # z_diff, planar_dist, psi_diff, u_diff
-        "reward_weights": np.array([1.0, 0.8, 0.1, 0.1]),  # success, tracking, action, psi_bonus
+        "reward_weights": np.array(
+            [1.0, 0.8, 0.1, 0.1]
+        ),  # success, tracking, action, psi_bonus
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
     Q_model_config = {
-        "custom_model": "bn_model",  
+        "custom_model": "bn_model",
         "custom_model_config": {},
     }
     policy_model_config = {
-        "custom_model": "bn_model", 
+        "custom_model": "bn_model",
         "custom_model_config": {},
     }
 
@@ -101,24 +104,24 @@ if __name__ == "__main__":
             "policy_model": policy_model_config,
             # == Learning ==
             "tau": 5e-3,
-            "timesteps_per_iteration": 100, 
+            "timesteps_per_iteration": 100,
             # === Replay buffer ===
             "buffer_size": int(1e6),
             "store_buffer_in_checkpoints": True,
             "prioritized_replay": True,
             # === Optimization ===
             "optimization": {
-                "actor_learning_rate": 3e-4, 
-                "critic_learning_rate": 3e-4, 
-                "entropy_learning_rate": 3e-4, 
+                "actor_learning_rate": 3e-4,
+                "critic_learning_rate": 3e-4,
+                "entropy_learning_rate": 3e-4,
             },
             "grad_clip": 5,
-            "learning_starts": TIMESTEP*0.05,
-            "rollout_fragment_length": sample_from(
-                lambda spec: random.randint(1, 5)),
+            "learning_starts": TIMESTEP * 0.05,
+            "rollout_fragment_length": sample_from(lambda spec: random.randint(1, 5)),
             "train_batch_size": 256,
             "target_network_update_freq": sample_from(
-                lambda spec: random.randint(0, 5)),
+                lambda spec: random.randint(0, 5)
+            ),
         }
     )
     stop = {
@@ -135,7 +138,8 @@ if __name__ == "__main__":
         hyperparam_bounds={
             "rollout_fragment_length": [1, 5],
             "target_network_update_freq": [0, 5],
-        })
+        },
+    )
 
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:

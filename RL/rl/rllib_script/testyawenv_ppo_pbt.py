@@ -2,7 +2,7 @@ import argparse
 import random
 import numpy as np
 import ray
-from blimp_env.envs import ResidualPlanarNavigateEnv
+from blimp_env.envs import TestYawEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
@@ -14,13 +14,13 @@ from ray.tune.schedulers import PopulationBasedTraining
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
-ENV = ResidualPlanarNavigateEnv
+ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "test"
 
+days = 3
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
-days = 28
 TIMESTEP = int(days * one_day_ts)
 
 restore = None
@@ -61,13 +61,13 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
-        "action": {
-            "disable_servo": True,
+        "observation": {
+            "enable_psi_vel": False,
         },
-        "reward_weights": np.array([100, 1.0, 0.0, 0.0]),
-        "tracking_reward_weights": np.array(
-            [0.3, 0.70, 0.0, 0.0]
-        ),  # z_diff, planar_dist, psi_diff, vel_diff
+        "reward_weights": np.array([0, 1.0, 0, 0]),  # success, tracking, action, bonus
+        "enable_residual_ctrl": True,
+        "enable_early_stopping": False,
+        "reward_scale": 0.1,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)

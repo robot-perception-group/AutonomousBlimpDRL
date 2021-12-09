@@ -1,6 +1,7 @@
 """ observation type """
 #!/usr/bin/env python
 
+from math import e
 from typing import TYPE_CHECKING, Any, Dict, Tuple
 
 import numpy as np
@@ -168,7 +169,7 @@ class ROSObservation(ObservationType):
 class PlanarKinematicsObservation(ROSObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "psi_vel","action"]
+    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "psi_vel", "action"]
     OBS_range = {
         "z_diff": [-100, 100],
         "planar_dist": [0, 200 * np.sqrt(2)],
@@ -188,16 +189,15 @@ class PlanarKinematicsObservation(ROSObservation):
         self.obs_name = self.OBS
         self.obs_dim = 10
         self.range_dict = self.OBS_range
-    
+
     def observe(self) -> np.ndarray:
         obs, obs_dict = self._observe()
         while np.isnan(obs).any():
             print("[ observation ] obs corrupted by NA")
             reply = respawn_model(**self.env.config["simulation"])
-            print("[ observation ] respawn model status ",reply)
+            print("[ observation ] respawn model status ", reply)
             obs, obs_dict = self._observe()
         return obs, obs_dict
-
 
     def _observe(self) -> np.ndarray:
         obs_dict = {
@@ -286,9 +286,84 @@ class PlanarKinematicsObservation(ROSObservation):
         return ang_diff
 
 
+class DummyYawObservation(PlanarKinematicsObservation):
+    """Planar kinematics observation with action feedback"""
+
+    OBS = ["psi_diff", "action"]
+    OBS_range = {
+        "psi_diff": [-np.pi, np.pi],
+    }
+
+    def __init__(
+        self,
+        env: "AbstractEnv",
+        noise_stdv=0.02,
+        scale_obs=True,
+        enable_psi_vel=True,
+        **kwargs: dict
+    ) -> None:
+        super().__init__(env, noise_stdv=noise_stdv, scale_obs=scale_obs, **kwargs)
+        self.enable_psi_vel = enable_psi_vel
+        if self.enable_psi_vel:
+            self.obs_dim = 3
+            self.obs_name = ["psi_diff", "psi_vel", "action"]
+            self.range_dict.update({"psi_vel": [-15, 15]})
+
+    def _observe(self) -> np.ndarray:
+        obs_dict = {
+            "position": self.pos_data,
+            "velocity": self.vel_data,
+            "velocity_norm": np.linalg.norm(self.vel_data),
+            "linear_acceleration": self.acc_data,
+            "orientation": self.ori_data,
+            "angle": self.ang_data,
+            "angular_velocity": self.ang_vel_data,
+        }
+        goal_dict = self.env.goal
+        processed_dict = self.process_obs(obs_dict, goal_dict, self.scale_obs)
+
+        action = self.env.action_type.get_cur_act()[[0]]
+        processed_dict.update({"action": action})
+
+        proc_df = pd.DataFrame.from_records([processed_dict])
+        processed = np.hstack(proc_df[self.obs_name].values[0])
+
+        obs_dict.update({"proc_dict": processed_dict})
+        obs_dict.update({"goal_dict": goal_dict})
+
+        if self.dbg_obs:
+            print("[ observation ] state", processed)
+            print("[ observation ] obs dict", obs_dict)
+
+        return processed, obs_dict
+
+    def process_obs(
+        self, obs_dict: dict, goal_dict: dict, scale_obs: bool = True
+    ) -> dict:
+        obs_pos, goal_pos = obs_dict["position"], goal_dict["position"]
+        vel = np.linalg.norm(obs_dict["velocity"])
+        goal_vel = goal_dict["velocity"]
+
+        planar_dist = np.linalg.norm(obs_pos[0:2] - goal_pos[0:2])
+        psi_diff = self.compute_psi_diff(goal_pos, obs_pos, obs_dict["angle"][2])
+
+        state_dict = {
+            "psi_diff": psi_diff,
+        }
+        if self.enable_psi_vel:
+            state_dict.update({"psi_vel": obs_dict["angular_velocity"][2]})
+
+        if scale_obs:
+            state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
+
+        return state_dict
+
+
 def observation_factory(env: "AbstractEnv", config: dict) -> ObservationType:
     """observation factory for different observation type"""
     if config["type"] == "PlanarKinematics":
         return PlanarKinematicsObservation(env, **config)
+    elif config["type"] == "DummyYaw":
+        return DummyYawObservation(env, **config)
     else:
         raise ValueError("Unknown observation type")
