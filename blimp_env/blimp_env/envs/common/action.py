@@ -269,23 +269,30 @@ class ContinuousAction(ROSActionType):
 class SimpleContinuousDifferentialAction(ContinuousAction):
     """simplified action space by binding action that has similar dynamic effect"""
 
-    DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04]) 
+    DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04])
     ACT_DIM = 4
 
-    def __init__(self, env: "AbstractEnv", disable_servo:bool=False, max_servo:float=-0.5 ,max_thrust:float=0.6,**kwargs:dict)->None:
+    def __init__(
+        self,
+        env: "AbstractEnv",
+        disable_servo: bool = False,
+        max_servo: float = -0.5,
+        max_thrust: float = 0.6,
+        **kwargs: dict,
+    ) -> None:
         """action channel
         0: back motor + top fin + bot fin
         1: left fin + right fin
         2: servo
         3: left motor + right motor
         """
-        super().__init__(env,**kwargs)
+        super().__init__(env, **kwargs)
         self.act_dim = self.ACT_DIM
         self.diff_act_scale = self.DIFF_ACT_SCALE
 
-        self.disable_servo=disable_servo
-        self.max_servo=max_servo
-        self.max_thrust=max_thrust
+        self.disable_servo = disable_servo
+        self.max_servo = max_servo
+        self.max_thrust = max_thrust
 
         self.init_act = np.zeros(self.act_dim)
         self.cur_act = np.zeros(self.act_dim)
@@ -335,13 +342,15 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         """
         cur_act += self.diff_act_scale * action
         cur_act = np.clip(cur_act, -1, 1)
-        
-        if cur_act[2] > self.max_servo: # only allow forward servo
+
+        if cur_act[2] > self.max_servo:  # only allow forward servo
             cur_act[2] = self.max_servo
         if self.disable_servo:
             cur_act[2] = -1
-        
-        cur_act[3] = np.clip(cur_act[3], 0, self.max_thrust) # only allow foward thrust and 50% max thrust
+
+        cur_act[3] = np.clip(
+            cur_act[3], 0, self.max_thrust
+        )  # only allow foward thrust and 50% max thrust
 
         return cur_act
 
@@ -412,6 +421,141 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         )
 
 
+class DummyYawAction(ContinuousAction):
+    """simplified action space by binding action that has similar dynamic effect"""
+
+    DIFF_ACT_SCALE = np.array([0.1])
+    ACT_DIM = 1
+
+    def __init__(
+        self,
+        env: "AbstractEnv",
+        **kwargs: dict,
+    ) -> None:
+        """action channel
+        0: back motor + top fin + bot fin
+        """
+        super().__init__(env, **kwargs)
+        self.act_dim = self.ACT_DIM
+        self.diff_act_scale = self.DIFF_ACT_SCALE
+
+        self.init_act = np.zeros(self.act_dim)
+        self.cur_act = np.zeros(self.act_dim)
+
+    def space(self):
+        return spaces.Box(
+            low=np.full((self.act_dim), -1),
+            high=np.full((self.act_dim), 1),
+            dtype=np.float32,
+        )
+
+    def act(self, action: np.ndarray) -> None:
+        """publish action
+
+        Args:
+            action (np.ndarray): agent action in range [-1, 1] with shape (4,)
+        """
+        self.cur_act = self.process_action(action, self.cur_act)
+        proc_actuator = self.process_actuator_state(
+            self.cur_act.copy(), self.act_noise_stdv
+        )
+
+        act_msg = LibrepilotActuators()
+        act_msg.header.stamp = rospy.Time.now()
+        act_msg.data.data = proc_actuator
+
+        mode = uav_pose()
+        mode.flightmode = self.flightmode
+
+        self.action_publisher.publish(act_msg)
+        self.flightmode_publisher.publish(mode)
+
+        if self.dbg_act:
+            print("[ Action ] mode:", self.flightmode)
+            print("[ Action ] agent action:", action)
+            print("[ Action ] current actuator:", self.cur_act)
+            print("[ Action ] process actuator:", proc_actuator)
+
+    def process_action(self, action: np.array, cur_act: np.array) -> np.array:
+        """modify agent action
+
+        Args:
+            action ([np.array]): agent action [-1,1]
+
+        Returns:
+            [np.array]: action with forward servo and thrust
+        """
+        cur_act += self.diff_act_scale * action
+        cur_act = np.clip(cur_act, -1, 1)
+
+        return cur_act
+
+    def process_actuator_state(
+        self, act_state: np.array, noise_level: float = 0.0
+    ) -> np.array:
+        """map agent action to actuator specification
+
+        Args:
+            act_state (np.array): agent actuator state [-1, 1] with shape (4,)
+            noise_level (float, optional): noise level [0, 1]. Defaults to 0.0.
+
+        Returns:
+            [type]: processed actuator state [1000, 2000] with shape (12,1)
+        """
+        proc = act_state + np.random.normal(0, noise_level, act_state.shape)
+        proc = np.clip(proc, -1, 1)
+        proc = utils.lmap(proc, [-1, 1], self.act_range)
+        proc = self.match_channel(proc)
+        return proc
+
+    def match_channel(self, action: np.array) -> np.array:
+        """match and fillup empty channels to fulfill input requirement for the gcs
+
+        Args:
+            action ([np array]): actions with empty action channels [1000, 2000]
+
+        Returns:
+            [np array]: actions with all action channels filled [1000,2000]
+
+        """
+        aug_action = np.zeros(12).reshape(12, 1)
+
+        aug_action[0] = action[0]
+        aug_action[1] = 1500
+        aug_action[2] = 1500
+        aug_action[3] = action[0]
+        aug_action[4] = action[0]
+        aug_action[5] = 1500
+        aug_action[6] = 1500
+        aug_action[8] = 1500
+
+        aug_action[7] = 1500
+        aug_action[9:12] = 1500
+
+        return aug_action
+
+    def action_rew(self, scale: np.array = np.array([0.5])) -> float:
+        """compute action reward from actuator state, only motors are considered
+
+        Args:
+            scale (np.array, optional): [scale each motor reward].
+
+        Returns:
+            [float]: [reward of current action state in range (-1, 1)]
+        """
+        motors = self.get_cur_act()[[0]]
+        motors_rew = -np.dot(abs(motors), scale) / scale.sum()
+        return motors_rew
+
+    def get_cur_act(self) -> np.array:
+        """get current actuator state"""
+        cur_act = self.cur_act.copy()
+        cur_act = self.match_channel(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
+        return cur_act.reshape(
+            8,
+        )
+
+
 def action_factory(  # pylint: disable=too-many-return-statements
     env: "AbstractEnv",
     config: dict,
@@ -421,5 +565,7 @@ def action_factory(  # pylint: disable=too-many-return-statements
         return ContinuousAction(env, **config)
     elif config["type"] == "SimpleContinuousDifferentialAction":
         return SimpleContinuousDifferentialAction(env, **config)
+    elif config["type"] == "DummyYawAction":
+        return DummyYawAction(env, **config)
     else:
         raise ValueError("Unknown action type")

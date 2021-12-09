@@ -117,10 +117,7 @@ def spawn_target(
 
     if spawn_fn is not None:
         spawn_target_reply = spawn_fn(
-            robot_id=robot_id,
-            ros_port=ros_port,
-            gaz_port=gaz_port,
-            **kwargs
+            robot_id=robot_id, ros_port=ros_port, gaz_port=gaz_port, **kwargs
         )
         return int(spawn_target_reply)
     else:
@@ -139,6 +136,7 @@ def spawn_ros_master(
 
 
 # ============ Composite Spawn Script ============#
+
 
 def spawn_simulation_on_different_port(
     robot_id: int = 0,
@@ -344,6 +342,7 @@ def remove_blimp(robot_id: int) -> int:
 
 # ============ Respawn Script ============#
 
+
 def respawn_target(
     robot_id: int = 0,
     ros_port: int = DEFAULT_ROSPORT,
@@ -351,14 +350,16 @@ def respawn_target(
     target_type: str = "InteractiveGoal",
     **kwargs,
 ) -> int:
-    kill_reply=kill_goal_screen(robot_id=robot_id)
-    spawn_target_reply=spawn_target(robot_id=robot_id,
-    ros_port=ros_port,
-    gaz_port=gaz_port,
-    target_type=target_type,
-    **kwargs,
+    kill_reply = kill_goal_screen(robot_id=robot_id)
+    spawn_target_reply = spawn_target(
+        robot_id=robot_id,
+        ros_port=ros_port,
+        gaz_port=gaz_port,
+        target_type=target_type,
+        **kwargs,
     )
-    return {"kill_reply": kill_reply, "spawn_target_reply":spawn_target_reply}
+    return {"kill_reply": kill_reply, "spawn_target_reply": spawn_target_reply}
+
 
 def respawn_model(
     robot_id: int = 0,

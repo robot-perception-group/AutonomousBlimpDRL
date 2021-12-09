@@ -128,11 +128,12 @@ class ROSTarget(TargetType):
 
 class RandomGoal(TargetType):
     """a random generated goal during training"""
+
     def __init__(
         self,
         env: "AbstractEnv",
         target_name_space="target_0",
-        new_target_every_ts:int=1200,
+        new_target_every_ts: int = 1200,
         DBG_ROS=False,
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
@@ -166,9 +167,9 @@ class RandomGoal(TargetType):
     def _create_pub_and_sub(self) -> None:
         """create publicator and subscriber"""
         self.wp_viz_publisher = rospy.Publisher(
-            self.target_name_space + "/rviz_pos_cmd", Marker, queue_size=1)
+            self.target_name_space + "/rviz_pos_cmd", Marker, queue_size=1
+        )
         self._pub_and_sub = True
-
 
     def publish_waypoint_toRviz(self, waypoint):
         marker = Marker()
@@ -178,7 +179,7 @@ class RandomGoal(TargetType):
         marker.type = marker.SPHERE
         marker.id = 0
         marker.scale.x, marker.scale.y, marker.scale.z = 2, 2, 2
-        marker.color.a, marker.color.r, marker.color.g, marker.color.b = 1,1,1,0
+        marker.color.a, marker.color.r, marker.color.g, marker.color.b = 1, 1, 1, 0
         marker.pose.position.x, marker.pose.position.y, marker.pose.position.z = (
             waypoint[1],
             waypoint[0],
@@ -191,7 +192,7 @@ class RandomGoal(TargetType):
         x = np.random.uniform(*self.x_range)
         y = np.random.uniform(*self.y_range)
         z = np.random.uniform(*self.z_range)
-        pos_cmd = np.array([x,y,z])
+        pos_cmd = np.array([x, y, z])
 
         v_cmd = np.random.uniform(*self.v_range)
 
@@ -201,8 +202,8 @@ class RandomGoal(TargetType):
         q_cmd = euler2quat(0, 0, psi)
         return pos_cmd, v_cmd, ang_cmd, q_cmd
 
-    def check_distance(self, position, origin=np.array([0, 0, 100])):
-        dist = np.linalg.norm(position - origin)
+    def check_planar_distance(self, position, origin=np.array([0, 0, 100])):
+        dist = np.linalg.norm(position[0:2] - origin[0:2])
         if dist > 30:
             return True
         else:
@@ -212,12 +213,11 @@ class RandomGoal(TargetType):
         far_enough = False
         while far_enough == False:
             pos_cmd, v_cmd, ang_cmd, _ = self.generate_goal()
-            far_enough = self.check_distance(pos_cmd)
-        
+            far_enough = self.check_planar_distance(pos_cmd)
+
         self.pos_cmd_data = pos_cmd
         self.vel_cmd_data = v_cmd
         self.ang_cmd_data = ang_cmd
-
 
     def sample(self) -> Dict[str, np.ndarray]:
         """sample target state
@@ -233,12 +233,14 @@ class RandomGoal(TargetType):
             "velocity": self.vel_cmd_data,
             "angle": self.ang_cmd_data,
         }
+
     def check_connection(self):
         pass
 
 
 class InteractiveGoal(ROSTarget):
     """a waypoint in 3D space defined by desired position, velocity and yaw angle"""
+
     def sample(self) -> Dict[str, np.ndarray]:
         """sample target state
 
