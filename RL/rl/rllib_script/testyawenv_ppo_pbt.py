@@ -20,7 +20,7 @@ AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "test"
 
-days = 3
+days = 21
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
@@ -35,8 +35,6 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=50000)
-parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
 parser.add_argument(
     "--criteria", type=str, default="timesteps_total"
 )  # "training_iteration", "time_total_s",  "timesteps_total"
@@ -94,7 +92,7 @@ if __name__ == "__main__":
             "kl_coeff": 1.0,
             "horizon": 400,
             "rollout_fragment_length": 200,
-            "train_batch_size": args.num_workers * 4000,
+            "train_batch_size": args.num_workers * 2000,
             "sgd_minibatch_size": 2048,
             "num_sgd_iter": sample_from(lambda spec: random.randint(10, 30)),
             "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
@@ -110,8 +108,8 @@ if __name__ == "__main__":
         time_attr=args.criteria,
         metric="episode_reward_mean",
         mode="max",
-        perturbation_interval=args.t_ready,
-        quantile_fraction=args.perturb,  # copy bottom % with top %
+        perturbation_interval=args.num_workers * 2000,
+        quantile_fraction=0.25,  # copy bottom % with top %
         # Specifies the hyperparam search space
         hyperparam_bounds={
             "clip_param": [0.1, 0.5],
@@ -122,6 +120,7 @@ if __name__ == "__main__":
 
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
+        close_simulation()
         close_simulation()
     results = tune.run(
         AGENT_NAME,
