@@ -272,7 +272,7 @@ class ROSAbstractEnv(AbstractEnv):
         )
 
         time.sleep(
-            2 * int(worker_index)
+            10 * int(worker_index)
         )  # spawn at different time increase spawn stability
         ros_port = self.config["simulation"]["ros_port"] + worker_index
         gaz_port = self.config["simulation"]["gaz_port"] + worker_index
@@ -281,9 +281,9 @@ class ROSAbstractEnv(AbstractEnv):
         os.environ["GAZEBO_MASTER_URI"] = host_addr + str(gaz_port) + "/"
 
         while rosgraph.is_master_online():
-            time.sleep(3)
-            ros_port += 1
-            gaz_port += 1
+            time.sleep(2)
+            ros_port += 7
+            gaz_port += 7
             os.environ["ROS_MASTER_URI"] = host_addr + str(ros_port) + "/"
             os.environ["GAZEBO_MASTER_URI"] = host_addr + str(gaz_port) + "/"
             print("current channel occupied, move to next channel:", ros_port)

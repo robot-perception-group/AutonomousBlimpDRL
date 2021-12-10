@@ -99,7 +99,10 @@ class ROSActionType(ActionType):
 
             if respawn_time > 0:
                 rospy.loginfo("[ Action ] Simulation Crashed...resume simulation")
-                reply = resume_simulation(**self.env.config["simulation"])
+                reply = resume_simulation(
+                    target_type=self.env.config["target"]["type"],
+                    **self.env.config["simulation"],
+                )
                 respawn_time = 0
                 resume_time += 1
                 rospy.loginfo("Simulation Resumed:", reply)

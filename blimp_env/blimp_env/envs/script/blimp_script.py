@@ -231,7 +231,7 @@ def kill_blimp_screen(robot_id: int) -> Tuple[int]:
             f"screen -S FW_{robot_id} -X quit",
             shell=True,
         )
-        time.sleep(2)
+        time.sleep(1)
     except:
         print("fw screen not found, skip kill")
         kill_fw_reply = 1
@@ -241,7 +241,7 @@ def kill_blimp_screen(robot_id: int) -> Tuple[int]:
             f"screen -S BLIMP_{robot_id} -X quit",
             shell=True,
         )
-        time.sleep(10)
+        time.sleep(7)
     except:
         print("blimp screen not found, skip kill")
         kill_blimp_reply = 1
@@ -263,7 +263,7 @@ def kill_goal_screen(robot_id: int) -> int:
             f"screen -S GOAL_{robot_id} -X quit",
             shell=True,
         )
-        time.sleep(5)
+        time.sleep(1)
     except:
         print("goal screen not found, skip kill")
         reply = 1
@@ -284,7 +284,7 @@ def kill_world_screen(robot_id: int) -> int:
             f"screen -S WORLD_{robot_id} -X quit",
             shell=True,
         )
-        time.sleep(20)
+        time.sleep(10)
     except:
         print("world screen not found, skip kill")
         reply = 1
@@ -305,7 +305,7 @@ def kill_master_screen(robot_id: int) -> int:
             f"screen -S ROSMASTER_{robot_id} -X quit",
             shell=True,
         )
-        time.sleep(2)
+        time.sleep(1)
     except:
         print("master screen not found, skip kill")
         reply = 1
@@ -321,6 +321,7 @@ def kill_all_screen(robot_id: int) -> dict:
     Returns:
         [str]: [status of the script]
     """
+    time.sleep(int(robot_id) * 20)
     kill_goal_reply = kill_goal_screen(robot_id)
     kill_blimp_reply, kill_fw_reply = kill_blimp_screen(robot_id)
     kill_world_reply = kill_world_screen(robot_id)
