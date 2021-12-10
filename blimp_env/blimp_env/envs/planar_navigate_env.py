@@ -752,8 +752,7 @@ if __name__ == "__main__":
     if auto_start_simulation:
         close_simulation()
 
-    # ENV = PlanarNavigateEnv, ResidualPlanarNavigateEnv
-    ENV = TestYawEnv
+    ENV = TestYawEnv # PlanarNavigateEnv, ResidualPlanarNavigateEnv, TestYawEnv
     env_kwargs = {
         "DBG": True,
         "simulation": {

@@ -11,6 +11,7 @@ from ray.tune import sample_from
 from ray.tune.registry import register_env
 
 from ray.tune.schedulers import PopulationBasedTraining
+from ray.tune.schedulers.pb2 import PB2
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
@@ -95,7 +96,7 @@ if __name__ == "__main__":
             "rollout_fragment_length": 200,
             "train_batch_size": args.num_workers * 4000,
             "sgd_minibatch_size": 2048,
-            "num_sgd_iter": sample_from(lambda spec: random.uniform(10, 30)),
+            "num_sgd_iter": sample_from(lambda spec: random.randint(10, 30)),
             "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
             "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
             "observation_filter": "MeanStdFilter",
@@ -105,24 +106,18 @@ if __name__ == "__main__":
         "timesteps_total": args.stop_timesteps,
     }
 
-    def explore(config):
-        if config["num_sgd_iter"] < 1:
-            config["num_sgd_iter"] = 1
-        return config
-
-    pbt = PopulationBasedTraining(
+    pb2 = PB2(
         time_attr=args.criteria,
         metric="episode_reward_mean",
         mode="max",
         perturbation_interval=args.t_ready,
-        resample_probability=args.perturb,
-        quantile_fraction=args.perturb,
-        hyperparam_mutations={
-            "clip_param": lambda: random.uniform(0.1, 0.5),
-            "lr": lambda: random.uniform(1e-4, 1e-5),
-            "num_sgd_iter": lambda: random.randint(10, 30),
+        quantile_fraction=args.perturb,  # copy bottom % with top %
+        # Specifies the hyperparam search space
+        hyperparam_bounds={
+            "clip_param": [0.1, 0.5],
+            "lr": [1e-4, 1e-5],
+            "num_sgd_iter": [10, 30],
         },
-        custom_explore_fn=explore,
     )
 
     print(config)
@@ -131,14 +126,13 @@ if __name__ == "__main__":
     results = tune.run(
         AGENT_NAME,
         name=exp_name,
-        scheduler=pbt,
-        num_samples=20,
+        scheduler=pb2,
+        num_samples=3,
         config=config,
         stop=stop,
-        checkpoint_freq=2000,
+        checkpoint_freq=500,
         checkpoint_at_end=True,
         reuse_actors=False,
-        max_failures=5,
         restore=restore,
         verbose=1,
     )

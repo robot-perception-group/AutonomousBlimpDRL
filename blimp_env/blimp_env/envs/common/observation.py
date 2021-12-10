@@ -299,10 +299,12 @@ class DummyYawObservation(PlanarKinematicsObservation):
         env: "AbstractEnv",
         noise_stdv=0.02,
         scale_obs=True,
-        enable_psi_vel=True,
+        enable_psi_vel=False,
         **kwargs: dict
     ) -> None:
         super().__init__(env, noise_stdv=noise_stdv, scale_obs=scale_obs, **kwargs)
+        self.obs_dim = 2
+
         self.enable_psi_vel = enable_psi_vel
         if self.enable_psi_vel:
             self.obs_dim = 3

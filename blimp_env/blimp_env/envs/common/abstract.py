@@ -281,7 +281,7 @@ class ROSAbstractEnv(AbstractEnv):
         os.environ["GAZEBO_MASTER_URI"] = host_addr + str(gaz_port) + "/"
 
         while rosgraph.is_master_online():
-            time.sleep(1)
+            time.sleep(3)
             ros_port += 1
             gaz_port += 1
             os.environ["ROS_MASTER_URI"] = host_addr + str(ros_port) + "/"

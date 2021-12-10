@@ -231,6 +231,7 @@ def kill_blimp_screen(robot_id: int) -> Tuple[int]:
             f"screen -S FW_{robot_id} -X quit",
             shell=True,
         )
+        time.sleep(2)
     except:
         print("fw screen not found, skip kill")
         kill_fw_reply = 1
@@ -240,6 +241,7 @@ def kill_blimp_screen(robot_id: int) -> Tuple[int]:
             f"screen -S BLIMP_{robot_id} -X quit",
             shell=True,
         )
+        time.sleep(10)
     except:
         print("blimp screen not found, skip kill")
         kill_blimp_reply = 1
@@ -261,6 +263,7 @@ def kill_goal_screen(robot_id: int) -> int:
             f"screen -S GOAL_{robot_id} -X quit",
             shell=True,
         )
+        time.sleep(5)
     except:
         print("goal screen not found, skip kill")
         reply = 1
@@ -281,6 +284,7 @@ def kill_world_screen(robot_id: int) -> int:
             f"screen -S WORLD_{robot_id} -X quit",
             shell=True,
         )
+        time.sleep(20)
     except:
         print("world screen not found, skip kill")
         reply = 1
@@ -301,6 +305,7 @@ def kill_master_screen(robot_id: int) -> int:
             f"screen -S ROSMASTER_{robot_id} -X quit",
             shell=True,
         )
+        time.sleep(2)
     except:
         print("master screen not found, skip kill")
         reply = 1
@@ -320,7 +325,6 @@ def kill_all_screen(robot_id: int) -> dict:
     kill_blimp_reply, kill_fw_reply = kill_blimp_screen(robot_id)
     kill_world_reply = kill_world_screen(robot_id)
     kill_master_reply = kill_master_screen(robot_id)
-    time.sleep(15)
     return {
         "kill_goal_reply": kill_goal_reply,
         "kill_blimp_reply": kill_blimp_reply,
@@ -332,12 +336,14 @@ def kill_all_screen(robot_id: int) -> dict:
 
 def remove_blimp(robot_id: int) -> int:
     """remove blimp model from gazebo world"""
-    return int(
+    reply = int(
         subprocess.check_call(
             f"rosservice call /gazebo/delete_model \"model_name: 'machine_{robot_id}' \"",
             shell=True,
         )
     )
+    time.sleep(5)
+    return reply
 
 
 # ============ Respawn Script ============#
