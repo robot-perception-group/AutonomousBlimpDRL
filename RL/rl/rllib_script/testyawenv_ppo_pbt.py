@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
         },
         "observation": {
-            "enable_psi_vel": False,
+            "enable_psi_vel": True,
         },
         "reward_weights": np.array([0, 1.0, 0, 0]),  # success, tracking, action, bonus
         "enable_residual_ctrl": True,
@@ -92,8 +92,8 @@ if __name__ == "__main__":
             "kl_coeff": 1.0,
             "horizon": 400,
             "rollout_fragment_length": 200,
-            "train_batch_size": args.num_workers * 2000,
-            "sgd_minibatch_size": args.num_workers * 200,
+            "train_batch_size": args.num_workers * 1000,
+            "sgd_minibatch_size": args.num_workers * 100,
             "num_sgd_iter": sample_from(lambda spec: random.randint(10, 30)),
             "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
             "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
