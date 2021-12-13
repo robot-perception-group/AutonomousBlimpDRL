@@ -10,7 +10,7 @@ import rospy
 from blimp_env.envs.common.abstract import ROSAbstractEnv
 from blimp_env.envs.common.action import Action
 from geometry_msgs.msg import Point, Quaternion
-from blimp_env.envs.script.blimp_script import respawn_model
+from blimp_env.envs.script import close_simulation
 import line_profiler
 
 profile = line_profiler.LineProfiler()
@@ -606,7 +606,9 @@ class TestYawEnv(PlanarNavigateEnv):
             self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["psi_vel"]))
 
         self.act_rviz_pub.publish(Quaternion(*info["act"], 0, 0, 0))
-        self.residual_act_rviz_pub.publish(Quaternion(*info["residual_act"], 0, 0, 0))
+        self.residual_act_rviz_pub.publish(
+            Quaternion(*info["residual_act"], *info["joint_act"], 0, 0)
+        )
 
         self.pos_cmd_pub.publish(Point(*self.goal["position"]))
 
@@ -628,7 +630,7 @@ class TestYawEnv(PlanarNavigateEnv):
         obs, _ = self.observation_type.observe()
 
         psi_ctrl, self.psi_err_i, self.prev_psi = self.pid_ctrl(
-            -obs[0], self.psi_err_i, self.prev_psi, np.array([1, 0.0, 0.5])
+            -obs[0], self.psi_err_i, self.prev_psi, np.array([1, 0.0, 0.7])
         )
         residual_act = np.array([psi_ctrl])
         residual_act = np.clip(residual_act, -1, 1)
@@ -737,6 +739,9 @@ class TestYawEnv(PlanarNavigateEnv):
         obs, _ = self.observation_type.observe()
         return np.abs(np.abs(obs[0]) - 1) < 0.05
 
+    def close(self) -> None:
+        close_simulation()
+
 
 if __name__ == "__main__":
     import copy
@@ -752,7 +757,7 @@ if __name__ == "__main__":
     if auto_start_simulation:
         close_simulation()
 
-    ENV = TestYawEnv # PlanarNavigateEnv, ResidualPlanarNavigateEnv, TestYawEnv
+    ENV = TestYawEnv  # PlanarNavigateEnv, ResidualPlanarNavigateEnv, TestYawEnv
     env_kwargs = {
         "DBG": True,
         "simulation": {

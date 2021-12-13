@@ -20,7 +20,7 @@ AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "test"
 
-days = 21
+days = 20
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=7, help="Number of workers to use"
+    "--num_workers", type=int, default=5, help="Number of workers to use"
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
@@ -93,7 +93,7 @@ if __name__ == "__main__":
             "horizon": 400,
             "rollout_fragment_length": 200,
             "train_batch_size": args.num_workers * 2000,
-            "sgd_minibatch_size": 2048,
+            "sgd_minibatch_size": args.num_workers * 200,
             "num_sgd_iter": sample_from(lambda spec: random.randint(10, 30)),
             "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
             "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         time_attr=args.criteria,
         metric="episode_reward_mean",
         mode="max",
-        perturbation_interval=args.num_workers * 2000,
+        perturbation_interval=args.num_workers * 10000,
         quantile_fraction=0.25,  # copy bottom % with top %
         # Specifies the hyperparam search space
         hyperparam_bounds={
@@ -121,15 +121,15 @@ if __name__ == "__main__":
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
         close_simulation()
-        close_simulation()
+
     results = tune.run(
         AGENT_NAME,
         name=exp_name,
         scheduler=pb2,
-        num_samples=3,
+        num_samples=5,
         config=config,
         stop=stop,
-        checkpoint_freq=500,
+        checkpoint_freq=2000,
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,

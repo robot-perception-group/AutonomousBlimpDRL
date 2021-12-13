@@ -32,7 +32,7 @@ class TorchBatchNormModel(TorchModelV2, nn.Module):
         self._logits = None
 
         # Create layers 0 to second-last.
-        for size in [128, 128]:
+        for size in [64, 64]:
             layers.append(
                 SlimFC(
                     in_size=prev_layer_size,
@@ -58,7 +58,7 @@ class TorchBatchNormModel(TorchModelV2, nn.Module):
         self._value_branch = SlimFC(
             in_size=prev_layer_size,
             out_size=1,
-            initializer=torch_normc_initializer(1.0),
+            initializer=torch_normc_initializer(0.01),
             activation_fn=None,
         )
 
