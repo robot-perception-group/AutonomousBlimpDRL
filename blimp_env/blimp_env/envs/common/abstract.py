@@ -272,7 +272,7 @@ class ROSAbstractEnv(AbstractEnv):
         )
 
         time.sleep(
-            10 * int(worker_index)
+            35 * int(worker_index)
         )  # spawn at different time increase spawn stability
         ros_port = self.config["simulation"]["ros_port"] + worker_index
         gaz_port = self.config["simulation"]["gaz_port"] + worker_index
