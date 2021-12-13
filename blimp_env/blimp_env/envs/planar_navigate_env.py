@@ -630,7 +630,7 @@ class TestYawEnv(PlanarNavigateEnv):
         obs, _ = self.observation_type.observe()
 
         psi_ctrl, self.psi_err_i, self.prev_psi = self.pid_ctrl(
-            -obs[0], self.psi_err_i, self.prev_psi, np.array([1, 0.0, 0.7])
+            -obs[0], self.psi_err_i, self.prev_psi, np.array([1.0, 0.0, 2.0])
         )
         residual_act = np.array([psi_ctrl])
         residual_act = np.clip(residual_act, -1, 1)
