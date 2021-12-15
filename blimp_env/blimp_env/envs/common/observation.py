@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import rospy
 from blimp_env.envs.common import utils
-from blimp_env.envs.script.blimp_script import respawn_model
+from blimp_env.envs.script.blimp_script import respawn_model, resume_simulation
 from gym import spaces
 from sensor_msgs.msg import Imu
 from transforms3d.euler import quat2euler
@@ -146,7 +146,7 @@ class ROSObservation(ObservationType):
     def check_connection(self):
         """check ros connection"""
         while (self.pos_data == np.array([0, 0, 0])).all():
-            rospy.loginfo("[ observation ] waiting for pose subscriber")
+            rospy.loginfo("[ observation ] waiting for pose subscriber...")
             try:
                 pose_data = rospy.wait_for_message(
                     self.name_space + "/pose",
@@ -154,16 +154,26 @@ class ROSObservation(ObservationType):
                     timeout=50,
                 )
             except TimeoutError:
-                rospy.loginfo("[ observation ] Simulation Crashed...Respawn")
-                reply = respawn_model(**self.env.config["simulation"])
-                rospy.loginfo("[ observation ] Simulation Respawned:", reply)
+                rospy.loginfo("[ observation ] cannot find pose subscriber")
+                reply = self.obs_err_handle()
 
             self.pos_data = utils.obj2array(pose_data.position)
 
-        rospy.logdebug("pose ready")
+        rospy.loginfo("[ observation ] pose ready")
 
     def observe(self) -> np.ndarray:
         raise NotImplementedError
+
+    def obs_err_handle(self):
+        try:
+            rospy.loginfo("[ observation ] respawn model...")
+            reply = respawn_model(**self.env.config["simulation"])
+            rospy.loginfo("[ observation ] respawn model status ", reply)
+        except TimeoutError:
+            rospy.loginfo("[ observation ] resume simulation...")
+            reply = resume_simulation(**self.env.config["simulation"])
+            rospy.loginfo("[ observation ] resume simulation status ", reply)
+        return reply
 
 
 class PlanarKinematicsObservation(ROSObservation):
@@ -193,9 +203,8 @@ class PlanarKinematicsObservation(ROSObservation):
     def observe(self) -> np.ndarray:
         obs, obs_dict = self._observe()
         while np.isnan(obs).any():
-            print("[ observation ] obs corrupted by NA")
-            reply = respawn_model(**self.env.config["simulation"])
-            print("[ observation ] respawn model status ", reply)
+            rospy.loginfo("[ observation ] obs corrupted by NA")
+            self.obs_err_handle()
             obs, obs_dict = self._observe()
         return obs, obs_dict
 

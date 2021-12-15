@@ -21,7 +21,7 @@ from blimp_env.envs.common.utils import update_dict
 from blimp_env.envs.script.blimp_script import (
     spawn_simulation_on_different_port,
     spawn_simulation_on_marvin,
-    kill_all_screen,
+    kill_screens,
 )
 from gym.utils import seeding
 
@@ -386,5 +386,5 @@ class ROSAbstractEnv(AbstractEnv):
     def close(self) -> None:
         rospy.logdebug("Closing RobotGazeboEnvironment")
         rospy.signal_shutdown("Closing RobotGazeboEnvironment")
-        kill_reply = kill_all_screen(int(self.config["robot_id"]))
+        kill_reply = kill_screens(int(self.config["robot_id"]))
         print("kill screen reply:", kill_reply)

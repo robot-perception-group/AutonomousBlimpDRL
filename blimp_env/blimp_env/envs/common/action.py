@@ -86,35 +86,32 @@ class ROSActionType(ActionType):
     def check_publishers_connection(self) -> None:
         """check actuator publisher connections"""
         waiting_time = 0
-        respawn_time = 0
-        resume_time = 0
 
         while self.action_publisher.get_num_connections() == 0:
             rospy.loginfo("[ Action ] No subscriber to action_publisher yet, wait...")
             waiting_time += 1
             time.sleep(1)
 
-            if resume_time > 0:
-                raise ValueError("[ Action ] Unable to establish action connection")
-
-            if respawn_time > 0:
-                rospy.loginfo("[ Action ] Simulation Crashed...resume simulation")
-                reply = resume_simulation(
-                    target_type=self.env.config["target"]["type"],
-                    **self.env.config["simulation"],
-                )
-                respawn_time = 0
-                resume_time += 1
-                rospy.loginfo("Simulation Resumed:", reply)
-
             if waiting_time >= 10:
-                rospy.loginfo("[ Action ] respawn model...")
-                respawn_model(**self.env.config["simulation"])
-                respawn_time += 1
                 waiting_time = 0
+                self.act_err_handle()
 
-        rospy.logdebug("action_publisher connected")
+        rospy.loginfo("action_publisher connected")
         return self.action_publisher.get_num_connections() > 0
+
+    def act_err_handle(self):
+        try:
+            rospy.loginfo("[ Action ] respawn model...")
+            reply = respawn_model(**self.env.config["simulation"])
+            rospy.loginfo("[ Action ] respawn result:", reply)
+        except TimeoutError:
+            rospy.loginfo("[ Action ] resume simulation...")
+            reply = resume_simulation(
+                target_type=self.env.config["target"]["type"],
+                **self.env.config["simulation"],
+            )
+            rospy.loginfo("[ Action ] resume simulation result:", reply)
+        return reply
 
     def set_init_pose(self):
         """set initial actions"""

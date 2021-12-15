@@ -1,10 +1,13 @@
 """ script """
+import errno
 import subprocess
 import pathlib
 from typing import Tuple
 import os
 import socket
 import time
+from blimp_env.envs.common.utils import timeout
+import rospy
 
 path = pathlib.Path(__file__).parent.resolve()
 
@@ -12,6 +15,21 @@ DEFAULT_ROSPORT = 11311
 DEFAULT_GAZPORT = 11351
 
 # ============ Spawn Script ============#
+
+
+def spawn_ros_master(
+    robot_id: int = 0, ros_port: int = DEFAULT_ROSPORT, gaz_port: int = DEFAULT_GAZPORT
+) -> int:
+    """spawn ros master at specified port number"""
+
+    names = ["ROSMASTER_" + str(robot_id)]
+    while check_screen_sessions_exist(names=names) is not True:
+        call_reply = subprocess.check_call(
+            str(path)
+            + f"/spawn_rosmaster.sh -i {robot_id} -p {gaz_port} -r {ros_port}",
+            shell=True,
+        )
+    return int(call_reply)
 
 
 def spawn_world(
@@ -22,11 +40,13 @@ def spawn_world(
     ros_port: int = DEFAULT_ROSPORT,
 ) -> int:
     """spawn gazebo world"""
-    call_reply = subprocess.check_call(
-        str(path)
-        + f"/spawn_world.sh -i {robot_id} -g {gui} -d {world} -p {gaz_port} -r {ros_port}",
-        shell=True,
-    )
+    names = ["WORLD_" + str(robot_id)]
+    while check_screen_sessions_exist(names=names) is not True:
+        call_reply = subprocess.check_call(
+            str(path)
+            + f"/spawn_world.sh -i {robot_id} -g {gui} -d {world} -p {gaz_port} -r {ros_port}",
+            shell=True,
+        )
     return int(call_reply)
 
 
@@ -44,13 +64,17 @@ def spawn_blimp(
     wind_arg = "-w" if enable_wind else ""
     mesh_arg = "-m" if enable_meshes else ""
 
-    call_reply = subprocess.check_call(
-        str(path)
-        + f"/spawn_blimp_sitl.sh -i {robot_id} {mesh_arg} {wind_arg}\
-             -wx {wind_direction[0]} -wy {wind_direction[1]} -ws {wind_speed}\
-             -r {ros_port} -p {gaz_port} -px {position[0]} -py {position[1]} -pz {position[2]}",
-        shell=True,
-    )
+    names = ["FW_" + str(robot_id), "BLIMP_" + str(robot_id)]
+    while check_screen_sessions_exist(names=names) is not True:
+        kill_screens(robot_id=robot_id, screen_names=names, sleep_times=[3, 10])
+        call_reply = subprocess.check_call(
+            str(path)
+            + f"/spawn_blimp_sitl.sh -i {robot_id} {mesh_arg} {wind_arg}\
+                -wx {wind_direction[0]} -wy {wind_direction[1]} -ws {wind_speed}\
+                -r {ros_port} -p {gaz_port} -px {position[0]} -py {position[1]} -pz {position[2]}",
+            shell=True,
+        )
+        time.sleep(3)
 
     return int(call_reply)
 
@@ -65,12 +89,15 @@ def spawn_goal(
 ) -> int:
     """spawn goal type target"""
     range_x, range_y, min_z, max_z = target_position_range
-    call_reply = subprocess.check_call(
-        str(path)
-        + f"/spawn_goal.sh -i {robot_id} -r {ros_port} -p {gaz_port}\
-             -px {range_x} -py {range_y} -pza {min_z} -pzb {max_z} -v {target_velocity_range}",
-        shell=True,
-    )
+
+    names = ["GOAL_" + str(robot_id)]
+    while check_screen_sessions_exist(names=names) is not True:
+        call_reply = subprocess.check_call(
+            str(path)
+            + f"/spawn_goal.sh -i {robot_id} -r {ros_port} -p {gaz_port}\
+                -px {range_x} -py {range_y} -pza {min_z} -pzb {max_z} -v {target_velocity_range}",
+            shell=True,
+        )
     return int(call_reply)
 
 
@@ -80,19 +107,24 @@ def spawn_square(
     gaz_port: int = DEFAULT_GAZPORT,
 ) -> int:
     """spawn goal type target"""
-    call_reply = subprocess.check_call(
-        str(path) + f"/spawn_square.sh -i {robot_id} -r {ros_port} -p {gaz_port}",
-        shell=True,
-    )
+    names = ["GOAL_" + str(robot_id)]
+    while check_screen_sessions_exist(names=names) is not True:
+        call_reply = subprocess.check_call(
+            str(path) + f"/spawn_square.sh -i {robot_id} -r {ros_port} -p {gaz_port}",
+            shell=True,
+        )
     return int(call_reply)
 
 
 def spawn_path(robot_id: int = 0) -> int:
     """spawn path type target"""
-    call_reply = subprocess.check_call(
-        str(path) + f"/spawn_path.sh -i {robot_id}",
-        shell=True,
-    )
+
+    names = ["GOAL_" + str(robot_id)]
+    while check_screen_sessions_exist(names=names) is not True:
+        call_reply = subprocess.check_call(
+            str(path) + f"/spawn_path.sh -i {robot_id}",
+            shell=True,
+        )
     return int(call_reply)
 
 
@@ -122,17 +154,6 @@ def spawn_target(
         return int(spawn_target_reply)
     else:
         return None
-
-
-def spawn_ros_master(
-    robot_id: int = 0, ros_port: int = DEFAULT_ROSPORT, gaz_port: int = DEFAULT_GAZPORT
-) -> int:
-    """spawn ros master at specified port number"""
-    call_reply = subprocess.check_call(
-        str(path) + f"/spawn_rosmaster.sh -i {robot_id} -p {gaz_port} -r {ros_port}",
-        shell=True,
-    )
-    return int(call_reply)
 
 
 # ============ Composite Spawn Script ============#
@@ -173,7 +194,7 @@ def spawn_simulation_on_different_port(
         "world_reply": world_reply,
         "blimp_reply": blimp_reply,
     }
-    print("spawn process result:", proc_result)
+    rospy.loginfo("spawn process result:", proc_result)
     return proc_result
 
 
@@ -214,125 +235,44 @@ def close_simulation_on_marvin(
 
 def close_simulation() -> int:
     """kill all simulators"""
-    return int(subprocess.check_call(str(path) + "/cleanup.sh"))
+    reply = int(subprocess.check_call(str(path) + "/cleanup.sh"))
+    return reply
 
 
-def kill_blimp_screen(robot_id: int) -> Tuple[int]:
-    """kill blimp screen session by specifying screen name and robot_id
+def kill_screen(screen_name, sleep_time=1):
+    reply = 1
+    while find_screen_session(screen_name) is not None:
+        try:
+            reply = subprocess.check_call(
+                f'for session in $(screen -ls | grep {screen_name}); do screen -S "${{session}}" -X quit; done',
+                shell=True,
+            )
+            time.sleep(sleep_time)
+        except:
+            print(f"screen {screen_name} not found, skip kill")
+    return reply
+
+
+def kill_screens(
+    robot_id: int,
+    screen_names: list = ["GOAL_", "FW_", "BLIMP_", "WORLD_", "ROSMASTER_"],
+    sleep_times: list = [3, 3, 10, 10, 5],
+) -> Tuple[int]:
+    """kill screen session by specifying screen name and robot_id
 
     Args:
         robot_id ([str]): [number of the robot]
+        screen_names ([list]): [screen name]
+        sleep_time ([list]): [sleep time after kill]
 
     Returns:
         [Tuple[int]]: [status of the script]
     """
-    try:
-        kill_fw_reply = subprocess.check_call(
-            f"screen -S FW_{robot_id} -X quit",
-            shell=True,
-        )
-        time.sleep(1)
-    except:
-        print("fw screen not found, skip kill")
-        kill_fw_reply = 1
-
-    try:
-        kill_blimp_reply = subprocess.check_call(
-            f"screen -S BLIMP_{robot_id} -X quit",
-            shell=True,
-        )
-        time.sleep(7)
-    except:
-        print("blimp screen not found, skip kill")
-        kill_blimp_reply = 1
-
-    return int(kill_blimp_reply), int(kill_fw_reply)
-
-
-def kill_goal_screen(robot_id: int) -> int:
-    """kill target screen session
-
-    Args:
-        robot_id ([str]): [robot_id]
-
-    Returns:
-        [int]: [status of the script]
-    """
-    try:
-        reply = subprocess.check_call(
-            f"screen -S GOAL_{robot_id} -X quit",
-            shell=True,
-        )
-        time.sleep(1)
-    except:
-        print("goal screen not found, skip kill")
-        reply = 1
-    return int(reply)
-
-
-def kill_world_screen(robot_id: int) -> int:
-    """kill gazebo screen session
-
-    Args:
-        robot_id ([str]): [robot_id]
-
-    Returns:
-        [int]: [status of the script]
-    """
-    try:
-        reply = subprocess.check_call(
-            f"screen -S WORLD_{robot_id} -X quit",
-            shell=True,
-        )
-        time.sleep(10)
-    except:
-        print("world screen not found, skip kill")
-        reply = 1
-    return int(reply)
-
-
-def kill_master_screen(robot_id: int) -> int:
-    """kill ros master screen session
-
-    Args:
-        robot_id ([str]): [robot_id]
-
-    Returns:
-        [int]: [status of the script]
-    """
-    try:
-        reply = subprocess.check_call(
-            f"screen -S ROSMASTER_{robot_id} -X quit",
-            shell=True,
-        )
-        time.sleep(1)
-    except:
-        print("master screen not found, skip kill")
-        reply = 1
-    return int(reply)
-
-
-def kill_all_screen(robot_id: int) -> dict:
-    """kill all screen session by specifying screen name and robot_id
-
-    Args:
-        robot_id ([str]): [number of the robot]
-
-    Returns:
-        [str]: [status of the script]
-    """
-    time.sleep(int(robot_id) * 20)
-    kill_goal_reply = kill_goal_screen(robot_id)
-    kill_blimp_reply, kill_fw_reply = kill_blimp_screen(robot_id)
-    kill_world_reply = kill_world_screen(robot_id)
-    kill_master_reply = kill_master_screen(robot_id)
-    return {
-        "kill_goal_reply": kill_goal_reply,
-        "kill_blimp_reply": kill_blimp_reply,
-        "kill_fw_reply": kill_fw_reply,
-        "kill_world_reply": kill_world_reply,
-        "kill_master_reply": kill_master_reply,
-    }
+    reply = {}
+    for screen_name, sleep_time in zip(screen_names, sleep_times):
+        kill_reply = kill_screen(screen_name + str(robot_id), sleep_time)
+        reply.update({"kill_" + screen_name + str(robot_id): kill_reply})
+    return reply
 
 
 def remove_blimp(robot_id: int) -> int:
@@ -357,7 +297,9 @@ def respawn_target(
     target_type: str = "InteractiveGoal",
     **kwargs,
 ) -> int:
-    kill_reply = kill_goal_screen(robot_id=robot_id)
+    kill_reply = kill_screens(
+        robot_id=robot_id, screen_names=["GOAL_"], sleep_times=[3]
+    )
     spawn_target_reply = spawn_target(
         robot_id=robot_id,
         ros_port=ros_port,
@@ -368,6 +310,7 @@ def respawn_target(
     return {"kill_reply": kill_reply, "spawn_target_reply": spawn_target_reply}
 
 
+@timeout(50, os.strerror(errno.ETIMEDOUT))
 def respawn_model(
     robot_id: int = 0,
     enable_meshes: bool = False,
@@ -382,7 +325,9 @@ def respawn_model(
     first kill the screen session and then remove model from gazebo
     lastly spawn model again
     """
-    kill_model_reply = kill_blimp_screen(robot_id=robot_id)
+    kill_model_reply = kill_screens(
+        robot_id=robot_id, screen_names=["FW_", "BLIMP_"], sleep_times=[3, 10]
+    )
     remove_model_reply = remove_blimp(robot_id=robot_id)
     spawn_model_reply = spawn_blimp(
         robot_id=robot_id,
@@ -407,7 +352,7 @@ def resume_simulation(
     ros_port: int = DEFAULT_ROSPORT,
     gaz_port: int = DEFAULT_GAZPORT,
     enable_meshes: bool = False,
-    target_type: str = "Goal",
+    target_type: str = "RandomGoal",
     **kwargs,  # pylint: disable=unused-argument
 ) -> dict:
     """resume simulation
@@ -425,9 +370,18 @@ def resume_simulation(
     Returns:
         [type]: [success]
     """
-    kill_reply = kill_all_screen(robot_id=robot_id)
+    kill_reply = kill_screens(robot_id=robot_id)
+    master_reply = spawn_ros_master(
+        robot_id=robot_id,
+        ros_port=ros_port,
+        gaz_port=gaz_port,
+    )
     world_reply = spawn_world(
-        robot_id=robot_id, world=world, gui=gui, ros_port=ros_port, gaz_port=gaz_port
+        robot_id=robot_id,
+        world=world,
+        gui=gui,
+        ros_port=ros_port,
+        gaz_port=gaz_port,
     )
     blimp_reply = spawn_blimp(
         robot_id=robot_id,
@@ -436,16 +390,41 @@ def resume_simulation(
         enable_meshes=enable_meshes,
     )
     target_reply = spawn_target(
-        robot_id=robot_id, target_type=target_type, ros_port=ros_port, gaz_port=gaz_port
+        robot_id=robot_id,
+        target_type=target_type,
+        ros_port=ros_port,
+        gaz_port=gaz_port,
     )
     proc_result = {
+        "master_reply": master_reply,
         "world_reply": world_reply,
         "blimp_reply": blimp_reply,
         "target_reply": target_reply,
     }
-    print("spawn process result:", proc_result)
+    rospy.loginfo("spawn process result:", proc_result)
 
     return {
-        "kill_model": kill_reply,
+        "kill_all_screen": kill_reply,
         "proc_result": proc_result,
     }
+
+
+# ============ check screen ============#
+def find_screen_session(name: str):
+    try:
+        screen_name = subprocess.check_output(
+            f"ls /var/run/screen/S-* | grep {name}",
+            shell=True,
+        )
+    except subprocess.CalledProcessError:
+        screen_name = None
+    return screen_name
+
+
+def check_screen_sessions_exist(
+    names: list = ["ROSMASTER_", "WORLD_", "FW_", "BLIMP_"]
+):
+    all_exist = True
+    for name in names:
+        all_exist *= find_screen_session(name) is not None
+    return bool(all_exist)
