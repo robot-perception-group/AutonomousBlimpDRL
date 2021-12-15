@@ -96,7 +96,7 @@ class ROSActionType(ActionType):
                 waiting_time = 0
                 self.act_err_handle()
 
-        rospy.loginfo("action_publisher connected")
+        rospy.loginfo("[ Action ] action ready")
         return self.action_publisher.get_num_connections() > 0
 
     def act_err_handle(self):
@@ -421,60 +421,11 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         )
 
 
-class DummyYawAction(ContinuousAction):
+class DummyYawAction(SimpleContinuousDifferentialAction):
     """simplified action space by binding action that has similar dynamic effect"""
 
     DIFF_ACT_SCALE = np.array([0.1])
     ACT_DIM = 1
-
-    def __init__(
-        self,
-        env: "AbstractEnv",
-        **kwargs: dict,
-    ) -> None:
-        """action channel
-        0: back motor + top fin + bot fin
-        """
-        super().__init__(env, **kwargs)
-        self.act_dim = self.ACT_DIM
-        self.diff_act_scale = self.DIFF_ACT_SCALE
-
-        self.init_act = np.zeros(self.act_dim)
-        self.cur_act = np.zeros(self.act_dim)
-
-    def space(self):
-        return spaces.Box(
-            low=np.full((self.act_dim), -1),
-            high=np.full((self.act_dim), 1),
-            dtype=np.float32,
-        )
-
-    def act(self, action: np.ndarray) -> None:
-        """publish action
-
-        Args:
-            action (np.ndarray): agent action in range [-1, 1] with shape (4,)
-        """
-        self.cur_act = self.process_action(action, self.cur_act)
-        proc_actuator = self.process_actuator_state(
-            self.cur_act.copy(), self.act_noise_stdv
-        )
-
-        act_msg = LibrepilotActuators()
-        act_msg.header.stamp = rospy.Time.now()
-        act_msg.data.data = proc_actuator
-
-        mode = uav_pose()
-        mode.flightmode = self.flightmode
-
-        self.action_publisher.publish(act_msg)
-        self.flightmode_publisher.publish(mode)
-
-        if self.dbg_act:
-            print("[ Action ] mode:", self.flightmode)
-            print("[ Action ] agent action:", action)
-            print("[ Action ] current actuator:", self.cur_act)
-            print("[ Action ] process actuator:", proc_actuator)
 
     def process_action(self, action: np.array, cur_act: np.array) -> np.array:
         """modify agent action
@@ -487,26 +438,7 @@ class DummyYawAction(ContinuousAction):
         """
         cur_act += self.diff_act_scale * action
         cur_act = np.clip(cur_act, -1, 1)
-
         return cur_act
-
-    def process_actuator_state(
-        self, act_state: np.array, noise_level: float = 0.0
-    ) -> np.array:
-        """map agent action to actuator specification
-
-        Args:
-            act_state (np.array): agent actuator state [-1, 1] with shape (4,)
-            noise_level (float, optional): noise level [0, 1]. Defaults to 0.0.
-
-        Returns:
-            [type]: processed actuator state [1000, 2000] with shape (12,1)
-        """
-        proc = act_state + np.random.normal(0, noise_level, act_state.shape)
-        proc = np.clip(proc, -1, 1)
-        proc = utils.lmap(proc, [-1, 1], self.act_range)
-        proc = self.match_channel(proc)
-        return proc
 
     def match_channel(self, action: np.array) -> np.array:
         """match and fillup empty channels to fulfill input requirement for the gcs
@@ -546,14 +478,6 @@ class DummyYawAction(ContinuousAction):
         motors = self.get_cur_act()[[0]]
         motors_rew = -np.dot(abs(motors), scale) / scale.sum()
         return motors_rew
-
-    def get_cur_act(self) -> np.array:
-        """get current actuator state"""
-        cur_act = self.cur_act.copy()
-        cur_act = self.match_channel(cur_act)[[0, 1, 2, 3, 4, 5, 6, 8]]
-        return cur_act.reshape(
-            8,
-        )
 
 
 def action_factory(  # pylint: disable=too-many-return-statements

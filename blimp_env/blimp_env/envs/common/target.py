@@ -9,6 +9,7 @@ from gym import spaces
 from librepilot.msg import AutopilotInfo
 from transforms3d.euler import euler2quat, quat2euler
 from visualization_msgs.msg import InteractiveMarkerInit, Marker, MarkerArray
+import time
 
 if TYPE_CHECKING:
     from blimp_env.envs.common.abstract import AbstractEnv
@@ -255,12 +256,10 @@ class InteractiveGoal(ROSTarget):
 
     def check_connection(self) -> None:
         """check ros connection"""
-        rate = rospy.Rate(100)
-
         while self._pub_and_sub is not True:
             try:
                 rospy.logdebug("[ target ] waiting for target startup")
-                rate.sleep()
+                time.sleep(1)
             except rospy.ROSInterruptException as err:
                 rospy.logdebug("unable to establish ros connection:", err)
                 break

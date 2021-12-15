@@ -179,26 +179,43 @@ class ROSObservation(ObservationType):
 class PlanarKinematicsObservation(ROSObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "psi_vel", "action"]
+    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "action"]
     OBS_range = {
         "z_diff": [-100, 100],
         "planar_dist": [0, 200 * np.sqrt(2)],
         "psi_diff": [-np.pi, np.pi],
         "vel_diff": [-11.5, 11.5],
         "vel": [0, 11.5],
-        "psi_vel": [-15, 15],
     }
 
     def __init__(
-        self, env: "AbstractEnv", noise_stdv=0.02, scale_obs=True, **kwargs: dict
+        self,
+        env: "AbstractEnv",
+        noise_stdv=0.02,
+        scale_obs=True,
+        enable_psi_vel=True,
+        **kwargs: dict
     ) -> None:
         super().__init__(env, **kwargs)
-        self.noise_stdv = noise_stdv
-        self.scale_obs = scale_obs
-
         self.obs_name = self.OBS
         self.obs_dim = 10
         self.range_dict = self.OBS_range
+
+        self.noise_stdv = noise_stdv
+        self.scale_obs = scale_obs
+        self.enable_psi_vel = enable_psi_vel
+        if self.enable_psi_vel:
+            self.obs_dim += 1
+            self.obs_name = [
+                "z_diff",
+                "planar_dist",
+                "psi_diff",
+                "vel_diff",
+                "vel",
+                "psi_vel",
+                "action",
+            ]
+            self.range_dict.update({"psi_vel": [-15, 15]})
 
     def observe(self) -> np.ndarray:
         obs, obs_dict = self._observe()
@@ -252,8 +269,11 @@ class PlanarKinematicsObservation(ROSObservation):
             "psi_diff": psi_diff,
             "vel_diff": vel - goal_vel,
             "vel": vel,
-            "psi_vel": obs_dict["angular_velocity"][2],
         }
+
+        if self.enable_psi_vel:
+            state_dict.update({"psi_vel": obs_dict["angular_velocity"][2]})
+
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
 
@@ -308,7 +328,7 @@ class DummyYawObservation(PlanarKinematicsObservation):
         env: "AbstractEnv",
         noise_stdv=0.02,
         scale_obs=True,
-        enable_psi_vel=False,
+        enable_psi_vel=True,
         **kwargs: dict
     ) -> None:
         super().__init__(env, noise_stdv=noise_stdv, scale_obs=scale_obs, **kwargs)
@@ -316,7 +336,7 @@ class DummyYawObservation(PlanarKinematicsObservation):
 
         self.enable_psi_vel = enable_psi_vel
         if self.enable_psi_vel:
-            self.obs_dim = 3
+            self.obs_dim += 1
             self.obs_name = ["psi_diff", "psi_vel", "action"]
             self.range_dict.update({"psi_vel": [-15, 15]})
 
@@ -352,10 +372,6 @@ class DummyYawObservation(PlanarKinematicsObservation):
         self, obs_dict: dict, goal_dict: dict, scale_obs: bool = True
     ) -> dict:
         obs_pos, goal_pos = obs_dict["position"], goal_dict["position"]
-        vel = np.linalg.norm(obs_dict["velocity"])
-        goal_vel = goal_dict["velocity"]
-
-        planar_dist = np.linalg.norm(obs_pos[0:2] - goal_pos[0:2])
         psi_diff = self.compute_psi_diff(goal_pos, obs_pos, obs_dict["angle"][2])
 
         state_dict = {

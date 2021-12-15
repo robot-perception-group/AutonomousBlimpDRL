@@ -20,7 +20,7 @@ class GazeboConnection:
     def __init__(self, start_init_physics_parameters=True, reset_world_or_sim="WORLD"):
         rospy.loginfo("GazeboConnection Initializing ...")
 
-        self._max_update_rate = Float64(200.0)
+        self._max_update_rate = Float64(400.0)
         self._ode_config = ODEPhysics()
         self._time_step = Float64(0.005)  # 0.001
 

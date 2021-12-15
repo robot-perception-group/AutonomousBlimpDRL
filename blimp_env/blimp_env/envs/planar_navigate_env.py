@@ -261,6 +261,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "type": "PlanarKinematics",
                 "noise_stdv": 0.015,
                 "scale_obs": True,
+                "enable_psi_vel": True,
             }
         )
         config["action"].update(
@@ -289,6 +290,10 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                     [0.3, 0.40, 0.20, 0.10]
                 ),  # z_diff, planar_dist, psi_diff, vel_diff
                 "success_threshhold": 5,  # [meters]
+                "reward_scale": 0.1,
+                "clip_reward": False,
+                "enable_residual_ctrl": True,
+                "enable_early_stopping": False,
             }
         )
         return config
@@ -297,8 +302,9 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         super().__init__(config=config)
 
         self.delta_t = 0.01
-        self.psi_err_i, self.alt_err_i, self.vel_err_i = 0, 0, 0
-        self.prev_psi, self.prev_alt, self.prev_vel = 0, 0, 0
+        self.psi_err_i, self.prev_psi = 0, 0
+        self.alt_err_i, self.prev_alt = 0, 0
+        self.vel_err_i, self.prev_vel = 0, 0
 
     def _create_pubs_subs(self):
         self.rew_bonus_rviz_pub = rospy.Publisher(
@@ -326,8 +332,12 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 terminal: bool,
                 info: dictionary of all the step info,
         """
-        residual_act = self.residual_ctrl()
-        joint_act = self.mixer(action, residual_act)
+        if self.config["enable_residual_ctrl"]:
+            residual_act = self.residual_ctrl()
+            joint_act = self.mixer(action, residual_act)
+        else:
+            joint_act = action
+
         self._simulate(joint_act)
         obs, obs_info = self.observation_type.observe()
         reward, reward_info = self._reward(obs, joint_act, obs_info)
@@ -428,16 +438,25 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
 
         action_reward = self.action_type.action_rew()
 
-        psi_diff, psi_vel = obs[2], obs[5]
-        psi_sign_bonus = np.abs(psi_diff) * (np.sign(psi_diff) * np.sign(psi_vel) - 1)
+        psi_sign_bonus = 0
+        if self.config["observation"]["enable_psi_vel"]:
+            psi_diff, psi_vel = (
+                obs_info["proc_dict"]["psi_diff"],
+                obs_info["proc_dict"]["psi_vel"],
+            )
+            psi_sign_bonus = (
+                np.abs(psi_diff) * (np.sign(psi_diff) * np.sign(psi_vel) - 1) / 2
+            )
         psi_close_bonus = -int(self.psi_close_to_pi())
         bonus = psi_sign_bonus + psi_close_bonus
 
-        reward = 0.1 * np.dot(
+        reward = self.config["reward_scale"] * np.dot(
             reward_weights,
             (success_reward, tracking_reward, action_reward, bonus),
         )
-        # reward = np.clip(reward, -1, 1)
+        if self.config["clip_reward"]:
+            reward = np.clip(reward, -1, 1)
+
         rew_info = (reward, success_reward, tracking_reward, action_reward)
         bonus_info = (bonus, psi_sign_bonus, psi_close_bonus)
         reward_info = {"rew_info": rew_info, "bonus_info": bonus_info}
@@ -460,9 +479,11 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         )
         success = success_reward >= 1
 
-        # early_stopping = bool(self.psi_change())
-        # return time or success or early_stopping
-        return time or success
+        if self.config["enable_early_stopping"]:
+            early_stopping = bool(self.psi_change())
+            return time or success or early_stopping
+        else:
+            return time or success
 
     def psi_change(self):
         """[detect if psi changes from -pi to pi and vice versa]
@@ -470,8 +491,9 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         Returns:
             [bool]: [if psi changes from -pi to pi and vice versa]
         """
-        obs, _ = self.observation_type.observe()
-        return np.abs(-obs[2] - self.prev_psi) > 1.8
+        _, obs_dict = self.observation_type.observe()
+        cur_psi = obs_dict["proc_dict"]["psi_diff"]
+        return np.abs(-cur_psi - self.prev_psi) > 1.8
 
     def psi_close_to_pi(self):
         """[detect if psi is close to pi and -pi]
@@ -479,11 +501,15 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         Returns:
             [bool]: []
         """
-        obs, _ = self.observation_type.observe()
-        return np.abs(np.abs(obs[2]) - 1) < 0.05
+        _, obs_dict = self.observation_type.observe()
+        cur_psi = obs_dict["proc_dict"]["psi_diff"]
+        return np.abs(np.abs(cur_psi) - 1) < 0.05
+
+    def close(self) -> None:
+        close_simulation()
 
 
-class TestYawEnv(PlanarNavigateEnv):
+class TestYawEnv(ResidualPlanarNavigateEnv):
     @classmethod
     def default_config(cls) -> dict:
         config = super().default_config()
@@ -499,6 +525,7 @@ class TestYawEnv(PlanarNavigateEnv):
             {
                 "type": "DummyYawAction",
                 "act_noise_stdv": 0.05,
+                "disable_servo": True,
             }
         )
         config["target"].update(
@@ -517,77 +544,14 @@ class TestYawEnv(PlanarNavigateEnv):
                     [0, 1.0, 0, 0]
                 ),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array([1.0]),  # psi_diff
-                "reward_scale": 0.1,
                 "success_threshhold": 0,  # [meters]
+                "reward_scale": 0.1,
+                "clip_reward": True,
                 "enable_residual_ctrl": True,
-                "enable_early_stopping": False,
+                "enable_early_stopping": True,
             }
         )
         return config
-
-    def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
-        super().__init__(config=config)
-
-        self.enable_psi_vel = self.config["observation"]["enable_psi_vel"]
-        self.enable_residual_ctrl = self.config["enable_residual_ctrl"]
-        self.enable_early_stopping = self.config["enable_early_stopping"]
-        self.reward_scale = self.config["reward_scale"]
-
-        self.delta_t = 0.01
-        self.psi_err_i, self.prev_psi = 0, 0
-
-    def _create_pubs_subs(self):
-        self.rew_bonus_rviz_pub = rospy.Publisher(
-            self.config["name_space"] + "/rviz_reward_psi_bonus", Point, queue_size=1
-        )
-        self.ang_vel_rviz_pub = rospy.Publisher(
-            self.config["name_space"] + "/rviz_ang_vel", Point, queue_size=1
-        )
-        self.residual_act_rviz_pub = rospy.Publisher(
-            self.config["name_space"] + "/rviz_residual_act", Quaternion, queue_size=1
-        )
-        return super()._create_pubs_subs()
-
-    @profile
-    def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
-        """[perform a step action and observe result]
-
-        Args:
-            action (Action): action from the agent [-1,1] with size (4,)
-
-        Returns:
-            Tuple[Observation, float, bool, dict]:
-                obs: np.array [-1,1] with size (9,),
-                reward: scalar,
-                terminal: bool,
-                info: dictionary of all the step info,
-        """
-        if self.enable_residual_ctrl:
-            residual_act = self.residual_ctrl()
-            joint_act = self.mixer(action, residual_act)
-        else:
-            joint_act = action
-
-        self._simulate(joint_act)
-        obs, obs_info = self.observation_type.observe()
-        reward, reward_info = self._reward(obs, joint_act, obs_info)
-        terminal = self._is_terminal(obs_info)
-        info = {
-            "step": self.steps,
-            "obs": obs,
-            "obs_info": obs_info,
-            "act": action,
-            "residual_act": residual_act,
-            "joint_act": joint_act,
-            "reward": reward,
-            "reward_info": reward_info,
-            "terminal": terminal,
-        }
-
-        self._update_goal()
-        self._step_info(info)
-
-        return obs, reward, terminal, info
 
     def _step_info(self, info: dict):
         """publish all the step information to rviz
@@ -602,7 +566,7 @@ class TestYawEnv(PlanarNavigateEnv):
         self.rew_bonus_rviz_pub.publish(Point(*info["reward_info"]["bonus_info"]))
         self.state_rviz_pub.publish(Quaternion(0, proc_info["psi_diff"], 0, 0))
         self.ang_diff_rviz_pub.publish(Point(0, 0, proc_info["psi_diff"]))
-        if self.enable_psi_vel:
+        if self.config["observation"]["enable_psi_vel"]:
             self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["psi_vel"]))
 
         self.act_rviz_pub.publish(Quaternion(*info["act"], 0, 0, 0))
@@ -636,20 +600,6 @@ class TestYawEnv(PlanarNavigateEnv):
         residual_act = np.clip(residual_act, -1, 1)
         return residual_act
 
-    def clear_pid_param(self):
-        self.psi_err_i, self.prev_psi = 0, 0
-
-    def pid_ctrl(self, err, err_i, err_prev, pid_coeff=np.array([1, 0.5, 0.3])):
-        err_i += err * self.delta_t
-        err_i = np.clip(err_i, -1, 1)
-        err_d = (err - err_prev) / self.delta_t
-        ctrl = np.dot(pid_coeff, np.array([err, err_i, err_d]))
-        return ctrl, err_i, err
-
-    def reset(self) -> Observation:
-        self.clear_pid_param()
-        return super().reset()
-
     def _reward(
         self, obs: np.array, act: np.array, obs_info: dict
     ) -> Tuple[float, dict]:
@@ -678,69 +628,31 @@ class TestYawEnv(PlanarNavigateEnv):
 
         action_reward = self.action_type.action_rew()
 
-        if self.enable_psi_vel:
-            psi_diff, psi_vel = obs[0], obs[1]
-            psi_sign_bonus = np.abs(psi_diff) * (
-                np.sign(psi_diff) * np.sign(psi_vel) - 1
+        psi_sign_bonus = 0
+        if self.config["observation"]["enable_psi_vel"]:
+            psi_diff, psi_vel = (
+                obs_info["proc_dict"]["psi_diff"],
+                obs_info["proc_dict"]["psi_vel"],
             )
-        else:
-            psi_sign_bonus = 0
+            psi_sign_bonus = (
+                np.abs(psi_diff) * (np.sign(psi_diff) * np.sign(psi_vel) - 1) / 2
+            )
         psi_close_bonus = -int(self.psi_close_to_pi())
         bonus = psi_sign_bonus + psi_close_bonus
 
-        reward = self.reward_scale * np.dot(
+        reward = self.config["reward_scale"] * np.dot(
             reward_weights,
             (success_reward, tracking_reward, action_reward, bonus),
         )
-        # reward = np.clip(reward, -1, 1)
+
+        if self.config["clip_reward"]:
+            reward = np.clip(reward, -1, 1)
+
         rew_info = (reward, success_reward, tracking_reward, action_reward)
         bonus_info = (bonus, psi_sign_bonus, psi_close_bonus)
         reward_info = {"rew_info": rew_info, "bonus_info": bonus_info}
 
         return float(reward), reward_info
-
-    def _is_terminal(self, obs_info: dict) -> bool:
-        """if episode terminate
-        - time: episode duration finished
-
-        Returns:
-            bool: [episode terminal or not]
-        """
-        time = False
-        if self.config["duration"] is not None:
-            time = self.steps >= int(self.config["duration"]) - 1
-
-        success_reward = self.compute_success_rew(
-            obs_info["position"], self.goal["position"]
-        )
-        success = success_reward >= 1
-
-        if self.enable_early_stopping:
-            early_stopping = bool(self.psi_change())
-            return time or success or early_stopping
-        else:
-            return time or success
-
-    def psi_change(self):
-        """[detect if psi changes from -pi to pi and vice versa]
-
-        Returns:
-            [bool]: [if psi changes from -pi to pi and vice versa]
-        """
-        obs, _ = self.observation_type.observe()
-        return np.abs(-obs[0] - self.prev_psi) > 1.8
-
-    def psi_close_to_pi(self):
-        """[detect if psi is close to pi and -pi]
-
-        Returns:
-            [bool]: []
-        """
-        obs, _ = self.observation_type.observe()
-        return np.abs(np.abs(obs[0]) - 1) < 0.05
-
-    def close(self) -> None:
-        close_simulation()
 
 
 if __name__ == "__main__":
@@ -784,7 +696,7 @@ if __name__ == "__main__":
         for _ in range(1000):
             action = env.action_space.sample()
             # action = np.array([0.0, 0, 0, 0])  # [yaw, pitch, servo, thrust]
-            action = np.array([0.0])  # [yaw, pitch, servo, thrust]
+            action = np.array([1.0])  # [yaw, pitch, servo, thrust]
             obs, reward, terminal, info = env.step(action)
 
         GazeboConnection().unpause_sim()
