@@ -66,6 +66,7 @@ if __name__ == "__main__":
         "enable_residual_ctrl": True,
         "enable_early_stopping": False,
         "reward_scale": 0.1,
+        "clip_reward": False,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -132,7 +133,7 @@ if __name__ == "__main__":
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
-        # resume=True,
+        resume=True,
         verbose=1,
     )
     ray.shutdown()
