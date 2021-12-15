@@ -1,14 +1,17 @@
 """ env util """
+import errno
+import functools
 import os
+import signal
 from functools import wraps
 from types import LambdaType
 from typing import Any, Callable, Dict, Optional, Sequence, Type, Union
 
 import gym
+import numpy as np
 import rospy
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv, VecEnv
-import numpy as np
 
 
 def lmap(v, x, y) -> float:
@@ -60,6 +63,30 @@ def with_retry(
         return wrapped
 
     return retry
+
+
+class TimeoutError(Exception):
+    pass
+
+
+def timeout(seconds=60, error_message=os.strerror(errno.ETIME)):
+    def decorator(func):
+        def _handle_timeout(signum, frame):
+            raise TimeoutError(error_message)
+
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            signal.signal(signal.SIGALRM, _handle_timeout)
+            signal.alarm(seconds)
+            try:
+                result = func(*args, **kwargs)
+            finally:
+                signal.alarm(0)
+            return result
+
+        return wrapper
+
+    return decorator
 
 
 def update_dict(dic: Dict, key: str, new_v: int) -> Dict:

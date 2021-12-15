@@ -10,7 +10,6 @@ from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
 
-from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.schedulers.pb2 import PB2
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
@@ -18,9 +17,9 @@ from rl.rllib_script.agent.model import TorchBatchNormModel
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "test"
+exp_name_posfix = "idle"
 
-days = 20
+days = 21
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
@@ -30,7 +29,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=5, help="Number of workers to use"
+    "--num_workers", type=int, default=7, help="Number of workers to use"
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
@@ -133,6 +132,7 @@ if __name__ == "__main__":
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
+        # resume=True,
         verbose=1,
     )
     ray.shutdown()

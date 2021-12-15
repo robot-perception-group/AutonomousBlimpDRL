@@ -210,7 +210,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         rew_info = (reward, success_reward, tracking_reward, action_reward)
         reward_info = {"rew_info": rew_info}
 
-        return reward, reward_info
+        return float(reward), reward_info
 
     def compute_success_rew(self, pos: np.array, goal_pos: np.array) -> float:
         """task success if distance to goal is less than sucess_threshhold
@@ -442,7 +442,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         bonus_info = (bonus, psi_sign_bonus, psi_close_bonus)
         reward_info = {"rew_info": rew_info, "bonus_info": bonus_info}
 
-        return reward, reward_info
+        return float(reward), reward_info
 
     def _is_terminal(self, obs_info: dict) -> bool:
         """if episode terminate
@@ -697,7 +697,7 @@ class TestYawEnv(PlanarNavigateEnv):
         bonus_info = (bonus, psi_sign_bonus, psi_close_bonus)
         reward_info = {"rew_info": rew_info, "bonus_info": bonus_info}
 
-        return reward, reward_info
+        return float(reward), reward_info
 
     def _is_terminal(self, obs_info: dict) -> bool:
         """if episode terminate
