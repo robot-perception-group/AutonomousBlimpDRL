@@ -66,6 +66,7 @@ if __name__ == "__main__":
         "enable_early_stopping": False,
         "reward_scale": 0.1,
         "clip_reward": False,
+        "enable_rsd_act_in_obs": True,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -96,7 +97,7 @@ if __name__ == "__main__":
             "num_sgd_iter": sample_from(lambda spec: random.randint(10, 30)),
             "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
             "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
-            "observation_filter": "MeanStdFilter",
+            "observation_filter": "NoFilter",
         }
     )
     stop = {
