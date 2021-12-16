@@ -22,6 +22,7 @@ from blimp_env.envs.script.blimp_script import (
     spawn_simulation_on_different_port,
     spawn_simulation_on_marvin,
     kill_screens,
+    kill_rosnode,
 )
 from gym.utils import seeding
 
@@ -212,6 +213,7 @@ class ROSAbstractEnv(AbstractEnv):
             anonymous=True,
             disable_signals=True,
         )
+        time.sleep(0.5)
         self.gaz = GazeboConnection(
             start_init_physics_parameters=True, reset_world_or_sim="WORLD"
         )
@@ -221,7 +223,7 @@ class ROSAbstractEnv(AbstractEnv):
         self.rate = rospy.Rate(self.config["simulation_frequency"])
 
         self.define_spaces()
-        self._create_pubs_subs()
+        self._create_pub_and_sub()
 
         self.gaz.unpause_sim()
         rospy.loginfo("[ RL Node " + str(self.config["robot_id"]) + " ] Initialized")
@@ -300,8 +302,8 @@ class ROSAbstractEnv(AbstractEnv):
         else:
             spawn_simulation_on_different_port(**self.config["simulation"])
 
-    def _create_pubs_subs(self):
-        pass
+    def _create_pub_and_sub(self):
+        time.sleep(1)
 
     def reset(self) -> Observation:
         self.steps = 0
@@ -386,5 +388,5 @@ class ROSAbstractEnv(AbstractEnv):
     def close(self) -> None:
         rospy.logdebug("Closing RobotGazeboEnvironment")
         rospy.signal_shutdown("Closing RobotGazeboEnvironment")
-        kill_reply = kill_screens(int(self.config["robot_id"]))
-        print("kill screen reply:", kill_reply)
+        # kill_reply = kill_screens(int(self.config["robot_id"]))
+        # print("kill screen reply:", kill_reply)

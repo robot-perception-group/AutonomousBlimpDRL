@@ -73,15 +73,19 @@ class ROSActionType(ActionType):
         self.name_space = name_space
         self.flightmode = flightmode
 
+        self.act_dim = 8
+        self.cur_act = self.init_act = np.zeros(self.act_dim)
+
+        self._create_pub_and_sub()
+
+    def _create_pub_and_sub(self):
         self.action_publisher = rospy.Publisher(
             self.name_space + "/actuatorcommand", LibrepilotActuators, queue_size=1
         )
         self.flightmode_publisher = rospy.Publisher(
             self.name_space + "/command", uav_pose, queue_size=1
         )
-
-        self.act_dim = 8
-        self.cur_act = self.init_act = np.zeros(self.act_dim)
+        time.sleep(1)
 
     def check_publishers_connection(self) -> None:
         """check actuator publisher connections"""
@@ -104,6 +108,7 @@ class ROSActionType(ActionType):
             rospy.loginfo("[ Action ] respawn model...")
             reply = respawn_model(**self.env.config["simulation"])
             rospy.loginfo("[ Action ] respawn result:", reply)
+
         except TimeoutError:
             rospy.loginfo("[ Action ] resume simulation...")
             reply = resume_simulation(

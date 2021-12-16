@@ -14,6 +14,30 @@ path = pathlib.Path(__file__).parent.resolve()
 DEFAULT_ROSPORT = 11311
 DEFAULT_GAZPORT = 11351
 
+
+# ============ check screen ============#
+
+
+def find_screen_session(name: str):
+    try:
+        screen_name = subprocess.check_output(
+            f"ls /var/run/screen/S-* | grep {name}",
+            shell=True,
+        )
+    except subprocess.CalledProcessError:
+        screen_name = None
+    return screen_name
+
+
+def check_screen_sessions_exist(
+    names: list = ["ROSMASTER_", "WORLD_", "FW_", "BLIMP_"]
+):
+    all_exist = True
+    for name in names:
+        all_exist *= find_screen_session(name) is not None
+    return bool(all_exist)
+
+
 # ============ Spawn Script ============#
 
 
@@ -198,38 +222,6 @@ def spawn_simulation_on_different_port(
     return proc_result
 
 
-def spawn_simulation_on_marvin(
-    robot_id: int = 0,
-    gui: bool = False,
-    world: str = "basic",
-    target_type: str = "InteractiveGoal",
-    ros_port: int = DEFAULT_ROSPORT,
-    gaz_port: int = DEFAULT_GAZPORT,
-    host_id: str = "yliu2@frg07.ifr.uni-stuttgart.de",
-    host_ip: str = "2222:129.69.124.167:22",
-    **kwargs,  # pylint: disable=unused-argument
-):
-    """spawn simulation on another pc"""
-    exe = f"ssh {host_id} -L {host_ip}"
-    cmd = "bash ~/catkin_ws/src/airship_simulation/script/"
-    args = f"spawn_blimp_simulation_on_different_port.sh -i \
-        {robot_id} -f {target_type} -r {ros_port} -p {gaz_port} -d {world} -g {gui}"
-    msg = exe + cmd + args
-    os.system(msg)
-
-
-def close_simulation_on_marvin(
-    host_id: str = "yliu2@frg07.ifr.uni-stuttgart.de",
-    host_ip: str = "2222:129.69.124.167:22",
-):
-    """clone simulation on another pc"""
-    args = "cleanup.sh"
-    cmd = "bash ~/catkin_ws/src/airship_simulation/script/"
-    exe = f"ssh {host_id} -L {host_ip} "
-    msg = exe + cmd + args
-    os.system(msg)
-
-
 # ============ Kill Script ============#
 
 
@@ -272,6 +264,14 @@ def kill_screens(
     for screen_name, sleep_time in zip(screen_names, sleep_times):
         kill_reply = kill_screen(screen_name + str(robot_id), sleep_time)
         reply.update({"kill_" + screen_name + str(robot_id): kill_reply})
+    return reply
+
+
+def kill_rosnode(node_name: str) -> str:
+    reply = subprocess.check_call(
+        f"for node in $(rosnode list | grep {node_name}) | xargs rosnode kill",
+        shell=True,
+    )
     return reply
 
 
@@ -409,22 +409,36 @@ def resume_simulation(
     }
 
 
-# ============ check screen ============#
-def find_screen_session(name: str):
-    try:
-        screen_name = subprocess.check_output(
-            f"ls /var/run/screen/S-* | grep {name}",
-            shell=True,
-        )
-    except subprocess.CalledProcessError:
-        screen_name = None
-    return screen_name
+# ============ remote ============#
 
 
-def check_screen_sessions_exist(
-    names: list = ["ROSMASTER_", "WORLD_", "FW_", "BLIMP_"]
+def spawn_simulation_on_marvin(
+    robot_id: int = 0,
+    gui: bool = False,
+    world: str = "basic",
+    target_type: str = "InteractiveGoal",
+    ros_port: int = DEFAULT_ROSPORT,
+    gaz_port: int = DEFAULT_GAZPORT,
+    host_id: str = "yliu2@frg07.ifr.uni-stuttgart.de",
+    host_ip: str = "2222:129.69.124.167:22",
+    **kwargs,  # pylint: disable=unused-argument
 ):
-    all_exist = True
-    for name in names:
-        all_exist *= find_screen_session(name) is not None
-    return bool(all_exist)
+    """spawn simulation on another pc"""
+    exe = f"ssh {host_id} -L {host_ip}"
+    cmd = "bash ~/catkin_ws/src/airship_simulation/script/"
+    args = f"spawn_blimp_simulation_on_different_port.sh -i \
+        {robot_id} -f {target_type} -r {ros_port} -p {gaz_port} -d {world} -g {gui}"
+    msg = exe + cmd + args
+    os.system(msg)
+
+
+def close_simulation_on_marvin(
+    host_id: str = "yliu2@frg07.ifr.uni-stuttgart.de",
+    host_ip: str = "2222:129.69.124.167:22",
+):
+    """clone simulation on another pc"""
+    args = "cleanup.sh"
+    cmd = "bash ~/catkin_ws/src/airship_simulation/script/"
+    exe = f"ssh {host_id} -L {host_ip} "
+    msg = exe + cmd + args
+    os.system(msg)
