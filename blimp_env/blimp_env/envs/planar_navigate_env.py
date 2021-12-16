@@ -59,8 +59,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         )
         return config
 
-    def _create_pubs_subs(self):
-        super()._create_pubs_subs()
+    def _create_pub_and_sub(self):
+        super()._create_pub_and_sub()
         self.rew_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_reward", Quaternion, queue_size=1
         )
@@ -284,7 +284,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
-                    [20, 0.8, 0.1, 0.1]
+                    [100, 0.8, 0.1, 0.1]
                 ),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array(
                     [0.3, 0.40, 0.20, 0.10]
@@ -301,12 +301,12 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
 
-        self.delta_t = 0.01
+        self.delta_t = 1 / self.config["policy_frequency"]
         self.psi_err_i, self.prev_psi = 0, 0
         self.alt_err_i, self.prev_alt = 0, 0
         self.vel_err_i, self.prev_vel = 0, 0
 
-    def _create_pubs_subs(self):
+    def _create_pub_and_sub(self):
         self.rew_bonus_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_reward_psi_bonus", Point, queue_size=1
         )
@@ -316,7 +316,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.residual_act_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_residual_act", Quaternion, queue_size=1
         )
-        return super()._create_pubs_subs()
+        return super()._create_pub_and_sub()
 
     @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
@@ -380,7 +380,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         obs, _ = self.observation_type.observe()
 
         psi_ctrl, self.psi_err_i, self.prev_psi = self.pid_ctrl(
-            -obs[2], self.psi_err_i, self.prev_psi, np.array([1, 0.0, 0.5])
+            -obs[2], self.psi_err_i, self.prev_psi, np.array([2, 0.0, 16])
         )
         alt_ctrl, self.alt_err_i, self.prev_alt = self.pid_ctrl(
             obs[0], self.alt_err_i, self.prev_alt
@@ -505,9 +505,6 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         cur_psi = obs_dict["proc_dict"]["psi_diff"]
         return np.abs(np.abs(cur_psi) - 1) < 0.05
 
-    def close(self) -> None:
-        close_simulation()
-
 
 class TestYawEnv(ResidualPlanarNavigateEnv):
     @classmethod
@@ -546,9 +543,9 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "tracking_reward_weights": np.array([1.0]),  # psi_diff
                 "success_threshhold": 0,  # [meters]
                 "reward_scale": 0.1,
-                "clip_reward": True,
+                "clip_reward": False,
                 "enable_residual_ctrl": True,
-                "enable_early_stopping": True,
+                "enable_early_stopping": False,
             }
         )
         return config
@@ -594,7 +591,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         obs, _ = self.observation_type.observe()
 
         psi_ctrl, self.psi_err_i, self.prev_psi = self.pid_ctrl(
-            -obs[0], self.psi_err_i, self.prev_psi, np.array([1.0, 0.0, 2.0])
+            -obs[0], self.psi_err_i, self.prev_psi, np.array([1.0, 0.0, 12.0])
         )
         residual_act = np.array([psi_ctrl])
         residual_act = np.clip(residual_act, -1, 1)
@@ -695,8 +692,7 @@ if __name__ == "__main__":
         env.reset()
         for _ in range(1000):
             action = env.action_space.sample()
-            # action = np.array([0.0, 0, 0, 0])  # [yaw, pitch, servo, thrust]
-            action = np.array([1.0])  # [yaw, pitch, servo, thrust]
+            action = np.zeros_like(action)  # [yaw, pitch, servo, thrust]
             obs, reward, terminal, info = env.step(action)
 
         GazeboConnection().unpause_sim()

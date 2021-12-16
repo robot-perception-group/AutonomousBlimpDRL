@@ -2,8 +2,9 @@
 #!/usr/bin/env python
 
 from math import e
+import subprocess
 from typing import TYPE_CHECKING, Any, Dict, Tuple
-
+import time
 import numpy as np
 import pandas as pd
 import rospy
@@ -54,6 +55,9 @@ class ROSObservation(ObservationType):
         self.dbg_ros = DBG_ROS
         self.dbg_obs = DBG_OBS
         self.real_exp = real_experiment
+        self.imu_namespace = (
+            self.name_space + "/Imu" if self.real_exp else self.name_space + "/tail/imu"
+        )
 
         self.obs_dim = 15
 
@@ -64,8 +68,9 @@ class ROSObservation(ObservationType):
         self.ang_data = np.array([0, 0, 0])
         self.ang_vel_data = np.array([0, 0, 0])
 
-        self._create_pub_and_sub()
         self.ros_cnt = 0
+
+        self._create_pub_and_sub()
 
     def space(self) -> spaces.Space:
         return spaces.Box(
@@ -75,17 +80,14 @@ class ROSObservation(ObservationType):
         )
 
     def _create_pub_and_sub(self):
-        if self.real_exp:
-            imu_namespace = self.name_space + "/Imu"
-        else:
-            imu_namespace = self.name_space + "/tail/imu"
         rospy.Subscriber(
-            imu_namespace,
+            self.imu_namespace,
             Imu,
             self._imu_callback,
         )
 
         rospy.Subscriber(self.name_space + "/pose", uav_pose, self._pose_callback)
+        time.sleep(1)
 
     def _imu_callback(self, msg):
         """imu msg callback
@@ -153,9 +155,19 @@ class ROSObservation(ObservationType):
                     uav_pose,
                     timeout=50,
                 )
-            except TimeoutError:
+                imu_data = rospy.wait_for_message(
+                    self.imu_namespace,
+                    Imu,
+                    timeout=50,
+                )
+            except:
                 rospy.loginfo("[ observation ] cannot find pose subscriber")
-                reply = self.obs_err_handle()
+                self.obs_err_handle()
+                pose_data = rospy.wait_for_message(
+                    self.name_space + "/pose",
+                    uav_pose,
+                    timeout=50,
+                )
 
             self.pos_data = utils.obj2array(pose_data.position)
 
@@ -169,7 +181,7 @@ class ROSObservation(ObservationType):
             rospy.loginfo("[ observation ] respawn model...")
             reply = respawn_model(**self.env.config["simulation"])
             rospy.loginfo("[ observation ] respawn model status ", reply)
-        except TimeoutError:
+        except:
             rospy.loginfo("[ observation ] resume simulation...")
             reply = resume_simulation(**self.env.config["simulation"])
             rospy.loginfo("[ observation ] resume simulation status ", reply)
