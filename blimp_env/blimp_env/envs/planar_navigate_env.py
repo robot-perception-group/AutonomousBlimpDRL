@@ -479,24 +479,24 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         )
         success = success_reward >= 1
 
+        early_stopping = False
         if self.config["enable_early_stopping"]:
             early_stopping = bool(self.psi_change())
-            return time or success or early_stopping
-        else:
-            return time or success
+
+        return time or success or early_stopping
 
     def psi_change(self):
-        """[detect if psi changes from -pi to pi and vice versa]
+        """[detect if scaled psi changes from -1 to 1 and vice versa]
 
         Returns:
-            [bool]: [if psi changes from -pi to pi and vice versa]
+            [bool]: []
         """
         _, obs_dict = self.observation_type.observe()
         cur_psi = obs_dict["proc_dict"]["psi_diff"]
-        return np.abs(-cur_psi - self.prev_psi) > 1.8
+        return np.abs(-cur_psi - self.prev_psi) > 1.6
 
     def psi_close_to_pi(self):
-        """[detect if psi is close to pi and -pi]
+        """[detect if scaled psi is close to 1 and -1]
 
         Returns:
             [bool]: []
@@ -516,6 +516,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_psi_vel": True,
+                "enable_rsd_act_in_obs": True,
             }
         )
         config["action"].update(
@@ -549,6 +550,47 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             }
         )
         return config
+
+    @profile
+    def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
+        """[perform a step action and observe result]
+
+        Args:
+            action (Action): action from the agent [-1,1] with size (4,)
+
+        Returns:
+            Tuple[Observation, float, bool, dict]:
+                obs: np.array [-1,1] with size (9,),
+                reward: scalar,
+                terminal: bool,
+                info: dictionary of all the step info,
+        """
+        if self.config["enable_residual_ctrl"]:
+            residual_act = self.residual_ctrl()
+            joint_act = self.mixer(action, residual_act)
+        else:
+            joint_act = action
+
+        self._simulate(joint_act)
+        obs, obs_info = self.observation_type.observe(residual_act)
+        reward, reward_info = self._reward(obs, joint_act, obs_info)
+        terminal = self._is_terminal(obs_info)
+        info = {
+            "step": self.steps,
+            "obs": obs,
+            "obs_info": obs_info,
+            "act": action,
+            "residual_act": residual_act,
+            "joint_act": joint_act,
+            "reward": reward,
+            "reward_info": reward_info,
+            "terminal": terminal,
+        }
+
+        self._update_goal()
+        self._step_info(info)
+
+        return obs, reward, terminal, info
 
     def _step_info(self, info: dict):
         """publish all the step information to rviz

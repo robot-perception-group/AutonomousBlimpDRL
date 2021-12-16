@@ -341,6 +341,7 @@ class DummyYawObservation(PlanarKinematicsObservation):
         noise_stdv=0.02,
         scale_obs=True,
         enable_psi_vel=True,
+        enable_rsd_act_in_obs=True,
         **kwargs: dict
     ) -> None:
         super().__init__(env, noise_stdv=noise_stdv, scale_obs=scale_obs, **kwargs)
@@ -352,7 +353,21 @@ class DummyYawObservation(PlanarKinematicsObservation):
             self.obs_name = ["psi_diff", "psi_vel", "action"]
             self.range_dict.update({"psi_vel": [-15, 15]})
 
-    def _observe(self) -> np.ndarray:
+        self.enable_rsd_act_in_obs = enable_rsd_act_in_obs
+        if self.enable_rsd_act_in_obs:
+            self.obs_dim += 1
+            self.obs_name.append("residual_act")
+            self.range_dict.update({"residual_act": [-1, 1]})
+
+    def observe(self, residual_act=np.array([0.0])) -> np.ndarray:
+        obs, obs_dict = self._observe(residual_act)
+        while np.isnan(obs).any():
+            rospy.loginfo("[ observation ] obs corrupted by NA")
+            self.obs_err_handle()
+            obs, obs_dict = self._observe(residual_act)
+        return obs, obs_dict
+
+    def _observe(self, residual_act=np.array([0.0])) -> np.ndarray:
         obs_dict = {
             "position": self.pos_data,
             "velocity": self.vel_data,
@@ -362,6 +377,9 @@ class DummyYawObservation(PlanarKinematicsObservation):
             "angle": self.ang_data,
             "angular_velocity": self.ang_vel_data,
         }
+        if self.enable_rsd_act_in_obs:
+            obs_dict.update({"residual_act": residual_act})
+
         goal_dict = self.env.goal
         processed_dict = self.process_obs(obs_dict, goal_dict, self.scale_obs)
 
@@ -391,6 +409,9 @@ class DummyYawObservation(PlanarKinematicsObservation):
         }
         if self.enable_psi_vel:
             state_dict.update({"psi_vel": obs_dict["angular_velocity"][2]})
+
+        if self.enable_rsd_act_in_obs:
+            state_dict.update({"residual_act": obs_dict["residual_act"]})
 
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
