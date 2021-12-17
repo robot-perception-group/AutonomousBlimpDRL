@@ -18,7 +18,7 @@ AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "idle"
 
-days = 21
+days = 2
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
@@ -33,9 +33,6 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument(
-    "--criteria", type=str, default="timesteps_total"
-)  # "training_iteration", "time_total_s",  "timesteps_total"
 
 
 def env_creator(env_config):
@@ -92,11 +89,16 @@ if __name__ == "__main__":
             "kl_coeff": 1.0,
             "horizon": 400,
             "rollout_fragment_length": 400,
-            "train_batch_size": args.num_workers * 400,
-            "sgd_minibatch_size": args.num_workers * 40,
-            "num_sgd_iter": 20,
-            "lr": 5e-5,
-            "clip_param": 0.3,
+            "train_batch_size": args.num_workers * 1600,
+            "sgd_minibatch_size": 1024,
+            "num_sgd_iter": 32,
+            "lr": 1e-4,
+            "lr_schedule": [
+                [0, 1e-4],
+                [args.stop_timesteps, 1e-12],
+            ],
+            "clip_param": 0.2,
+            "grad_clip": 0.5,
             "observation_filter": "NoFilter",
             "batch_mode": "truncate_episodes",
         }
