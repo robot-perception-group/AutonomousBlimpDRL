@@ -16,7 +16,7 @@ from rl.rllib_script.agent.model import TorchBatchNormModel
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "idle"
+exp_name_posfix = "Idle_Rscale"
 
 days = 2
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
