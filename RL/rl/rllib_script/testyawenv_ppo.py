@@ -66,7 +66,7 @@ if __name__ == "__main__":
         "enable_early_stopping": False,
         "reward_scale": 0.1,
         "clip_reward": False,
-        "enable_rsd_act_in_obs": True,
+        "enable_rsd_act_in_obs": False,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -91,13 +91,14 @@ if __name__ == "__main__":
             "lambda": 0.9,
             "kl_coeff": 1.0,
             "horizon": 400,
-            "rollout_fragment_length": 200,
-            "train_batch_size": args.num_workers * 1000,
-            "sgd_minibatch_size": args.num_workers * 100,
-            "num_sgd_iter": sample_from(lambda spec: random.randint(10, 30)),
-            "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
-            "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
+            "rollout_fragment_length": 400,
+            "train_batch_size": args.num_workers * 400,
+            "sgd_minibatch_size": args.num_workers * 40,
+            "num_sgd_iter": 20,
+            "lr": 5e-5,
+            "clip_param": 0.3,
             "observation_filter": "NoFilter",
+            "batch_mode": "truncate_episodes",
         }
     )
     stop = {
