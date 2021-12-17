@@ -61,7 +61,7 @@ if __name__ == "__main__":
         "reward_weights": np.array([0, 1.0, 0, 0]),  # success, tracking, action, bonus
         "enable_residual_ctrl": True,
         "enable_early_stopping": False,
-        "reward_scale": 0.1,
+        "reward_scale": tune.grid_search([0.1, 1.0, 10]),
         "clip_reward": False,
         "enable_rsd_act_in_obs": False,
     }
