@@ -16,7 +16,7 @@ from rl.rllib_script.agent.model import TorchBatchNormModel
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "Idle_Rscale"
+exp_name_posfix = "idle_rsd_effect"
 
 days = 2
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -50,18 +50,20 @@ if __name__ == "__main__":
 
     register_env(env_name, env_creator)
     env_config = {
-        "seed": 123,
+        "seed": tune.grid_search([123, 456, 789]),
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
         },
         "observation": {
-            "enable_psi_vel": True,
+            "enable_psi_vel": tune.grid_search([True, False]),
         },
-        "reward_weights": np.array([0, 1.0, 0, 0]),  # success, tracking, action, bonus
-        "enable_residual_ctrl": True,
-        "enable_early_stopping": False,
-        "reward_scale": tune.grid_search([0.1, 1.0, 10]),
+        "reward_weights": np.array(
+            [1.0, 1.0, 0, 0]
+        ),  # success, tracking, action, bonus
+        "enable_residual_ctrl": tune.grid_search([True, False]),
+        "enable_early_stopping": tune.grid_search([True, False]),
+        "reward_scale": 0.1,
         "clip_reward": False,
         "enable_rsd_act_in_obs": False,
     }
@@ -120,7 +122,7 @@ if __name__ == "__main__":
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
-        # resume=True,
+        resume=True,
         verbose=1,
     )
     ray.shutdown()
