@@ -539,7 +539,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
-                    [0, 1.0, 0, 0]
+                    [1.0, 1.0, 0, 0]
                 ),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array([1.0]),  # psi_diff
                 "success_threshhold": 0,  # [meters]
@@ -550,6 +550,10 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             }
         )
         return config
+
+    def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
+        super().__init__(config=config)
+        self.success_cnt = 0
 
     @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
@@ -569,6 +573,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             residual_act = self.residual_ctrl()
             joint_act = self.mixer(action, residual_act)
         else:
+            residual_act = np.array([0])
             joint_act = action
 
         self._simulate(joint_act)
@@ -659,9 +664,8 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         track_weights = self.config["tracking_reward_weights"].copy()
         reward_weights = self.config["reward_weights"].copy()
 
-        success_reward = self.compute_success_rew(
-            obs_info["position"], self.goal["position"]
-        )
+        psi_diff = obs_info["proc_dict"]["psi_diff"]
+        success_reward = self.compute_success_rew(psi_diff)
 
         tracking_reward = np.dot(track_weights, -np.abs(obs[0]))
 
@@ -669,10 +673,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
 
         psi_sign_bonus = 0
         if self.config["observation"]["enable_psi_vel"]:
-            psi_diff, psi_vel = (
-                obs_info["proc_dict"]["psi_diff"],
-                obs_info["proc_dict"]["psi_vel"],
-            )
+            psi_vel = obs_info["proc_dict"]["psi_vel"]
             psi_sign_bonus = (
                 np.abs(psi_diff) * (np.sign(psi_diff) * np.sign(psi_vel) - 1) / 2
             )
@@ -692,6 +693,48 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         reward_info = {"rew_info": rew_info, "bonus_info": bonus_info}
 
         return float(reward), reward_info
+
+    def compute_success_rew(self, psi_diff: np.array, epsilon=0.1) -> float:
+        """psi_diff less than 0.1 50 times in consecution
+
+        Args:
+            psi_diff (np.array): [scaled psi diff]
+            epsilon (float, optional): [tolerence]. Defaults to 0.1.
+
+        Returns:
+            float: [description]
+        """
+        if np.abs(psi_diff) < epsilon:
+            self.success_cnt += 1
+        else:
+            self.success_cnt = 0
+
+        return float(self.success_cnt > 50)
+
+    def _is_terminal(self, obs_info: dict) -> bool:
+        """if episode terminate
+        - time: episode duration finished
+
+        Returns:
+            bool: [episode terminal or not]
+        """
+        time = False
+        if self.config["duration"] is not None:
+            time = self.steps >= int(self.config["duration"]) - 1
+
+        success_reward = self.compute_success_rew(
+            obs_info["proc_dict"]["psi_diff"]
+        )
+        success = success_reward >= 1
+
+        early_stopping = False
+        if self.config["enable_early_stopping"]:
+            early_stopping = bool(self.psi_change())
+
+        return time or success or early_stopping
+
+    def close(self) -> None:
+        close_simulation()
 
 
 if __name__ == "__main__":

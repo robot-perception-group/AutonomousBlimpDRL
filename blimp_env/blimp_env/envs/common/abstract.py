@@ -388,5 +388,5 @@ class ROSAbstractEnv(AbstractEnv):
     def close(self) -> None:
         rospy.logdebug("Closing RobotGazeboEnvironment")
         rospy.signal_shutdown("Closing RobotGazeboEnvironment")
-        # kill_reply = kill_screens(int(self.config["robot_id"]))
-        # print("kill screen reply:", kill_reply)
+        kill_reply = kill_screens(int(self.config["robot_id"]))
+        print("kill screen reply:", kill_reply)
