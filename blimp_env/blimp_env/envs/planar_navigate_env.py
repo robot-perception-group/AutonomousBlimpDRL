@@ -709,7 +709,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         else:
             self.success_cnt = 0
 
-        return float(self.success_cnt > 50)
+        return float(self.success_cnt > 150)
 
     def _is_terminal(self, obs_info: dict) -> bool:
         """if episode terminate
@@ -722,16 +722,11 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         if self.config["duration"] is not None:
             time = self.steps >= int(self.config["duration"]) - 1
 
-        success_reward = self.compute_success_rew(
-            obs_info["proc_dict"]["psi_diff"]
-        )
-        success = success_reward >= 1
-
         early_stopping = False
         if self.config["enable_early_stopping"]:
             early_stopping = bool(self.psi_change())
 
-        return time or success or early_stopping
+        return time or early_stopping
 
     def close(self) -> None:
         close_simulation()
