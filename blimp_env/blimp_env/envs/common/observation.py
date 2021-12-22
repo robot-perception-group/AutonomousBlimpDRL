@@ -213,7 +213,7 @@ class PlanarKinematicsObservation(ROSObservation):
         self.scale_obs = scale_obs
         self.enable_psi_vel = enable_psi_vel
 
-        self.obs_name = self.OBS
+        self.obs_name = self.OBS.copy()
         self.obs_dim = len(self.OBS)
         self.range_dict = self.OBS_range
 
@@ -222,8 +222,8 @@ class PlanarKinematicsObservation(ROSObservation):
             self.obs_name.append("psi_vel")
             self.range_dict.update({"psi_vel": [-15, 15]})
 
-        self.obs_name.append("action")
         self.obs_dim += 4
+        self.obs_name.append("action")
 
     def observe(self) -> np.ndarray:
         obs, obs_dict = self._observe()
@@ -344,7 +344,9 @@ class DummyYawObservation(PlanarKinematicsObservation):
         self.enable_psi_vel = enable_psi_vel
         self.enable_rsd_act_in_obs = enable_rsd_act_in_obs
 
+        self.obs_name = self.OBS.copy()
         self.obs_dim = len(self.OBS)
+        self.range_dict = self.OBS_range
 
         if self.enable_psi_vel:
             self.obs_dim += 1
