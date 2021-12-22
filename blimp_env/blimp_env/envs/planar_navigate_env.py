@@ -516,7 +516,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_psi_vel": True,
-                "enable_rsd_act_in_obs": True,
+                "enable_rsd_act_in_obs": False,
             }
         )
         config["action"].update(
@@ -695,7 +695,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         return float(reward), reward_info
 
     def compute_success_rew(self, psi_diff: np.array, epsilon=0.1) -> float:
-        """psi_diff less than 0.1 50 times in consecution
+        """psi_diff less than 0.1 150 times in consecution
 
         Args:
             psi_diff (np.array): [scaled psi diff]
@@ -709,7 +709,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         else:
             self.success_cnt = 0
 
-        return float(self.success_cnt > 150)
+        return float(self.success_cnt > 5 * self.config["simulation_frequency"])
 
     def _is_terminal(self, obs_info: dict) -> bool:
         """if episode terminate

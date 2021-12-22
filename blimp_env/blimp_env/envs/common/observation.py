@@ -191,7 +191,7 @@ class ROSObservation(ObservationType):
 class PlanarKinematicsObservation(ROSObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel", "action"]
+    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel"]
     OBS_range = {
         "z_diff": [-100, 100],
         "planar_dist": [0, 200 * np.sqrt(2)],
@@ -209,25 +209,21 @@ class PlanarKinematicsObservation(ROSObservation):
         **kwargs: dict
     ) -> None:
         super().__init__(env, **kwargs)
-        self.obs_name = self.OBS
-        self.obs_dim = 10
-        self.range_dict = self.OBS_range
-
         self.noise_stdv = noise_stdv
         self.scale_obs = scale_obs
         self.enable_psi_vel = enable_psi_vel
+
+        self.obs_name = self.OBS
+        self.obs_dim = len(self.OBS)
+        self.range_dict = self.OBS_range
+
         if self.enable_psi_vel:
             self.obs_dim += 1
-            self.obs_name = [
-                "z_diff",
-                "planar_dist",
-                "psi_diff",
-                "vel_diff",
-                "vel",
-                "psi_vel",
-                "action",
-            ]
+            self.obs_name.append("psi_vel")
             self.range_dict.update({"psi_vel": [-15, 15]})
+
+        self.obs_name.append("action")
+        self.obs_dim += 4
 
     def observe(self) -> np.ndarray:
         obs, obs_dict = self._observe()
@@ -330,7 +326,7 @@ class PlanarKinematicsObservation(ROSObservation):
 class DummyYawObservation(PlanarKinematicsObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["psi_diff", "action"]
+    OBS = ["psi_diff"]
     OBS_range = {
         "psi_diff": [-np.pi, np.pi],
     }
@@ -345,19 +341,23 @@ class DummyYawObservation(PlanarKinematicsObservation):
         **kwargs: dict
     ) -> None:
         super().__init__(env, noise_stdv=noise_stdv, scale_obs=scale_obs, **kwargs)
-        self.obs_dim = 2
-
         self.enable_psi_vel = enable_psi_vel
+        self.enable_rsd_act_in_obs = enable_rsd_act_in_obs
+
+        self.obs_dim = len(self.OBS)
+
         if self.enable_psi_vel:
             self.obs_dim += 1
-            self.obs_name = ["psi_diff", "psi_vel", "action"]
+            self.obs_name.append("psi_vel")
             self.range_dict.update({"psi_vel": [-15, 15]})
 
-        self.enable_rsd_act_in_obs = enable_rsd_act_in_obs
         if self.enable_rsd_act_in_obs:
             self.obs_dim += 1
             self.obs_name.append("residual_act")
             self.range_dict.update({"residual_act": [-1, 1]})
+
+        self.obs_dim += 1
+        self.obs_name.append("action")
 
     def observe(self, residual_act=np.array([0.0])) -> np.ndarray:
         obs, obs_dict = self._observe(residual_act)

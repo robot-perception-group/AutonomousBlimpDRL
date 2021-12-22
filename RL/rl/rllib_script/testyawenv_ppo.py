@@ -23,6 +23,7 @@ one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
 restore = None
+resume = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -57,6 +58,7 @@ if __name__ == "__main__":
         },
         "observation": {
             "enable_psi_vel": tune.grid_search([True, False]),
+            "enable_rsd_act_in_obs": False,
         },
         "reward_weights": np.array(
             [1.0, 1.0, 0, 0]
@@ -65,7 +67,6 @@ if __name__ == "__main__":
         "enable_early_stopping": tune.grid_search([True, False]),
         "reward_scale": 0.1,
         "clip_reward": False,
-        "enable_rsd_act_in_obs": False,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -122,7 +123,8 @@ if __name__ == "__main__":
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
-        # resume=True,
+        resume=resume,
+        max_failures=3,
         verbose=1,
     )
     ray.shutdown()
