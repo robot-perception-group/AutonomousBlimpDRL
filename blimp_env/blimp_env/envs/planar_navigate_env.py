@@ -516,7 +516,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_psi_vel": True,
-                "enable_rsd_act_in_obs": False,
+                "enable_rsd_act_in_obs": True,
             }
         )
         config["action"].update(
@@ -547,6 +547,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
                 "enable_early_stopping": False,
+                "mixer_type": "relative",  # absolute, relative
             }
         )
         return config
@@ -554,6 +555,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
         self.success_cnt = 0
+        self.residual_act = 0
 
     @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
@@ -569,15 +571,14 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 terminal: bool,
                 info: dictionary of all the step info,
         """
-        if self.config["enable_residual_ctrl"]:
-            residual_act = self.residual_ctrl()
-            joint_act = self.mixer(action, residual_act)
-        else:
-            residual_act = np.array([0])
-            joint_act = action
-
+        joint_act = self.mixer(action, self.residual_act)
         self._simulate(joint_act)
-        obs, obs_info = self.observation_type.observe(residual_act)
+        self.residual_act = (
+            self.residual_ctrl()
+            if self.config["enable_residual_ctrl"]
+            else np.array([0.0])
+        )
+        obs, obs_info = self.observation_type.observe(self.residual_act.copy())
         reward, reward_info = self._reward(obs, joint_act, obs_info)
         terminal = self._is_terminal(obs_info)
         info = {
@@ -585,7 +586,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             "obs": obs,
             "obs_info": obs_info,
             "act": action,
-            "residual_act": residual_act,
+            "residual_act": self.residual_act,
             "joint_act": joint_act,
             "reward": reward,
             "reward_info": reward_info,
@@ -627,22 +628,38 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             print("STEP INFO:", info)
             print("\r")
 
-    def mixer(self, action, residual_act):
-        joint_act = 0.5 * action + 0.5 * residual_act
-        return joint_act
+    def mixer(self, action, residual_act, beta=0.5):
+        if self.config["enable_residual_ctrl"] == False:
+            return action
+
+        if self.config["mixer_type"] == "absolute":
+            return beta * action + (1 - beta) * residual_act
+        elif self.config["mixer_type"] == "relative":
+            return residual_act * (1 + beta * action)
+        else:
+            raise NotImplementedError
 
     def residual_ctrl(self):
         """
         use PID controller to generate a residual signal
         """
-        obs, _ = self.observation_type.observe()
+        obs, obs_dict = self.observation_type.observe()
 
-        psi_ctrl, self.psi_err_i, self.prev_psi = self.pid_ctrl(
-            -obs[0], self.psi_err_i, self.prev_psi, np.array([1.0, 0.0, 0.0])
+        psi_ctrl, self.psi_err_i, _ = self.pid_ctrl(
+            -obs[0],
+            self.psi_err_i,
+            obs_dict["angular_velocity"][2],
+            np.array([1.3, 0.0, 0.1]),
         )
         residual_act = np.array([psi_ctrl])
         residual_act = np.clip(residual_act, -1, 1)
         return residual_act
+
+    def pid_ctrl(self, err, err_i, err_d, pid_coeff=np.array([1, 0.5, 0.3])):
+        err_i += err * self.delta_t
+        err_i = np.clip(err_i, -1, 1)
+        ctrl = np.dot(pid_coeff, np.array([err, err_i, err_d]))
+        return ctrl, err_i, err
 
     def _reward(
         self, obs: np.array, act: np.array, obs_info: dict
