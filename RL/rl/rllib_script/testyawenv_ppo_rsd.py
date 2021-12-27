@@ -1,29 +1,36 @@
 import argparse
 import random
+
 import numpy as np
 import ray
 from blimp_env.envs import TestYawEnv
 from blimp_env.envs.script import close_simulation
+
 from ray import tune
 from ray.rllib.agents import ppo
+from ray.rllib.agents.ppo import PPOTrainer
+from ray.rllib.evaluation import RolloutWorker
+from ray.rllib.evaluation.metrics import collect_metrics
 from ray.rllib.models import ModelCatalog
+from ray.rllib.policy.policy import Policy
+from ray.rllib.policy.sample_batch import DEFAULT_POLICY_ID, SampleBatch
 from ray.tune import sample_from
 from ray.tune.registry import register_env
-
+from ray.tune.utils.placement_groups import PlacementGroupFactory
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "RelativeMixer_PsiVelAsD_RsdFeedback"
+exp_name_posfix = "withSuccessR_RsdEffect"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
 restore = None
-resume = False
+resume = True
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -38,6 +45,72 @@ parser.add_argument(
 
 def env_creator(env_config):
     return ENV(env_config)
+
+
+def my_train_fn(config, reporter):
+    total_ts = config["total_timesteps"]
+    vf_explained_var = 0
+
+    # Train for n iterations with high LR
+    agent1 = PPOTrainer(env="CartPole-v0", config=config)
+    while vf_explained_var < 0.9:
+        result = agent1.train()
+        vf_explained_var = result["vf_explained_var"]
+        reporter(**result)
+        phase1_time = result["timesteps_total"]
+    state = agent1.save()
+    agent1.stop()
+
+    # Train for n iterations with low LR
+    agent2 = PPOTrainer(env="CartPole-v0", config=config)
+    agent2.restore(state)
+    for _ in range(total_ts - phase1_time):
+        result = agent2.train()
+        result["phase"] = 2
+        result["timesteps_total"] += phase1_time  # keep time moving forward
+        reporter(**result)
+    agent2.stop()
+
+
+def training_workflow(config, reporter):
+    """
+    https://github.com/ray-project/ray/blob/master/rllib/examples/custom_train_fn.py
+    https://github.com/ray-project/ray/blob/master/rllib/examples/rollout_worker_custom_workflow.py
+    """
+    # Setup policy and policy evaluation actors
+    env = gym.make(config["env"])
+    policy = CustomPolicy(env.observation_space, env.action_space, {})
+    workers = [
+        RolloutWorker.as_remote().remote(
+            env_creator=lambda c: gym.make("CartPole-v0"), policy=CustomPolicy
+        )
+        for _ in range(config["num_workers"])
+    ]
+
+    for _ in range(config["num_iters"]):
+        # Broadcast weights to the policy evaluation workers
+        weights = ray.put({DEFAULT_POLICY_ID: policy.get_weights()})
+        for w in workers:
+            w.set_weights.remote(weights)
+
+        # Gather a batch of samples
+        T1 = SampleBatch.concat_samples(ray.get([w.sample.remote() for w in workers]))
+
+        # Update the remote policy replicas and gather another batch of samples
+        new_value = policy.w * 2.0
+        for w in workers:
+            w.for_policy.remote(lambda p: p.update_some_value(new_value))
+
+        # Gather another batch of samples
+        T2 = SampleBatch.concat_samples(ray.get([w.sample.remote() for w in workers]))
+
+        # Improve the policy using the T1 batch
+        policy.learn_on_batch(T1)
+
+        # Do some arbitrary updates based on the T2 batch
+        policy.update_some_value(sum(T2["rewards"]))
+
+        reporter(**collect_metrics(remote_workers=workers))
 
 
 if __name__ == "__main__":
@@ -67,7 +140,6 @@ if __name__ == "__main__":
         "enable_early_stopping": False,
         "reward_scale": 0.1,
         "clip_reward": False,
-        "mixer_type": tune.grid_search(["absolute", "relative"]),
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
