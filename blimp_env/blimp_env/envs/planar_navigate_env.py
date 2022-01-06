@@ -396,7 +396,6 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             obs[0],
             self.alt_err_i,
             self.prev_alt,
-            offset=0.01,
         )
         vel_ctrl, self.vel_err_i, self.prev_vel = self.pid_ctrl(
             -obs[3], self.vel_err_i, self.prev_vel
@@ -415,7 +414,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         err_i,
         err_d,
         offset=0.0,
-        pid_coeff=np.array([1.3, 0.3, 0.05]),
+        pid_coeff=np.array([1.0, 0.3, 0.05]),
         i_from_sensor=False,
         d_from_sensor=False,
     ):
