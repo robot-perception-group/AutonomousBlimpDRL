@@ -67,7 +67,7 @@ if __name__ == "__main__":
         "reward_scale": 0.07,
         "clip_reward": False,
         "mixer_type": "relative",
-        "beta": 1.0,
+        "beta": 0.7,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
