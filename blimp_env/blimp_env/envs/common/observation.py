@@ -191,13 +191,14 @@ class ROSObservation(ObservationType):
 class PlanarKinematicsObservation(ROSObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["z_diff", "planar_dist", "psi_diff", "vel_diff", "vel"]
+    OBS = ["z_diff", "planar_dist", "yaw_diff", "vel_diff", "vel", "yaw_vel"]
     OBS_range = {
         "z_diff": [-100, 100],
         "planar_dist": [0, 200 * np.sqrt(2)],
-        "psi_diff": [-np.pi, np.pi],
+        "yaw_diff": [-np.pi, np.pi],
         "vel_diff": [-11.5, 11.5],
         "vel": [0, 11.5],
+        "yaw_vel": [-15, 15],
     }
 
     def __init__(
@@ -205,46 +206,50 @@ class PlanarKinematicsObservation(ROSObservation):
         env: "AbstractEnv",
         noise_stdv=0.02,
         scale_obs=True,
-        enable_psi_vel=True,
+        enable_rsdact_feedback=True,
         **kwargs: dict
     ) -> None:
         super().__init__(env, **kwargs)
         self.noise_stdv = noise_stdv
         self.scale_obs = scale_obs
-        self.enable_psi_vel = enable_psi_vel
+        self.enable_rsdact_feedback = enable_rsdact_feedback
 
         self.obs_name = self.OBS.copy()
         self.obs_dim = len(self.OBS)
         self.range_dict = self.OBS_range
 
-        if self.enable_psi_vel:
-            self.obs_dim += 1
-            self.obs_name.append("psi_vel")
-            self.range_dict.update({"psi_vel": [-15, 15]})
+        if self.enable_rsdact_feedback:
+            self.obs_dim += 4
+            self.obs_name.append("residual_act")
 
         self.obs_dim += 4
         self.obs_name.append("action")
 
-    def observe(self) -> np.ndarray:
-        obs, obs_dict = self._observe()
+    def observe(self, rsdact=np.zeros(4)) -> np.ndarray:
+        obs, obs_dict = self._observe(rsdact)
         while np.isnan(obs).any():
             rospy.loginfo("[ observation ] obs corrupted by NA")
             self.obs_err_handle()
-            obs, obs_dict = self._observe()
+            obs, obs_dict = self._observe(rsdact)
         return obs, obs_dict
 
-    def _observe(self) -> np.ndarray:
+    def _observe(self, rsdact=np.zeros(4)) -> np.ndarray:
         obs_dict = {
             "position": self.pos_data,
             "velocity": self.vel_data,
             "velocity_norm": np.linalg.norm(self.vel_data),
             "linear_acceleration": self.acc_data,
+            "acceleration_norm": np.linalg.norm(self.acc_data),
             "orientation": self.ori_data,
             "angle": self.ang_data,
             "angular_velocity": self.ang_vel_data,
         }
+
         goal_dict = self.env.goal
         processed_dict = self.process_obs(obs_dict, goal_dict, self.scale_obs)
+
+        if self.enable_rsdact_feedback:
+            processed_dict.update({"residual_act": rsdact})
 
         action = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
         processed_dict.update({"action": action})
@@ -269,19 +274,16 @@ class PlanarKinematicsObservation(ROSObservation):
         goal_vel = goal_dict["velocity"]
 
         planar_dist = np.linalg.norm(obs_pos[0:2] - goal_pos[0:2])
-        psi_diff = self.compute_psi_diff(goal_pos, obs_pos, obs_dict["angle"][2])
+        yaw_diff = self.compute_yaw_diff(goal_pos, obs_pos, obs_dict["angle"][2])
 
         state_dict = {
             "z_diff": obs_pos[2] - goal_pos[2],
             "planar_dist": planar_dist,
-            "psi_diff": psi_diff,
+            "yaw_diff": yaw_diff,
             "vel_diff": vel - goal_vel,
             "vel": vel,
+            "yaw_vel": obs_dict["angular_velocity"][2],
         }
-
-        if self.enable_psi_vel:
-            state_dict.update({"psi_vel": obs_dict["angular_velocity"][2]})
-
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
 
@@ -296,24 +298,24 @@ class PlanarKinematicsObservation(ROSObservation):
         return state_dict
 
     @classmethod
-    def compute_psi_diff(
-        cls, goal_pos: np.array, obs_pos: np.array, obs_psi: float
+    def compute_yaw_diff(
+        cls, goal_pos: np.array, obs_pos: np.array, obs_yaw: float
     ) -> float:
-        """compute psi angle of the vector machine position to goal position
-        then compute the difference of this angle to machine psi angle
+        """compute yaw angle of the vector machine position to goal position
+        then compute the difference of this angle to machine yaw angle
         last, make sure this angle lies within (-pi, pi)
 
         Args:
             goal_pos (np.array): [machine position]
             obs_pos (np.array): [goal postiion]
-            obs_psi (float): [machine psi angle]
+            obs_yaw (float): [machine yaw angle]
 
         Returns:
-            float: [psi angle differences]
+            float: [yaw angle differences]
         """
         pos_diff = obs_pos - goal_pos
-        goal_psi = np.arctan2(pos_diff[1], pos_diff[0]) - np.pi
-        ang_diff = goal_psi - obs_psi
+        goal_yaw = np.arctan2(pos_diff[1], pos_diff[0]) - np.pi
+        ang_diff = goal_yaw - obs_yaw
 
         if ang_diff > np.pi:
             ang_diff -= 2 * np.pi
@@ -326,9 +328,10 @@ class PlanarKinematicsObservation(ROSObservation):
 class DummyYawObservation(PlanarKinematicsObservation):
     """Planar kinematics observation with action feedback"""
 
-    OBS = ["psi_diff"]
+    OBS = ["yaw_diff", "yaw_vel"]
     OBS_range = {
-        "psi_diff": [-np.pi, np.pi],
+        "yaw_diff": [-np.pi, np.pi],
+        "yaw_vel": [-15, 15],
     }
 
     def __init__(
@@ -336,40 +339,32 @@ class DummyYawObservation(PlanarKinematicsObservation):
         env: "AbstractEnv",
         noise_stdv=0.02,
         scale_obs=True,
-        enable_psi_vel=True,
-        enable_rsd_act_in_obs=True,
+        enable_rsdact_feedback=True,
         **kwargs: dict
     ) -> None:
         super().__init__(env, noise_stdv=noise_stdv, scale_obs=scale_obs, **kwargs)
-        self.enable_psi_vel = enable_psi_vel
-        self.enable_rsd_act_in_obs = enable_rsd_act_in_obs
+        self.enable_rsdact_feedback = enable_rsdact_feedback
 
         self.obs_name = self.OBS.copy()
         self.obs_dim = len(self.OBS)
         self.range_dict = self.OBS_range
 
-        if self.enable_psi_vel:
-            self.obs_dim += 1
-            self.obs_name.append("psi_vel")
-            self.range_dict.update({"psi_vel": [-15, 15]})
-
-        if self.enable_rsd_act_in_obs:
+        if self.enable_rsdact_feedback:
             self.obs_dim += 1
             self.obs_name.append("residual_act")
-            self.range_dict.update({"residual_act": [-1, 1]})
 
         self.obs_dim += 1
         self.obs_name.append("action")
 
-    def observe(self, residual_act=np.array([0.0])) -> np.ndarray:
-        obs, obs_dict = self._observe(residual_act)
+    def observe(self, rsdact=np.array([0.0])) -> np.ndarray:
+        obs, obs_dict = self._observe(rsdact)
         while np.isnan(obs).any():
             rospy.loginfo("[ observation ] obs corrupted by NA")
             self.obs_err_handle()
-            obs, obs_dict = self._observe(residual_act)
+            obs, obs_dict = self._observe(rsdact)
         return obs, obs_dict
 
-    def _observe(self, residual_act=np.array([0.0])) -> np.ndarray:
+    def _observe(self, rsdact=np.array([0.0])) -> np.ndarray:
         obs_dict = {
             "position": self.pos_data,
             "velocity": self.vel_data,
@@ -379,11 +374,12 @@ class DummyYawObservation(PlanarKinematicsObservation):
             "angle": self.ang_data,
             "angular_velocity": self.ang_vel_data,
         }
-        if self.enable_rsd_act_in_obs:
-            obs_dict.update({"residual_act": residual_act})
 
         goal_dict = self.env.goal
         processed_dict = self.process_obs(obs_dict, goal_dict, self.scale_obs)
+
+        if self.enable_rsdact_feedback:
+            processed_dict.update({"residual_act": rsdact})
 
         action = self.env.action_type.get_cur_act()[[0]]
         processed_dict.update({"action": action})
@@ -404,16 +400,9 @@ class DummyYawObservation(PlanarKinematicsObservation):
         self, obs_dict: dict, goal_dict: dict, scale_obs: bool = True
     ) -> dict:
         obs_pos, goal_pos = obs_dict["position"], goal_dict["position"]
-        psi_diff = self.compute_psi_diff(goal_pos, obs_pos, obs_dict["angle"][2])
+        yaw_diff = self.compute_yaw_diff(goal_pos, obs_pos, obs_dict["angle"][2])
 
-        state_dict = {
-            "psi_diff": psi_diff,
-        }
-        if self.enable_psi_vel:
-            state_dict.update({"psi_vel": obs_dict["angular_velocity"][2]})
-
-        if self.enable_rsd_act_in_obs:
-            state_dict.update({"residual_act": obs_dict["residual_act"]})
+        state_dict = {"yaw_diff": yaw_diff, "yaw_vel": obs_dict["angular_velocity"][2]}
 
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)

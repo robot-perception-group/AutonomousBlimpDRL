@@ -57,14 +57,10 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
         },
         "observation": {
-            "enable_psi_vel": True,
-            "enable_rsd_act_in_obs": True,
+            "enable_rsdact_feedback": True,
         },
-        "reward_weights": np.array(
-            [1.0, 1.0, 0, 0]
-        ),  # success, tracking, action, bonus
+        "reward_weights": np.array([1.0, 1.0, 0]),  # success, tracking, action
         "enable_residual_ctrl": True,
-        "enable_early_stopping": False,
         "reward_scale": 0.1,
         "clip_reward": False,
         "mixer_type": tune.grid_search(["absolute", "relative"]),
