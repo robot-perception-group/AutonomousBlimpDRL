@@ -10,7 +10,6 @@ from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
 
-from ray.tune.schedulers import PopulationBasedTraining
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
 # exp setup
@@ -19,11 +18,12 @@ AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "test"
 
+days = 7
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
-days = 28
 TIMESTEP = int(days * one_day_ts)
 
 restore = None
+resume = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -34,11 +34,6 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--t_ready", type=int, default=50000)
-parser.add_argument("--perturb", type=float, default=0.25)  # if using PBT
-parser.add_argument(
-    "--criteria", type=str, default="timesteps_total"
-)  # "training_iteration", "time_total_s",  "timesteps_total"
 
 
 def env_creator(env_config):
@@ -61,13 +56,18 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
-        "action": {
-            "disable_servo": True,
+        "observation": {
+            "enable_rsdact_feedback": True,
         },
-        "reward_weights": np.array([100, 1.0, 0.0, 0.0]),
-        "tracking_reward_weights": np.array(
-            [0.3, 0.70, 0.0, 0.0]
-        ),  # z_diff, planar_dist, psi_diff, vel_diff
+        "action": {
+            "disable_servo": False,
+        },
+        "reward_weights": np.array([100, 1.0, 0.0]),  # success, tracking, action
+        "enable_residual_ctrl": True,
+        "reward_scale": 0.07,
+        "clip_reward": False,
+        "mixer_type": "relative",
+        "beta": 1.0,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -92,54 +92,40 @@ if __name__ == "__main__":
             "lambda": 0.9,
             "kl_coeff": 1.0,
             "horizon": 400,
-            "rollout_fragment_length": 200,
-            "train_batch_size": args.num_workers * 4000,
-            "sgd_minibatch_size": 2048,
-            "num_sgd_iter": sample_from(lambda spec: random.uniform(10, 30)),
-            "lr": sample_from(lambda spec: random.uniform(1e-4, 1e-5)),
-            "clip_param": sample_from(lambda spec: random.uniform(0.1, 0.5)),
-            "observation_filter": "MeanStdFilter",
+            "rollout_fragment_length": 400,
+            "train_batch_size": args.num_workers * 1600,
+            "sgd_minibatch_size": 1024,
+            "num_sgd_iter": 32,
+            "lr": 1e-4,
+            "lr_schedule": [
+                [0, 1e-4],
+                [args.stop_timesteps, 1e-12],
+            ],
+            "clip_param": 0.2,
+            "grad_clip": 0.5,
+            "observation_filter": "NoFilter",
+            "batch_mode": "truncate_episodes",
         }
     )
     stop = {
         "timesteps_total": args.stop_timesteps,
     }
 
-    def explore(config):
-        if config["num_sgd_iter"] < 1:
-            config["num_sgd_iter"] = 1
-        return config
-
-    pbt = PopulationBasedTraining(
-        time_attr=args.criteria,
-        metric="episode_reward_mean",
-        mode="max",
-        perturbation_interval=args.t_ready,
-        resample_probability=args.perturb,
-        quantile_fraction=args.perturb,
-        hyperparam_mutations={
-            "clip_param": lambda: random.uniform(0.1, 0.5),
-            "lr": lambda: random.uniform(1e-4, 1e-5),
-            "num_sgd_iter": lambda: random.randint(10, 30),
-        },
-        custom_explore_fn=explore,
-    )
-
     print(config)
     if env_config["simulation"]["auto_start_simulation"]:
         close_simulation()
+
     results = tune.run(
         AGENT_NAME,
         name=exp_name,
-        scheduler=pbt,
-        num_samples=20,
         config=config,
         stop=stop,
         checkpoint_freq=2000,
         checkpoint_at_end=True,
         reuse_actors=False,
-        max_failures=5,
         restore=restore,
+        resume=resume,
+        max_failures=3,
         verbose=1,
     )
     ray.shutdown()
