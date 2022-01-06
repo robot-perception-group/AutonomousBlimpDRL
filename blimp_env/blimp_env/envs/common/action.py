@@ -282,7 +282,7 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         env: "AbstractEnv",
         disable_servo: bool = False,
         max_servo: float = -0.5,
-        max_thrust: float = 0.6,
+        max_thrust: float = 0.5,
         **kwargs: dict,
     ) -> None:
         """action channel

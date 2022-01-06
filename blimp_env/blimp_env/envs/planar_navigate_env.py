@@ -268,7 +268,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             {
                 "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
-                "disable_servo": False,
+                "disable_servo": True,
             }
         )
         config["target"].update(
@@ -284,7 +284,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
-                    [100, 0.8, 0.1]
+                    [100, 0.8, 0.2]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.3, 0.40, 0.20, 0.10]
@@ -294,6 +294,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
                 "mixer_type": "relative",
+                "beta": 0.5,
             }
         )
         return config
@@ -331,7 +332,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 terminal: bool,
                 info: dictionary of all the step info,
         """
-        joint_act = self.mixer(action, self.residual_act)
+        joint_act = self.mixer(action, self.residual_act, self.config["beta"])
         self._simulate(joint_act)
 
         self.residual_act = (
@@ -377,7 +378,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             raise NotImplementedError
 
         joint_act[2] = action[2]
-        return joint_act
+        return np.clip(joint_act, -1, 1)
 
     def residual_ctrl(self):
         """
@@ -385,11 +386,11 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         """
         obs, obs_dict = self.observation_type.observe()
 
-        yaw_ctrl, _, _ = self.pid_ctrl(
+        yaw_ctrl, self.yaw_err_i, _ = self.pid_ctrl(
             -obs[2],
             self.yaw_err_i,
             obs_dict["angular_velocity"][2],
-            pid_coeff=np.array([1.0, 0.0, 0.05]),
+            pid_coeff=np.array([1.0, 0.1, 0.05]),
             d_from_sensor=True,
         )
         alt_ctrl, self.alt_err_i, self.prev_alt = self.pid_ctrl(
@@ -414,7 +415,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         err_i,
         err_d,
         offset=0.0,
-        pid_coeff=np.array([1.0, 0.3, 0.05]),
+        pid_coeff=np.array([1.0, 0.2, 0.05]),
         i_from_sensor=False,
         d_from_sensor=False,
     ):
@@ -610,11 +611,13 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             return action
 
         if self.config["mixer_type"] == "absolute":
-            return beta * action + (1 - beta) * residual_act
+            joint_act = beta * action + (1 - beta) * residual_act
         elif self.config["mixer_type"] == "relative":
-            return residual_act * (1 + beta * action)
+            joint_act = residual_act * (1 + beta * action)
         else:
             raise NotImplementedError
+
+        return np.clip(joint_act, -1, 1)
 
     def residual_ctrl(self):
         """
@@ -626,7 +629,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             -obs[0],
             self.yaw_err_i,
             obs_dict["angular_velocity"][2],
-            np.array([1.3, 0.0, 0.1]),
+            np.array([1.0, 0.0, 0.05]),
         )
         return np.clip(np.array([yaw_ctrl]), -1, 1)
 

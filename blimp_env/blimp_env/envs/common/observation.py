@@ -189,7 +189,7 @@ class ROSObservation(ObservationType):
 
 
 class PlanarKinematicsObservation(ROSObservation):
-    """Planar kinematics observation with action feedback"""
+    """Planar kinematics observation with actuator feedback"""
 
     OBS = ["z_diff", "planar_dist", "yaw_diff", "vel_diff", "vel", "yaw_vel"]
     OBS_range = {
@@ -223,7 +223,7 @@ class PlanarKinematicsObservation(ROSObservation):
             self.obs_name.append("residual_act")
 
         self.obs_dim += 4
-        self.obs_name.append("action")
+        self.obs_name.append("actuator")
 
     def observe(self, rsdact=np.zeros(4)) -> np.ndarray:
         obs, obs_dict = self._observe(rsdact)
@@ -251,8 +251,8 @@ class PlanarKinematicsObservation(ROSObservation):
         if self.enable_rsdact_feedback:
             processed_dict.update({"residual_act": rsdact})
 
-        action = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
-        processed_dict.update({"action": action})
+        actuator = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
+        processed_dict.update({"actuator": actuator})
 
         proc_df = pd.DataFrame.from_records([processed_dict])
         processed = np.hstack(proc_df[self.obs_name].values[0])
@@ -326,7 +326,7 @@ class PlanarKinematicsObservation(ROSObservation):
 
 
 class DummyYawObservation(PlanarKinematicsObservation):
-    """Planar kinematics observation with action feedback"""
+    """Planar kinematics observation with actuator feedback"""
 
     OBS = ["yaw_diff", "yaw_vel"]
     OBS_range = {
@@ -354,7 +354,7 @@ class DummyYawObservation(PlanarKinematicsObservation):
             self.obs_name.append("residual_act")
 
         self.obs_dim += 1
-        self.obs_name.append("action")
+        self.obs_name.append("actuator")
 
     def observe(self, rsdact=np.array([0.0])) -> np.ndarray:
         obs, obs_dict = self._observe(rsdact)
@@ -381,8 +381,8 @@ class DummyYawObservation(PlanarKinematicsObservation):
         if self.enable_rsdact_feedback:
             processed_dict.update({"residual_act": rsdact})
 
-        action = self.env.action_type.get_cur_act()[[0]]
-        processed_dict.update({"action": action})
+        actuator = self.env.action_type.get_cur_act()[[0]]
+        processed_dict.update({"actuator": actuator})
 
         proc_df = pd.DataFrame.from_records([processed_dict])
         processed = np.hstack(proc_df[self.obs_name].values[0])
