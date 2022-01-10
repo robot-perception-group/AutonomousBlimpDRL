@@ -106,12 +106,11 @@ class TorchRNNModel(TorchRNN, nn.Module):
         num_outputs,
         model_config,
         name,
+        fc_size=64,
+        lstm_state_size=128,
     ):
         nn.Module.__init__(self)
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
-
-        fc_size = model_config["custom_model_config"]["fc_size"]
-        lstm_state_size = model_config["custom_model_config"]["lstm_state_size"]
 
         self.obs_size = get_preprocessor(obs_space)(obs_space).size
         self.fc_size = fc_size
