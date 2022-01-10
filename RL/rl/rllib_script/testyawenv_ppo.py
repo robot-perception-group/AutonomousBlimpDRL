@@ -16,7 +16,7 @@ from rl.rllib_script.agent.model import TorchBatchNormModel
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "AbsoluteMixer_Rewscale_Clipparam"
+exp_name_posfix = "badPID_LSTM_Clipparam"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -34,11 +34,11 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
-parser.add_argument("--use_lstm", type=bool, default=False, help="enable lstm cell")
+parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
 parser.add_argument(
     "--lstm_use_prev",
     type=bool,
-    default=False,
+    default=True,
     help="allow lstm use previous action and reward",
 )
 
@@ -68,11 +68,11 @@ if __name__ == "__main__":
         },
         "reward_weights": np.array([1.0, 1.0, 0]),  # success, tracking, action
         "enable_residual_ctrl": True,
-        "reward_scale": tune.grid_search([0.01, 0.01, 0.1]),
+        "reward_scale": 0.1,
         "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.5,
-        "pid_param": np.array([1.0, 0.0, 0.0]),
+        "pid_param": np.array([1.0, 0.0, 0.0]),  # bad:[1,0,0], good:[1,0,0.05]
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -110,8 +110,8 @@ if __name__ == "__main__":
                 [0, 1e-4],
                 [args.stop_timesteps, 1e-12],
             ],
-            "clip_param": tune.grid_search([0.2, 2.0, 20.0]),
-            "vf_clip_param": 1e6,
+            "clip_param": tune.grid_search([0.2, 2.0, 10.0]),
+            "vf_clip_param": tune.grid_search([10, None]),
             "grad_clip": tune.grid_search([0.5, 5.0, 50.0]),
             "observation_filter": "NoFilter",
             "batch_mode": "truncate_episodes",
