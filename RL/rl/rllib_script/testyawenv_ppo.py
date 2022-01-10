@@ -31,18 +31,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=1, help="Number of workers to use"
+    "--num_workers", type=int, default=7, help="Number of workers to use"
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
 parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
-parser.add_argument(
-    "--lstm_use_prev",
-    type=bool,
-    default=True,
-    help="allow lstm use previous action and reward",
-)
 
 
 def env_creator(env_config):
@@ -78,17 +72,22 @@ if __name__ == "__main__":
     }
 
     custom_model = None if args.use_lstm else "bn_model"
+    custom_model_config = (
+        {}
+        if args.use_lstm
+        else {
+            "actor_sizes": [64, 64],
+            "critic_sizes": [128, 128],
+        }
+    )
 
     model_config = {
         "use_lstm": args.use_lstm,
         "lstm_cell_size": 64,
-        "lstm_use_prev_action": args.lstm_use_prev,
-        "lstm_use_prev_reward": args.lstm_use_prev,
+        "lstm_use_prev_action": args.use_lstm,
+        "lstm_use_prev_reward": args.use_lstm,
         "custom_model": custom_model,
-        "custom_model_config": {
-            "actor_sizes": [64, 64],
-            "critic_sizes": [128, 128],
-        },
+        "custom_model_config": custom_model_config,
     }
 
     config = AGENT.DEFAULT_CONFIG.copy()
