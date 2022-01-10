@@ -225,7 +225,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """
         return (
             1.0
-            if np.linalg.norm(pos[0:2] - goal_pos[0:2])
+            if np.round(np.linalg.norm(pos[0:2] - goal_pos[0:2]), 5)
             < self.config["success_threshhold"]
             else 0.0
         )
@@ -530,6 +530,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
                 "mixer_type": "relative",  # absolute, relative
+                "pid_param": np.array([1.0, 0.0, 0.05]),
             }
         )
         return config
@@ -629,7 +630,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             -obs[0],
             self.yaw_err_i,
             obs_dict["angular_velocity"][2],
-            np.array([1.0, 0.0, 0.05]),
+            self.config["pid_param"],
         )
         return np.clip(np.array([yaw_ctrl]), -1, 1)
 

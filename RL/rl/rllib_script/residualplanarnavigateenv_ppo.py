@@ -18,7 +18,7 @@ AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "test"
 
-days = 7
+days = 35
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         "reward_scale": 0.07,
         "clip_reward": False,
         "mixer_type": "relative",
-        "beta": 0.7,
+        "beta": 1.5,
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)

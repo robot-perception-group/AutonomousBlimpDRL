@@ -16,7 +16,7 @@ from rl.rllib_script.agent.model import TorchBatchNormModel
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "RelativeMixer_PsiVelAsD_RsdFeedback"
+exp_name_posfix = "AbsoluteMixer_Rewscale_Clipparam"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -33,6 +33,13 @@ parser.add_argument(
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
+)
+parser.add_argument("--use_lstm", type=bool, default=False, help="enable lstm cell")
+parser.add_argument(
+    "--lstm_use_prev",
+    type=bool,
+    default=False,
+    help="allow lstm use previous action and reward",
 )
 
 
@@ -51,7 +58,7 @@ if __name__ == "__main__":
 
     register_env(env_name, env_creator)
     env_config = {
-        "seed": tune.grid_search([123, 456, 789]),
+        "seed": 123,
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
@@ -61,13 +68,19 @@ if __name__ == "__main__":
         },
         "reward_weights": np.array([1.0, 1.0, 0]),  # success, tracking, action
         "enable_residual_ctrl": True,
-        "reward_scale": 0.1,
+        "reward_scale": tune.grid_search([0.01, 0.01, 0.1]),
         "clip_reward": False,
-        "mixer_type": tune.grid_search(["absolute", "relative"]),
+        "mixer_type": "absolute",
+        "beta": 0.5,
+        "pid_param": np.array([1.0, 0.0, 0.0]),
     }
 
     ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
     model_config = {
+        "use_lstm": args.use_lstm,
+        "lstm_cell_size": 64,
+        "lstm_use_prev_action": args.lstm_use_prev,
+        "lstm_use_prev_reward": args.lstm_use_prev,
         "custom_model": "bn_model",
         "custom_model_config": {},
     }
@@ -85,7 +98,7 @@ if __name__ == "__main__":
             "model": model_config,
             # == Learning ==
             "gamma": 0.999,
-            "lambda": 0.9,
+            "lambda": 0.9,  # gae lambda
             "kl_coeff": 1.0,
             "horizon": 400,
             "rollout_fragment_length": 400,
@@ -97,8 +110,9 @@ if __name__ == "__main__":
                 [0, 1e-4],
                 [args.stop_timesteps, 1e-12],
             ],
-            "clip_param": 0.2,
-            "grad_clip": 0.5,
+            "clip_param": tune.grid_search([0.2, 2.0, 20.0]),
+            "vf_clip_param": 1e6,
+            "grad_clip": tune.grid_search([0.5, 5.0, 50.0]),
             "observation_filter": "NoFilter",
             "batch_mode": "truncate_episodes",
         }
