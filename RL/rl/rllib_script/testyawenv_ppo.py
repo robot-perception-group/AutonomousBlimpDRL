@@ -12,6 +12,8 @@ from ray.tune.registry import register_env
 
 from rl.rllib_script.agent.model import TorchBatchNormModel
 
+ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+
 # exp setup
 ENV = TestYawEnv
 AGENT = ppo
@@ -29,7 +31,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
 parser.add_argument("--num_gpus", type=bool, default=1, help="Number of gpu to use")
 parser.add_argument(
-    "--num_workers", type=int, default=7, help="Number of workers to use"
+    "--num_workers", type=int, default=1, help="Number of workers to use"
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
@@ -72,17 +74,21 @@ if __name__ == "__main__":
         "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.5,
-        "pid_param": np.array([1.0, 0.0, 0.0]),  # bad:[1,0,0], good:[1,0,0.05]
+        "pid_param": np.array([1.0, 0.0, 0.0]),  # bad:[1.0,0,0], good:[1.0,0,0.05]
     }
 
-    ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+    custom_model = None if args.use_lstm else "bn_model"
+
     model_config = {
         "use_lstm": args.use_lstm,
         "lstm_cell_size": 64,
         "lstm_use_prev_action": args.lstm_use_prev,
         "lstm_use_prev_reward": args.lstm_use_prev,
-        "custom_model": "bn_model",
-        "custom_model_config": {},
+        "custom_model": custom_model,
+        "custom_model_config": {
+            "actor_sizes": [64, 64],
+            "critic_sizes": [128, 128],
+        },
     }
 
     config = AGENT.DEFAULT_CONFIG.copy()
