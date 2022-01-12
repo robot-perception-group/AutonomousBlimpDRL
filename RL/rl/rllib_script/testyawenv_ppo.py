@@ -10,22 +10,22 @@ from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
 
-from rl.rllib_script.agent.model import TorchBatchNormModel
+from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
 
 ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 
 # exp setup
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "goodPID_LSTM_mixer_Clipparam"
+exp_name_posfix = "goodPID_myRNN_mixer_Clipparam"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
 restore = None  # path to checkpoint
-resume = False  # whether to continue from the last experiment
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -35,6 +35,9 @@ parser.add_argument(
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
+)
+parser.add_argument(
+    "--resume", type=bool, default=False, help="resume the last experiment"
 )
 parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
 
@@ -71,21 +74,21 @@ if __name__ == "__main__":
         "pid_param": np.array([1.0, 0.0, 0.05]),  # bad:[1.0,0,0], good:[1.0,0,0.05]
     }
 
-    custom_model = None if args.use_lstm else "bn_model"
-    custom_model_config = (
-        {}
-        if args.use_lstm
-        else {
+    if args.use_lstm:
+        custom_model = "bnrnn_model"
+        custom_model_config = {
+            "hidden_sizes": [64, 64],
+            "lstm_cell_size": 64,
+            "lstm_use_prev_action": True,
+            "lstm_use_prev_reward": True,
+        }
+    else:
+        custom_model = "bn_model"
+        custom_model_config = {
             "actor_sizes": [64, 64],
             "critic_sizes": [128, 128],
         }
-    )
-
     model_config = {
-        "use_lstm": args.use_lstm,
-        "lstm_cell_size": 64,
-        "lstm_use_prev_action": args.use_lstm,
-        "lstm_use_prev_reward": args.use_lstm,
         "custom_model": custom_model,
         "custom_model_config": custom_model_config,
     }
@@ -139,7 +142,7 @@ if __name__ == "__main__":
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
-        resume=resume,
+        resume=args.resume,
         max_failures=3,
         verbose=1,
     )
