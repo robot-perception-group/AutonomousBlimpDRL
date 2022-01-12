@@ -1,5 +1,6 @@
 import argparse
 import random
+
 import numpy as np
 import ray
 from blimp_env.envs import TestYawEnv
@@ -9,8 +10,9 @@ from ray.rllib.agents import ppo
 from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
-
-from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
+from rl.rllib_script.agent.model import (TorchBatchNormModel,
+                                         TorchBatchNormRNNModel)
+from rl.rllib_script.util import find_nearest_power_of_two
 
 ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
 ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
@@ -93,6 +95,9 @@ if __name__ == "__main__":
         "custom_model_config": custom_model_config,
     }
 
+    train_batch_size = args.num_workers * 1600
+    sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
+
     config = AGENT.DEFAULT_CONFIG.copy()
     config.update(
         {
@@ -110,8 +115,8 @@ if __name__ == "__main__":
             "kl_coeff": 1.0,
             "horizon": 400,
             "rollout_fragment_length": 400,
-            "train_batch_size": args.num_workers * 1600,
-            "sgd_minibatch_size": 1024,
+            "train_batch_size": train_batch_size,
+            "sgd_minibatch_size": sgd_minibatch_size,
             "num_sgd_iter": 32,
             "lr": 1e-4,
             "lr_schedule": [
