@@ -18,14 +18,14 @@ ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "badPID_LSTM_Clipparam"
+exp_name_posfix = "goodPID_LSTM_mixer_Clipparam"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
-restore = None
-resume = False
+restore = None  # path to checkpoint
+resume = False  # whether to continue from the last experiment
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -66,9 +66,9 @@ if __name__ == "__main__":
         "enable_residual_ctrl": True,
         "reward_scale": 0.1,
         "clip_reward": False,
-        "mixer_type": "absolute",
-        "beta": 0.5,
-        "pid_param": np.array([1.0, 0.0, 0.0]),  # bad:[1.0,0,0], good:[1.0,0,0.05]
+        "mixer_type": tune.grid_search(["absolute", "relative"]),
+        "beta": tune.grid_search([0.2, 0.5, 1.0, 2.0]),
+        "pid_param": np.array([1.0, 0.0, 0.05]),  # bad:[1.0,0,0], good:[1.0,0,0.05]
     }
 
     custom_model = None if args.use_lstm else "bn_model"
@@ -115,9 +115,9 @@ if __name__ == "__main__":
                 [0, 1e-4],
                 [args.stop_timesteps, 1e-12],
             ],
-            "clip_param": tune.grid_search([0.2, 2.0, 10.0]),
-            "vf_clip_param": tune.grid_search([10, None]),
-            "grad_clip": tune.grid_search([0.5, 5.0, 50.0]),
+            "clip_param": 0.2,
+            "vf_clip_param": 10,
+            "grad_clip": 0.5,
             "observation_filter": "NoFilter",
             "batch_mode": "truncate_episodes",
         }
