@@ -10,7 +10,10 @@ from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
 
-from rl.rllib_script.agent.model import TorchBatchNormModel
+from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
+
+ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 
 # exp setup
 ENV = ResidualPlanarNavigateEnv
@@ -34,6 +37,10 @@ parser.add_argument(
 parser.add_argument(
     "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
+parser.add_argument(
+    "--resume", type=bool, default=False, help="resume the last experiment"
+)
+parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
 
 
 def env_creator(env_config):
@@ -66,14 +73,27 @@ if __name__ == "__main__":
         "enable_residual_ctrl": True,
         "reward_scale": 0.07,
         "clip_reward": False,
-        "mixer_type": "relative",
-        "beta": 1.5,
+        "mixer_type": "absolute",
+        "beta": 0.5,
     }
 
-    ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+    if args.use_lstm:
+        custom_model = "bnrnn_model"
+        custom_model_config = {
+            "hidden_sizes": [64, 64],
+            "lstm_cell_size": 64,
+            "lstm_use_prev_action": True,
+            "lstm_use_prev_reward": True,
+        }
+    else:
+        custom_model = "bn_model"
+        custom_model_config = {
+            "actor_sizes": [64, 64],
+            "critic_sizes": [128, 128],
+        }
     model_config = {
-        "custom_model": "bn_model",
-        "custom_model_config": {},
+        "custom_model": custom_model,
+        "custom_model_config": custom_model_config,
     }
 
     config = AGENT.DEFAULT_CONFIG.copy()
@@ -102,6 +122,7 @@ if __name__ == "__main__":
                 [args.stop_timesteps, 1e-12],
             ],
             "clip_param": 0.2,
+            "vf_clip_param": 10,
             "grad_clip": 0.5,
             "observation_filter": "NoFilter",
             "batch_mode": "truncate_episodes",
@@ -124,7 +145,7 @@ if __name__ == "__main__":
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
-        resume=resume,
+        resume=args.resume,
         max_failures=3,
         verbose=1,
     )
