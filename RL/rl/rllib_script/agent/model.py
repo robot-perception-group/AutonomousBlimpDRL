@@ -22,6 +22,38 @@ from ray.rllib.utils.typing import ModelConfigDict, TensorType
 torch, nn = try_import_torch()
 
 
+def _create_bn_layers(
+    input_layer_size,
+    out_size,
+    sizes=[64, 64],
+    output_init_weights=1e-2,
+    activation_fn=nn.Tanh,
+):
+    layers = []
+    prev_layer_size = input_layer_size
+    for size in sizes:
+        layers.append(
+            SlimFC(
+                in_size=prev_layer_size,
+                out_size=size,
+                initializer=torch_normc_initializer(1.0),
+                activation_fn=activation_fn,
+            )
+        )
+        prev_layer_size = size
+        layers.append(nn.LayerNorm(prev_layer_size))
+
+    _hidden_layers = nn.Sequential(*layers)
+    _hidden_out = None
+    _branch = SlimFC(
+        in_size=prev_layer_size,
+        out_size=out_size,
+        initializer=torch_normc_initializer(output_init_weights),
+        activation_fn=None,
+    )
+    return _hidden_layers, _hidden_out, _branch
+
+
 class TorchBatchNormModel(TorchModelV2, nn.Module):
     """Example of a TorchModelV2 using batch normalization.
     https://github.com/ray-project/ray/blob/90fd38c64ac282df63c2a7fbccf66a46217991a4/rllib/examples/models/batch_norm_model.py#L155
@@ -44,7 +76,7 @@ class TorchBatchNormModel(TorchModelV2, nn.Module):
             "critic_sizes", [128, 128]
         )
 
-        (self._hidden_layers, self._hidden_out, self._logits) = self._create_bn_layers(
+        (self._hidden_layers, self._hidden_out, self._logits) = _create_bn_layers(
             input_layer_size=input_layer_size,
             out_size=self.num_outputs,
             output_init_weights=1e-12,
@@ -54,43 +86,11 @@ class TorchBatchNormModel(TorchModelV2, nn.Module):
             self._hidden_layers_v,
             self._hidden_out_v,
             self._value_branch,
-        ) = self._create_bn_layers(
+        ) = _create_bn_layers(
             input_layer_size=input_layer_size,
             out_size=1,
             sizes=critic_sizes,
         )
-
-    def _create_bn_layers(
-        self,
-        input_layer_size,
-        out_size,
-        sizes=[64, 64],
-        output_init_weights=1e-2,
-        activation_fn=nn.Tanh,
-    ):
-        layers = []
-        prev_layer_size = input_layer_size
-        for size in sizes:
-            layers.append(
-                SlimFC(
-                    in_size=prev_layer_size,
-                    out_size=size,
-                    initializer=torch_normc_initializer(1.0),
-                    activation_fn=activation_fn,
-                )
-            )
-            prev_layer_size = size
-            layers.append(nn.LayerNorm(prev_layer_size))
-
-        _hidden_layers = nn.Sequential(*layers)
-        _hidden_out = None
-        _branch = SlimFC(
-            in_size=prev_layer_size,
-            out_size=out_size,
-            initializer=torch_normc_initializer(output_init_weights),
-            activation_fn=None,
-        )
-        return _hidden_layers, _hidden_out, _branch
 
     @override(ModelV2)
     def forward(self, input_dict, state, seq_lens):
@@ -129,17 +129,17 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
 
         input_layer_size = int(np.product(obs_space.shape))
-        # input_layer_size = get_preprocessor(obs_space)(obs_space).size
         hidden_sizes = model_config["custom_model_config"].get("hidden_sizes", [64, 64])
         self.cell_size = model_config["custom_model_config"].get("lstm_cell_size", 64)
 
         self.time_major = model_config.get("_time_major", False)
-        self.use_prev_action = model_config["custom_model_config"][
-            "lstm_use_prev_action"
-        ]
-        self.use_prev_reward = model_config["custom_model_config"][
-            "lstm_use_prev_reward"
-        ]
+        self.use_prev_action = model_config["custom_model_config"].get(
+            "lstm_use_prev_action", True
+        )
+
+        self.use_prev_reward = model_config["custom_model_config"].get(
+            "lstm_use_prev_reward", True
+        )
 
         # self.action_space_struct = get_base_struct_from_space(self.action_space)
         self.action_space_struct = get_base_struct_from_space(action_space)
@@ -162,7 +162,7 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         if self.use_prev_reward:
             lstm_input_size += 1
 
-        self.hidden, _, _ = self._create_bn_layers(
+        self.hidden, _, _ = _create_bn_layers(
             input_layer_size=input_layer_size,
             out_size=hidden_sizes[-1],
             output_init_weights=1e-12,
@@ -198,37 +198,6 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
 
         self._features = None
 
-    def _create_bn_layers(
-        self,
-        input_layer_size,
-        out_size,
-        sizes=[64, 64],
-        output_init_weights=1e-2,
-        activation_fn=nn.Tanh,
-    ):
-        layers = []
-        prev_layer_size = input_layer_size
-        for size in sizes:
-            layers.append(
-                SlimFC(
-                    in_size=prev_layer_size,
-                    out_size=size,
-                    initializer=torch_normc_initializer(1.0),
-                    activation_fn=activation_fn,
-                )
-            )
-            prev_layer_size = size
-            layers.append(nn.LayerNorm(prev_layer_size))
-
-        _hidden_layers = nn.Sequential(*layers)
-        _hidden_out = None
-        _branch = SlimFC(
-            in_size=prev_layer_size,
-            out_size=out_size,
-            initializer=torch_normc_initializer(output_init_weights),
-            activation_fn=None,
-        )
-        return _hidden_layers, _hidden_out, _branch
 
     @override(TorchRNN)
     def forward(
@@ -236,7 +205,7 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         input_dict: Dict[str, TensorType],
         state: List[TensorType],
         seq_lens: TensorType,
-    ) -> (TensorType, List[TensorType]):
+    ):
         assert seq_lens is not None
         wrapped_out, _ = self.forward_hidden(input_dict, [], None)
 
