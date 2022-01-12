@@ -56,6 +56,8 @@ def _create_bn_layers(
 
 class TorchBatchNormModel(TorchModelV2, nn.Module):
     """Example of a TorchModelV2 using batch normalization.
+
+    modified from
     https://github.com/ray-project/ray/blob/90fd38c64ac282df63c2a7fbccf66a46217991a4/rllib/examples/models/batch_norm_model.py#L155
     """
 
@@ -112,7 +114,7 @@ class TorchBatchNormModel(TorchModelV2, nn.Module):
 
 
 class TorchBatchNormRNNModel(TorchRNN, nn.Module):
-    """
+    """modified from
     https://github.com/ray-project/ray/blob/master/rllib/examples/models/rnn_model.py
     https://github.com/ray-project/ray/blob/master/rllib/models/torch/recurrent_net.py
     """
@@ -197,7 +199,6 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         # __sphinx_doc_end__
 
         self._features = None
-
 
     @override(TorchRNN)
     def forward(
