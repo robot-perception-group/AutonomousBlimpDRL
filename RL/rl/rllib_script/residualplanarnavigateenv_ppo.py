@@ -10,8 +10,7 @@ from ray.rllib.agents import ppo
 from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
-from rl.rllib_script.agent.model import (TorchBatchNormModel,
-                                         TorchBatchNormRNNModel)
+from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
 from rl.rllib_script.util import find_nearest_power_of_two
 
 ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
@@ -21,7 +20,7 @@ ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "test"
+exp_name_posfix = "wind_LSTM_absMix"
 
 days = 35
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -64,6 +63,9 @@ if __name__ == "__main__":
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
+            "enable_wind": True,
+            "enable_wind_sampling": True,
+            "wind_speed": 2.5,
         },
         "observation": {
             "enable_rsdact_feedback": True,
@@ -128,7 +130,7 @@ if __name__ == "__main__":
             ],
             "clip_param": 0.2,
             "vf_clip_param": 10,
-            "grad_clip": 0.5,
+            "grad_clip": 1.0,
             "observation_filter": "NoFilter",
             "batch_mode": "truncate_episodes",
         }
