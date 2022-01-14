@@ -157,7 +157,8 @@ class ROSAbstractEnv(AbstractEnv):
                     "gui": False,
                     "enable_meshes": False,
                     "enable_wind": False,
-                    "wind_speed": 2.0,
+                    "enable_wind_sampling": False,
+                    "wind_speed": 2.5,
                     "world": "basic",
                     "auto_start_simulation": True,
                     "remote_host_name": "frg07",
@@ -224,6 +225,11 @@ class ROSAbstractEnv(AbstractEnv):
 
         self.define_spaces()
         self._create_pub_and_sub()
+
+        if self.config["simulation"]["enable_wind_sampling"]:
+            from rotors_comm.msg import WindSpeed
+
+            self.wind_state = WindSpeed()
 
         self.gaz.unpause_sim()
         rospy.loginfo("[ RL Node " + str(self.config["robot_id"]) + " ] Initialized")

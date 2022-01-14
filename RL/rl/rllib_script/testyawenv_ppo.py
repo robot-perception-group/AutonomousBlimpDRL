@@ -3,6 +3,7 @@ import random
 
 import numpy as np
 import ray
+from ray.rllib.evaluation import episode
 from blimp_env.envs import TestYawEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
@@ -10,9 +11,9 @@ from ray.rllib.agents import ppo
 from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
-from rl.rllib_script.agent.model import (TorchBatchNormModel,
-                                         TorchBatchNormRNNModel)
+from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
 from rl.rllib_script.util import find_nearest_power_of_two
+from ray.rllib.agents.ppo import PPOTrainer
 
 ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
 ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
@@ -21,7 +22,7 @@ ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 ENV = TestYawEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "goodPID_myRNN_mixer_Clipparam"
+exp_name_posfix = "goodPID_hybridmixer_beta"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -71,9 +72,9 @@ if __name__ == "__main__":
         "enable_residual_ctrl": True,
         "reward_scale": 0.1,
         "clip_reward": False,
-        "mixer_type": tune.grid_search(["absolute", "relative"]),
-        "beta": tune.grid_search([0.2, 0.5, 1.0, 2.0]),
+        "mixer_type": "absolute",
         "pid_param": np.array([1.0, 0.0, 0.05]),  # bad:[1.0,0,0], good:[1.0,0,0.05]
+        "beta": 0.5,
     }
 
     if args.use_lstm:
