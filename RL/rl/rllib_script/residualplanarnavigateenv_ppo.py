@@ -65,7 +65,7 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
             "enable_wind": True,
             "enable_wind_sampling": True,
-            "wind_speed": 2.5,
+            "wind_speed": 2.0,
         },
         "observation": {
             "enable_rsdact_feedback": True,
