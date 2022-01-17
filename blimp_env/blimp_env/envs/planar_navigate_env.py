@@ -29,6 +29,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             {
                 "enable_wind": False,
                 "enable_wind_sampling": False,
+                "wind_speed": 2.0,
             }
         )
         config["observation"].update(
@@ -56,7 +57,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             {
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
-                "policy_frequency": 6,  # [hz] has to be greater than 5 to overwrite backup controller
+                "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array([1, 0.8, 0.2]),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.25, 0.25, 0.25, 0.25]
@@ -192,7 +193,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         wind_speed = self.config["simulation"]["wind_speed"]
         self.wind_state.velocity.x = np.random.uniform(-wind_speed, wind_speed)
         self.wind_state.velocity.y = np.random.uniform(-wind_speed, wind_speed)
-        self.wind_state.velocity.z = np.random.uniform(-wind_speed/10, wind_speed/10)
+        self.wind_state.velocity.z = np.random.uniform(
+            -wind_speed / 10, wind_speed / 10
+        )
 
     def _reward(
         self, obs: np.array, act: np.array, obs_info: dict
@@ -285,6 +288,9 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_rsdact_feedback": True,
+                "enable_wind": False,
+                "enable_wind_sampling": False,
+                "wind_speed": 2.0,
             }
         )
         config["action"].update(

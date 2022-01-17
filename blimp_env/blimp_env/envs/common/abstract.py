@@ -156,13 +156,13 @@ class ROSAbstractEnv(AbstractEnv):
                     "gaz_port": 11351,
                     "gui": False,
                     "enable_meshes": False,
-                    "enable_wind": False,
-                    "enable_wind_sampling": False,
-                    "wind_speed": 2.5,
                     "world": "basic",
                     "auto_start_simulation": True,
                     "remote_host_name": "frg07",
                     "maximum_local_worker": 10,
+                    "enable_wind": False,
+                    "enable_wind_sampling": False,  # sample random wind
+                    "wind_speed": 2.0,
                 },
                 "observation": {
                     "type": "PlanarKinematics",
