@@ -75,8 +75,9 @@ pip install .
 ```console
 rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/launchfile/* ~/catkin_ws/src/airship_simulation/blimp_description/launch
 cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/rosbridge.cpp ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/ROSBridge/src/rosbridge.cpp
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/launchfile/* ~/catkin_ws/src/airship_simulation/blimp_description/launch
+cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/normwind/src/* ~/catkin_ws/src/airship_simulation/blimp_gazebo_plugin/normwind/src
 ```
 
 4. compile ROS packages
