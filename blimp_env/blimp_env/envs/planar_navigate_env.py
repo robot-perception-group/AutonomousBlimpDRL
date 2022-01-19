@@ -44,6 +44,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
                 "disable_servo": True,
+                "max_servo": -0.5,
+                "max_thrust": 0.5,
             }
         )
         config["target"].update(
@@ -298,6 +300,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
                 "disable_servo": True,
+                "max_servo": -0.5,
+                "max_thrust": 0.5,
             }
         )
         config["target"].update(
