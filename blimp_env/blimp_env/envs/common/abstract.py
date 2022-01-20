@@ -163,6 +163,8 @@ class ROSAbstractEnv(AbstractEnv):
                     "enable_wind": False,
                     "enable_wind_sampling": False,  # sample random wind
                     "wind_speed": 2.0,
+                    "wind_direction": (1, 0),
+                    "position": (0, 0, 100),
                 },
                 "observation": {
                     "type": "PlanarKinematics",
@@ -303,6 +305,7 @@ class ROSAbstractEnv(AbstractEnv):
         self._spawn_sim(marvin)
 
     def _spawn_sim(self, marvin=False):
+
         if marvin:
             spawn_simulation_on_marvin(**self.config["simulation"])
         else:

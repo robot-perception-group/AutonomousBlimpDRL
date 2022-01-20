@@ -19,6 +19,8 @@ from ray.rllib.utils.spaces.space_utils import get_base_struct_from_space
 from ray.rllib.utils.torch_utils import one_hot
 from ray.rllib.utils.typing import ModelConfigDict, TensorType
 
+# from ray.rllib.models import ModelCatalog
+
 torch, nn = try_import_torch()
 
 
@@ -275,3 +277,7 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         )
         logits = self._logits_branch(self._features)
         return logits, [torch.squeeze(h, 0), torch.squeeze(c, 0)]
+
+
+# ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+# ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)

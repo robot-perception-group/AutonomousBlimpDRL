@@ -284,15 +284,19 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
     @classmethod
     def default_config(cls) -> dict:
         config = super().default_config()
+        config["simulation"].update(
+            {
+                "enable_wind": False,
+                "enable_wind_sampling": False,
+                "wind_speed": 2.0,
+            }
+        )
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_rsdact_feedback": True,
-                "enable_wind": False,
-                "enable_wind_sampling": False,
-                "wind_speed": 2.0,
             }
         )
         config["action"].update(
