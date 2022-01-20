@@ -323,7 +323,7 @@ class ROSAbstractEnv(AbstractEnv):
 
     def _reset(self):
         self._reset_gazebo()
-        self._update_goal()
+        self._update_goal_and_env()
 
     def _reset_gazebo(self):
         self.gaz.unpause_sim()
@@ -391,7 +391,7 @@ class ROSAbstractEnv(AbstractEnv):
 
             self.rate.sleep()
 
-    def _update_goal(self):
+    def _update_goal_and_env(self):
         raise NotImplementedError
 
     def close(self) -> None:

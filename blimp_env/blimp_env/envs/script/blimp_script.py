@@ -1,18 +1,53 @@
 """ script """
 import errno
-import subprocess
-import pathlib
-from typing import Tuple
 import os
+import pathlib
 import socket
+import subprocess
 import time
-from blimp_env.envs.common.utils import timeout
+from typing import Tuple
+
 import rospy
+from blimp_env.envs.common.utils import timeout
 
 path = pathlib.Path(__file__).parent.resolve()
 
 DEFAULT_ROSPORT = 11311
 DEFAULT_GAZPORT = 11351
+
+
+# ============ utility function ============#
+
+
+def change_buoynacy(
+    robot_id: int = 0,
+    ros_port: int = DEFAULT_ROSPORT,
+    gaz_port: int = DEFAULT_GAZPORT,
+    deflation: float = 1.0,
+    freeflop_angle: float = 0.0,
+    collapse: float = 0.0,
+    buoyancy: float = 1.0,
+):
+    """
+    Examples:
+        Ideal Perfect Blimp:    ./deflate_blimp.sh blimp 0 0 0 1
+        Intact Blimp:   ./deflate_blimp.sh blimp 1 0 0 1
+        Floppy Blimp:   ./deflate_blimp.sh blimp 2 2 0.01 0.95
+        Blimp after 2 days:     ./deflate_blimp.sh blimp 8 10 0.08 0.8
+        Disassembly test:       ./deflate_blimp.sh blimp 100 100 100 0
+    """
+    machine_name = "machine_" + str(robot_id)
+
+    call_reply = subprocess.check_call(
+        str(path)
+        + f"/deflate_blimp.sh {machine_name} {deflation} {freeflop_angle} {collapse} {buoyancy} "
+        + f"{ros_port} {gaz_port}",
+        shell=True,
+    )
+    rospy.loginfo(
+        f"Change buoyancy state to (deflation, freeflop_angle, collapse, buoyancy): {(deflation, freeflop_angle, collapse, buoyancy)}",
+    )
+    return call_reply
 
 
 # ============ check screen ============#
@@ -398,7 +433,7 @@ def resume_simulation(
         ros_port=ros_port,
         gaz_port=gaz_port,
         enable_meshes=enable_meshes,
-        enable_wind=enable_wind,  
+        enable_wind=enable_wind,
         wind_direction=wind_direction,
         wind_speed=wind_speed,
         position=position,

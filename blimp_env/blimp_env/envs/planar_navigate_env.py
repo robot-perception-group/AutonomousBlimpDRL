@@ -11,7 +11,7 @@ from blimp_env.envs.common.abstract import ROSAbstractEnv
 from blimp_env.envs.common.action import Action
 from geometry_msgs.msg import Point, Quaternion
 from rotors_comm.msg import WindSpeed
-from blimp_env.envs.script import close_simulation
+from blimp_env.envs.script import close_simulation, change_buoynacy
 import line_profiler
 
 profile = line_profiler.LineProfiler()
@@ -30,6 +30,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "enable_wind": False,
                 "enable_wind_sampling": False,
                 "wind_speed": 2.0,
+                "enable_buoyancy_sampling": False,
             }
         )
         config["observation"].update(
@@ -130,7 +131,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             "terminal": terminal,
         }
 
-        self._update_goal()
+        self._update_goal_and_env()
         self._step_info(info)
 
         return obs, reward, terminal, info
@@ -178,13 +179,17 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         self.steps = 0
         self.done = False
         self._reset()
+
         if self.config["simulation"]["enable_wind_sampling"]:
             self._sample_wind_state()
+        if self.config["simulation"]["enable_buoyancy_sampling"]:
+            self._sample_buoyancy()
+
         obs, _ = self.observation_type.observe()
         return obs
 
-    def _update_goal(self):
-        """sample new goal dictionary"""
+    def _update_goal_and_env(self):
+        """sample new goal and update env state"""
         self.goal = self.target_type.sample()
 
         if self.config["simulation"]["enable_wind_sampling"]:
@@ -197,6 +202,23 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         self.wind_state.velocity.y = np.random.uniform(-wind_speed, wind_speed)
         self.wind_state.velocity.z = np.random.uniform(
             -wind_speed / 10, wind_speed / 10
+        )
+
+    def _sample_buoyancy(
+        self,
+        deflation_range=[0.0, 2.0],
+        freeflop_angle_range=[0.0, 2.0],
+        collapse_range=[0.0, 0.02],
+        buoyancy_range=[0.9, 1.1],
+    ):
+        change_buoynacy(
+            robot_id=self.config["robot_id"],
+            ros_port=self.config["ros_port"],
+            gaz_port=self.config["gaz_port"],
+            deflation=np.random.uniform(*deflation_range),
+            freeflop_angle=np.random.uniform(*freeflop_angle_range),
+            collapse=np.random.uniform(*collapse_range),
+            buoyancy=np.random.uniform(*buoyancy_range),
         )
 
     def _reward(
@@ -289,6 +311,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "enable_wind": False,
                 "enable_wind_sampling": False,
                 "wind_speed": 2.0,
+                "enable_buoyancy_sampling": True,
             }
         )
         config["observation"].update(
@@ -390,7 +413,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             "terminal": terminal,
         }
 
-        self._update_goal()
+        self._update_goal_and_env()
         self._step_info(info)
 
         return obs, reward, terminal, info
@@ -612,7 +635,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             "terminal": terminal,
         }
 
-        self._update_goal()
+        self._update_goal_and_env()
         self._step_info(info)
 
         return obs, reward, terminal, info
@@ -779,7 +802,9 @@ if __name__ == "__main__":
             "gui": True,
             "enable_meshes": True,
             "auto_start_simulation": auto_start_simulation,
-            "enable_wind": True,
+            "enable_wind": False,
+            "enable_wind_sampling": False,
+            "enable_buoyancy_sampling": True,
         },
         "observation": {
             "DBG_ROS": False,
