@@ -197,6 +197,7 @@ def spawn_simulation_on_different_port(
     **kwargs,  # pylint: disable=unused-argument
 ) -> dict:
     """start blimp simulator on different ros or gazbo port"""
+
     ros_reply = spawn_ros_master(
         robot_id=robot_id, ros_port=ros_port, gaz_port=gaz_port
     )
@@ -313,12 +314,13 @@ def respawn_target(
 @timeout(50, os.strerror(errno.ETIMEDOUT))
 def respawn_model(
     robot_id: int = 0,
+    ros_port: int = DEFAULT_ROSPORT,
+    gaz_port: int = DEFAULT_GAZPORT,
     enable_meshes: bool = False,
     enable_wind: bool = False,
     wind_direction: tuple = (1, 0),
     wind_speed: float = 1.5,
-    ros_port: int = DEFAULT_ROSPORT,
-    gaz_port: int = DEFAULT_GAZPORT,
+    position: tuple = (0, 0, 100),
     **kwargs,  # pylint: disable=unused-argument
 ) -> dict:
     """respawn model
@@ -329,19 +331,22 @@ def respawn_model(
         robot_id=robot_id, screen_names=["FW_", "BLIMP_"], sleep_times=[3, 10]
     )
     remove_model_reply = remove_blimp(robot_id=robot_id)
-    spawn_model_reply = spawn_blimp(
+
+    blimp_reply = spawn_blimp(
         robot_id=robot_id,
-        enable_meshes=enable_meshes,
-        enable_wind=enable_wind,
-        wind_direction=wind_direction,
-        wind_speed=wind_speed,
         ros_port=ros_port,
         gaz_port=gaz_port,
+        enable_meshes=enable_meshes,
+        enable_wind=False,  # TODO: check if wind plugin still function after model removal
+        wind_direction=wind_direction,
+        wind_speed=wind_speed,
+        position=position,
     )
+
     return {
         "kill_model": kill_model_reply,
         "remove_model": remove_model_reply,
-        "spawn_model": spawn_model_reply,
+        "spawn_model": blimp_reply,
     }
 
 
@@ -353,6 +358,10 @@ def resume_simulation(
     gaz_port: int = DEFAULT_GAZPORT,
     enable_meshes: bool = False,
     target_type: str = "RandomGoal",
+    enable_wind: bool = False,
+    wind_direction: tuple = (1, 0),
+    wind_speed: float = 1.5,
+    position: tuple = (0, 0, 100),
     **kwargs,  # pylint: disable=unused-argument
 ) -> dict:
     """resume simulation
@@ -383,12 +392,18 @@ def resume_simulation(
         ros_port=ros_port,
         gaz_port=gaz_port,
     )
+
     blimp_reply = spawn_blimp(
         robot_id=robot_id,
         ros_port=ros_port,
         gaz_port=gaz_port,
         enable_meshes=enable_meshes,
+        enable_wind=enable_wind,  
+        wind_direction=wind_direction,
+        wind_speed=wind_speed,
+        position=position,
     )
+
     target_reply = spawn_target(
         robot_id=robot_id,
         target_type=target_type,
