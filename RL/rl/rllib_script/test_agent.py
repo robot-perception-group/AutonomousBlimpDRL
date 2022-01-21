@@ -4,9 +4,10 @@ import numpy as np
 from blimp_env.envs import ResidualPlanarNavigateEnv
 import ray
 from ray.rllib.agents import ppo
-from ray.tune import sample_from
-from ray.tune.registry import register_env
-from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
+from ray.rllib.evaluate import rollout
+import rl.rllib_script.agent.model
+
+from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 
 
 checkpoint_path = os.path.expanduser(
@@ -14,27 +15,6 @@ checkpoint_path = os.path.expanduser(
 )
 
 ENV = ResidualPlanarNavigateEnv
-env_config = {
-    "DBG": True,
-    "seed": 123,
-    "simulation": {
-        "gui": True,
-        "auto_start_simulation": True,
-        "enable_wind": True,
-        "enable_wind_sampling": False,
-        "wind_speed": 1.0,
-        "wind_direction": (1, 0),
-    },
-    "action": {
-        "disable_servo": False,
-    },
-    "target": {
-        "type": "InteractiveGoal",
-        "target_name_space": "goal_",
-        "new_target_every_ts": 1200,
-    },
-    "reward_weights": np.array([100, 0.9, 0.1]),
-}
 
 
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
@@ -42,32 +22,70 @@ config_path = os.path.join(run_base_dir, "params.pkl")
 with open(config_path, "rb") as f:
     config = pickle.load(f)
 
-config.update(
+auto_start_simulation = False
+env_config = config["env_config"]
+env_config.update(
     {
-        "num_workers": 1,
-        "num_gpus": 0,
-        "evaluation_num_workers": 1,
-        "evaluation_interval": 1,
-        "evaluation_num_episodes": 1,
+        "DBG": False,
+        "evaluation_mode": True,
+        "seed": 123,
+        "robot_id": "0",
+        "duration": 1000000000,
     }
 )
+env_config["simulation"].update(
+    {
+        "gui": True,
+        "auto_start_simulation": auto_start_simulation,
+        "enable_meshes": True,
+        "enable_wind": True,
+        "enable_wind_sampling": False,
+        "wind_speed": 1.5,
+        "wind_direction": (1, 0),
+        "enable_buoyancy_sampling": False,
+        "position": (0, 0, 30),
+    }
+)
+env_config.update(
+    {
+        "target": {
+            "type": "MultiGoal",  # InteractiveGoal
+            "trigger_dist": 10,
+            # "new_target_every_ts": 1200,
+        },
+    }
+)
+if auto_start_simulation:
+    close_simulation()
+    spawn_simulation_on_different_port(**env_config)
 
+env_config["simulation"]["auto_start_simulation"] = False
+config.update(
+    {
+        "create_env_on_driver": True,  # Make sure worker 0 has an Env.
+        "num_workers": 0,
+        "num_gpus": 0,
+        # "evaluation_num_workers": 1,
+        # "evaluation_interval": 1,
+        # "evaluation_num_episodes": 1,
+        # "evaluation_config": {
+        #     "explore": False,
+        #     "env_config": env_config,
+        # },
+    }
+)
 ray.shutdown()
-ray.init()
-# env = ENV(env_config)
+ray.init(local_mode=True)
 agent = ppo.PPOTrainer(config=config, env=ENV)
 agent.restore(checkpoint_path)
 
-if config["model"]["custom_model"] == "bnrnn_model":
-    cell_size = config["custom_model_config"]["lstm_cell_size"]
-    state = [np.zeros(cell_size, np.float32), np.zeros(cell_size, np.float32)]
+num_episodes = 10
+steps = 0
+episodes = 0
+for episodes in range(num_episodes):
+    eval_result = agent.evaluate()["evaluation"]
+    print(
+        "Episode #{}: reward: {}".format(episodes, eval_result["episode_reward_mean"])
+    )
 
-
-episode_reward = 0
-done = False
-obs = agent.env.reset()
-
-for _ in range(10000):
-    action, state, _ = agent.compute_action(obs, state)
-    obs, reward, done, info = agent.env.step(action)
-    episode_reward += reward
+# agent.stop()

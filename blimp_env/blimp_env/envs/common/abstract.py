@@ -149,6 +149,7 @@ class ROSAbstractEnv(AbstractEnv):
                 "gaz_port": 11351,
                 "name_space": "machine_",
                 "DBG": False,
+                "evaluation_mode": False,
                 "simulation": {
                     "robot_id": "0",
                     "ros_ip": "localhost",
@@ -200,8 +201,14 @@ class ROSAbstractEnv(AbstractEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         # if rllib parallelization, use worker index as robot_id
         if hasattr(config, "worker_index"):
-            config["robot_id"] = str(config.worker_index - 1)
+            assert (
+                config.worker_index >= 0
+            ), f"worker_index should be a positive integer, worker_index: {config.worker_index}"
+            config["robot_id"] = (
+                str(0) if config["evaluation_mode"] else str(config.worker_index)
+            )
             config["seed"] = int(config.worker_index) + 123
+
         super().__init__(config=config)
 
         if self.config["simulation"]["auto_start_simulation"]:
@@ -225,8 +232,10 @@ class ROSAbstractEnv(AbstractEnv):
         )
         self.rate = rospy.Rate(self.config["simulation_frequency"])
 
+        self._pub_and_sub = False
         self.define_spaces()
         self._create_pub_and_sub()
+        self._pub_and_sub = True
 
         if self.config["simulation"]["enable_wind_sampling"]:
             from rotors_comm.msg import WindSpeed
