@@ -13,6 +13,7 @@ from geometry_msgs.msg import Point, Quaternion
 from rotors_comm.msg import WindSpeed
 from blimp_env.envs.script import close_simulation, change_buoynacy
 import line_profiler
+import copy
 
 profile = line_profiler.LineProfiler()
 
@@ -119,8 +120,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """
         self._simulate(action)
         obs, obs_info = self.observation_type.observe()
-        reward, reward_info = self._reward(obs, action, obs_info)
-        terminal = self._is_terminal(obs_info)
+        reward, reward_info = self._reward(obs.copy(), action, copy.deepcopy(obs_info))
+        terminal = self._is_terminal(copy.deepcopy(obs_info))
         info = {
             "step": self.steps,
             "obs": obs,
@@ -362,7 +363,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
 
-        self.pid_act = np.zeros(4)
+        self.pid_act = np.zeros(self.action_type.act_dim)
 
         self.delta_t = 1 / self.config["policy_frequency"] * 10
         self.yaw_err_i, self.prev_yaw = 0, 0
@@ -399,8 +400,10 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             self.residual_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(4)
         )
         obs, obs_info = self.observation_type.observe(self.pid_act.copy())
-        reward, reward_info = self._reward(obs, joint_act, obs_info)
-        terminal = self._is_terminal(obs_info)
+        reward, reward_info = self._reward(
+            obs.copy(), joint_act, copy.deepcopy(obs_info)
+        )
+        terminal = self._is_terminal(copy.deepcopy(obs_info))
         info = {
             "step": self.steps,
             "obs": obs,
@@ -544,12 +547,17 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         if self.config["duration"] is not None:
             time = self.steps >= int(self.config["duration"]) - 1
 
-        success_reward = self.compute_success_rew(
-            obs_info["position"], self.goal["position"]
-        )
-        success = success_reward >= 1
+        success = False
+        if self.config["target"]["type"] == "MultiGoal":
+            success = self.target_type.wp_index == self.target_type.wp_max_index
+        else:
+            success_reward = self.compute_success_rew(
+                obs_info["position"], self.goal["position"]
+            )
+            success = success_reward >= 1.0
 
-        return time or success
+        # return time or success
+        return False  # TODO debugging purpose
 
 
 class TestYawEnv(ResidualPlanarNavigateEnv):
@@ -621,8 +629,10 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             self.residual_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(1)
         )
         obs, obs_info = self.observation_type.observe(self.pid_act.copy())
-        reward, reward_info = self._reward(obs, joint_act, obs_info)
-        terminal = self._is_terminal(obs_info)
+        reward, reward_info = self._reward(
+            obs.copy(), joint_act, copy.deepcopy(obs_info)
+        )
+        terminal = self._is_terminal(copy.deepcopy(obs_info))
         info = {
             "step": self.steps,
             "obs": obs,

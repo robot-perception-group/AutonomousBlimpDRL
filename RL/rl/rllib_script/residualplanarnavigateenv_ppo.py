@@ -20,7 +20,7 @@ ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "wind_LSTM_absMix"
+exp_name_posfix = "disturbed_LSTM_absMix"
 
 days = 35
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -65,6 +65,7 @@ if __name__ == "__main__":
             "enable_wind": True,
             "enable_wind_sampling": True,
             "wind_speed": 2.0,
+            "enable_buoyancy_sampling": True,
         },
         "observation": {
             "enable_rsdact_feedback": True,

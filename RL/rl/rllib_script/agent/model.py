@@ -18,8 +18,8 @@ from ray.rllib.utils.framework import try_import_torch
 from ray.rllib.utils.spaces.space_utils import get_base_struct_from_space
 from ray.rllib.utils.torch_utils import one_hot
 from ray.rllib.utils.typing import ModelConfigDict, TensorType
+from ray.rllib.models import ModelCatalog
 
-# from ray.rllib.models import ModelCatalog
 
 torch, nn = try_import_torch()
 
@@ -215,7 +215,11 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         prev_a_r = []
         # Prev actions.
         if self.model_config["custom_model_config"]["lstm_use_prev_action"]:
-            prev_a = input_dict[SampleBatch.PREV_ACTIONS]
+            try:
+                prev_a = input_dict[SampleBatch.PREV_ACTIONS]
+            except KeyError:
+                prev_a = torch.zeros(self.action_dim)
+
             if isinstance(self.action_space, (Discrete, MultiDiscrete)):
                 prev_a = one_hot(prev_a.float(), self.action_space)
             else:
@@ -224,9 +228,12 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
 
         # Prev rewards.
         if self.model_config["custom_model_config"]["lstm_use_prev_reward"]:
-            prev_a_r.append(
-                torch.reshape(input_dict[SampleBatch.PREV_REWARDS].float(), [-1, 1])
-            )
+            try:
+                prev_r = input_dict[SampleBatch.PREV_REWARDS].float()
+            except KeyError:
+                prev_r = torch.zeros(1)
+
+            prev_a_r.append(torch.reshape(prev_r, [-1, 1]))
 
         # Concat prev. actions + rewards to the "main" input.
         if prev_a_r:
@@ -279,5 +286,5 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
         return logits, [torch.squeeze(h, 0), torch.squeeze(c, 0)]
 
 
-# ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
-# ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
+ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
+ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
