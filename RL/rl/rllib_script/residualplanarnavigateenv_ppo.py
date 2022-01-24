@@ -79,7 +79,7 @@ if __name__ == "__main__":
         "reward_scale": 0.005,
         "clip_reward": False,
         "mixer_type": "absolute",
-        "beta": 0.4,
+        "beta": 0.5,
     }
 
     if args.use_lstm:
