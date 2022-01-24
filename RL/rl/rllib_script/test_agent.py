@@ -8,15 +8,15 @@ import rl.rllib_script.agent.model
 
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 
-ENV = ResidualPlanarNavigateEnv
-
 
 checkpoint_path = os.path.expanduser(
     "~/ray_results/ResidualPlanarNavigateEnv_PPO_wind_LSTM_absMix/PPO_ResidualPlanarNavigateEnv_b32cf_00000_0_2022-01-14_20-10-56/checkpoint_002700/checkpoint-2700"
 )
-auto_start_simulation = False
-duration = 1e20
 
+ENV = ResidualPlanarNavigateEnv
+simulation_mode = True  # False if realworld exp
+auto_start_simulation = True  # False if realworld exp or reusing env
+duration = 1e20
 
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 config_path = os.path.join(run_base_dir, "params.pkl")
@@ -46,20 +46,32 @@ env_config["simulation"].update(
         "position": (0, 0, 30),
     }
 )
-env_config.update(
+env_config["observation"].update(
     {
-        "target": {
-            "type": "MultiGoal",  # InteractiveGoal
-            "trigger_dist": 10,
-            # "new_target_every_ts": 1200,
-        },
+        "real_experiment": not simulation_mode,
+        "noise_stdv": 0.0 if not simulation_mode else 0.02,
     }
 )
+env_config["action"].update(
+    {
+        "act_noise_stdv": 0.0 if not simulation_mode else 0.05,
+        "disable_servo": True,
+        "max_servo": -0.5,
+        "max_thrust": 0.5,
+    }
+)
+env_config["target"].update(
+    {
+        "type": "MultiGoal",  # InteractiveGoal
+        "trigger_dist": 10,
+        # "new_target_every_ts": 1200,
+    }
+)
+
 if auto_start_simulation:
     close_simulation()
     spawn_simulation_on_different_port(**env_config["simulation"])
 
-env_config["simulation"]["auto_start_simulation"] = False
 config.update(
     {
         "create_env_on_driver": True,  # Make sure worker 0 has an Env.
