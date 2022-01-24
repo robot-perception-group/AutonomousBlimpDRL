@@ -149,7 +149,7 @@ class ROSAbstractEnv(AbstractEnv):
                 "gaz_port": 11351,
                 "name_space": "machine_",
                 "DBG": False,
-                "evaluation_mode": False,
+                "evaluation_mode": False,  # if true, robot_id always 0
                 "simulation": {
                     "robot_id": "0",
                     "ros_ip": "localhost",
@@ -160,17 +160,17 @@ class ROSAbstractEnv(AbstractEnv):
                     "world": "basic",
                     "auto_start_simulation": True,
                     "remote_host_name": "frg07",
-                    "maximum_local_worker": 10,
+                    "maximum_local_worker": 8,
                     "enable_wind": False,
-                    "enable_wind_sampling": False,  # sample random wind
-                    "wind_speed": 2.0,
-                    "wind_direction": (1, 0),
-                    "position": (0, 0, 100),
+                    "enable_wind_sampling": False,  # sample random wind speed and direction
+                    "wind_speed": 2.0,  # initial wind speed
+                    "wind_direction": (1, 0),  # initial wind in x and y direction
+                    "position": (0, 0, 100),  # initial spawned position
                 },
                 "observation": {
                     "type": "PlanarKinematics",
                     "name_space": "machine_",
-                    "real_experiment": False,
+                    "real_experiment": False,  # IMU is different between sim and real
                     "DBG_ROS": False,
                     "DBG_OBS": False,
                 },
@@ -316,7 +316,6 @@ class ROSAbstractEnv(AbstractEnv):
         self._spawn_sim(marvin)
 
     def _spawn_sim(self, marvin=False):
-
         if marvin:
             spawn_simulation_on_marvin(**self.config["simulation"])
         else:
