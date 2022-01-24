@@ -10,19 +10,17 @@ from ray.rllib.agents import ppo
 from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
-from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
+import rl.rllib_script.agent.model
 from rl.rllib_script.util import find_nearest_power_of_two
 
-ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
-ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 
 # exp setup
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "disturbed_LSTM_absMix"
+exp_name_posfix = "test_lstm"
 
-days = 35
+days = 20
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
 TIMESTEP = int(days * one_day_ts)
 
@@ -64,7 +62,7 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
             "enable_wind": True,
             "enable_wind_sampling": True,
-            "wind_speed": 2.0,
+            "wind_speed": 1.5,
             "enable_buoyancy_sampling": True,
         },
         "observation": {
