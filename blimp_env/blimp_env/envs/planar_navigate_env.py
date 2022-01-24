@@ -62,7 +62,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "duration": 1200,
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
-                "reward_weights": np.array([1, 0.8, 0.2]),  # success, tracking, action
+                "reward_weights": np.array([10, 0.8, 0.2]),  # success, tracking, action
                 "tracking_reward_weights": np.array(
                     [0.25, 0.25, 0.25, 0.25]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff

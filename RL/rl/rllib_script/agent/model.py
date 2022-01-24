@@ -218,6 +218,9 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
             try:
                 prev_a = input_dict[SampleBatch.PREV_ACTIONS]
             except KeyError:
+                print(
+                    "[ Warning ] lstm detect keyerror, prev_actions not in the batch key"
+                )
                 prev_a = torch.zeros(self.action_dim)
 
             if isinstance(self.action_space, (Discrete, MultiDiscrete)):
@@ -231,6 +234,9 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
             try:
                 prev_r = input_dict[SampleBatch.PREV_REWARDS].float()
             except KeyError:
+                print(
+                    "[ Warning ] lstm detect keyerror, prev_rewards not in the batch key"
+                )
                 prev_r = torch.zeros(1)
 
             prev_a_r.append(torch.reshape(prev_r, [-1, 1]))

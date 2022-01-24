@@ -180,7 +180,7 @@ class MultiGoal(TargetType):
             self.wp_list.append(WayPoint(wp[0:3], wp[3]))
 
         self.trigger_dist = trigger_dist
-        self.wp_max_index = len(self.wp_list) - 1
+        self.wp_max_index = len(self.wp_list)
         self.wp_index = 0
 
         self.pos_cmd_data = self.wp_list[0].position
