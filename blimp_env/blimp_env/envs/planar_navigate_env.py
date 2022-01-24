@@ -207,8 +207,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
 
     def _sample_buoyancy(
         self,
-        deflation_range=[0.0, 2.0],
-        freeflop_angle_range=[0.0, 2.0],
+        deflation_range=[0.0, 1.5],
+        freeflop_angle_range=[0.0, 1.5],
         collapse_range=[0.0, 0.02],
         buoyancy_range=[0.9, 1.1],
     ):
@@ -312,7 +312,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "enable_wind": False,
                 "enable_wind_sampling": False,
                 "wind_speed": 2.0,
-                "enable_buoyancy_sampling": True,
+                "enable_buoyancy_sampling": False,
             }
         )
         config["observation"].update(
