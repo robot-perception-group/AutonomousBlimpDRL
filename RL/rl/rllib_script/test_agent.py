@@ -8,14 +8,18 @@ import rl.rllib_script.agent.model
 
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 
+ENV = ResidualPlanarNavigateEnv
 
 checkpoint_path = os.path.expanduser(
     "~/ray_results/ResidualPlanarNavigateEnv_PPO_wind_LSTM_absMix/PPO_ResidualPlanarNavigateEnv_b32cf_00000_0_2022-01-14_20-10-56/checkpoint_002700/checkpoint-2700"
 )
 
-ENV = ResidualPlanarNavigateEnv
 simulation_mode = True  # False if realworld exp
 auto_start_simulation = True  # False if realworld exp or reusing env
+
+
+if not simulation_mode:
+    auto_start_simulation = False
 duration = 1e20
 
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
