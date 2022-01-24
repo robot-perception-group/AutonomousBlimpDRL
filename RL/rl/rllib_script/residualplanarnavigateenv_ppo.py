@@ -3,16 +3,14 @@ import random
 
 import numpy as np
 import ray
+import rl.rllib_script.agent.model
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
-from ray.rllib.models import ModelCatalog
 from ray.tune import sample_from
 from ray.tune.registry import register_env
-import rl.rllib_script.agent.model
 from rl.rllib_script.util import find_nearest_power_of_two
-
 
 # exp setup
 ENV = ResidualPlanarNavigateEnv
@@ -70,13 +68,18 @@ if __name__ == "__main__":
         },
         "action": {
             "disable_servo": False,
+            "max_servo": -0.3,
         },
-        "reward_weights": np.array([100, 1.0, 0.0]),  # success, tracking, action
+        "reward_weights": np.array([10, 0.8, 0.2]),  # success, tracking, action
+        "tracking_reward_weights": np.array(
+            [0.35, 0.35, 0.15, 0.15]
+        ),  # z_diff, planar_dist, yaw_diff, vel_diff
+        "success_threshhold": 5,  # [meters]
         "enable_residual_ctrl": True,
-        "reward_scale": 0.07,
+        "reward_scale": 0.005,
         "clip_reward": False,
         "mixer_type": "absolute",
-        "beta": 0.5,
+        "beta": 0.4,
     }
 
     if args.use_lstm:
