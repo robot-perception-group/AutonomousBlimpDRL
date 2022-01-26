@@ -69,13 +69,13 @@ if __name__ == "__main__":
             "disable_servo": False,
             "max_servo": -0.3,
         },
-        "reward_weights": np.array([10, 0.8, 0.2]),  # success, tracking, action
+        "reward_weights": np.array([100, 0.8, 0.2]),  # success, tracking, action
         "tracking_reward_weights": np.array(
-            [0.35, 0.35, 0.15, 0.15]
+            [0.4, 0.3, 0.2, 0.1]
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": 5,  # [meters]
         "enable_residual_ctrl": True,
-        "reward_scale": 0.005,
+        "reward_scale": 0.05,
         "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.5,
