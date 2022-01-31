@@ -15,16 +15,17 @@ checkpoint_path = os.path.expanduser(
     "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_LSTM_AbsMix/checkpoint_002700/checkpoint-2700"
 )
 
-simulation_mode = False  # if realworld exp or simulation
+robot_id = "1"
+simulation_mode = True  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
 online_training = True  # if training during test
 
-# in realworld exp "auto_start_simulation" should always be false
+# in real world experiment "auto_start_simulation" should always be false
 if not simulation_mode:
     auto_start_simulation = False
 
-duration = 1e20  # evaluation time steps
-train_iter = 1e20  # training iterations if online training is enabled
+duration = 1e20
+train_iter = 1e20
 
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 config_path = os.path.join(run_base_dir, "params.pkl")
@@ -34,6 +35,7 @@ with open(config_path, "rb") as f:
 env_config = config["env_config"]
 env_config.update(
     {
+        "robot_id": robot_id,
         "DBG": False,
         "evaluation_mode": True,
         "real_experiment": not simulation_mode,
@@ -44,6 +46,7 @@ env_config.update(
 )
 env_config["simulation"].update(
     {
+        "robot_id": int(robot_id),
         "gui": True,
         "auto_start_simulation": auto_start_simulation,
         "enable_meshes": True,

@@ -200,17 +200,13 @@ class ROSAbstractEnv(AbstractEnv):
         return config
 
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
-        # if rllib parallelization, use worker index as robot_id
         if hasattr(config, "worker_index"):
             assert (
                 config.worker_index >= 0
             ), f"worker_index should be a positive integer, worker_index: {config.worker_index}"
-
-            config["robot_id"] = (
-                str(1)
-                if config.get("evaluation_mode", False)
-                else str(config.worker_index - 1)
-            )
+            if not config["evaluation_mode"]:
+                # if rllib parallelization, use worker index as robot_id except in evaluation mode
+                config["robot_id"] = str(config.worker_index - 1)
 
             config["seed"] = int(config.worker_index) + 123
 
