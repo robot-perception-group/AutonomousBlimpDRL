@@ -12,7 +12,7 @@ from ray.tune.logger import pretty_print
 ENV = ResidualPlanarNavigateEnv
 
 checkpoint_path = os.path.expanduser(
-    "~/ray_results/ResidualPlanarNavigateEnv_PPO_LSTM_AbsMix/PPO_ResidualPlanarNavigateEnv_796ff_00000_0_2022-01-12_12-40-43/checkpoint_002700/checkpoint-2700"
+    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_LSTM_AbsMix/checkpoint_002700/checkpoint-2700"
 )
 
 simulation_mode = False  # if realworld exp or simulation
