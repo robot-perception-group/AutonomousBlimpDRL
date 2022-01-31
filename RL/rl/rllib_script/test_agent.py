@@ -1,12 +1,13 @@
-import pickle
 import os
-import numpy as np
-from blimp_env.envs import ResidualPlanarNavigateEnv
-import ray
-from ray.rllib.agents import ppo
-import rl.rllib_script.agent.model
+import pickle
 
+import numpy as np
+import ray
+import rl.rllib_script.agent.model
+from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
+from ray.rllib.agents import ppo
+from ray.tune.logger import pretty_print
 
 ENV = ResidualPlanarNavigateEnv
 
@@ -14,15 +15,16 @@ checkpoint_path = os.path.expanduser(
     "~/ray_results/ResidualPlanarNavigateEnv_PPO_LSTM_AbsMix/PPO_ResidualPlanarNavigateEnv_796ff_00000_0_2022-01-12_12-40-43/checkpoint_002700/checkpoint-2700"
 )
 
-simulation_mode = True  # if realworld exp or simulation
-auto_start_simulation = True  # start simulation
-online_training = False  # if training during test
+simulation_mode = False  # if realworld exp or simulation
+auto_start_simulation = False  # start simulation
+online_training = True  # if training during test
 
 # in realworld exp "auto_start_simulation" should always be false
 if not simulation_mode:
     auto_start_simulation = False
 
 duration = 1e20  # evaluation time steps
+train_iter = 1e20  # training iterations if online training is enabled
 
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 config_path = os.path.join(run_base_dir, "params.pkl")
@@ -96,10 +98,14 @@ if online_training:
             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
             "num_workers": 0,
             "num_gpus": 1,
-            # "horizon": duration,
-            # "rollout_fragment_length": duration,
-            "explore": False,
+            "explore": True,
             "env_config": env_config,
+            "horizon": 400,
+            "rollout_fragment_length": 400,
+            "train_batch_size": 1600,
+            "sgd_minibatch_size": 128,
+            "lr": 1e-4,
+            "lr_schedule": None,
         }
     )
     print(config)
@@ -107,7 +113,11 @@ if online_training:
     ray.init()
     agent = ppo.PPOTrainer(config=config, env=ENV)
     agent.restore(checkpoint_path)
-    agent.train()
+    for _ in range(int(train_iter)):
+        result = agent.train()
+        print(pretty_print(result))
+        if result["timesteps_total"] >= duration:
+            break
 else:
     config.update(
         {
@@ -147,7 +157,7 @@ else:
         prev_action = action
         prev_reward = reward
 
-        if steps % 100 == 0:
+        if steps % 20 == 0:
             print(f"Steps #{steps} Average Reward: {total_reward/(steps+1)}")
             print(f"Steps #{steps} Action: {action}")
             print(f"Steps #{steps} Observation: {obs}")
