@@ -207,7 +207,7 @@ class ROSAbstractEnv(AbstractEnv):
             ), f"worker_index should be a positive integer, worker_index: {config.worker_index}"
 
             config["robot_id"] = (
-                str(0)
+                str(1)
                 if config.get("evaluation_mode", False)
                 else str(config.worker_index - 1)
             )
