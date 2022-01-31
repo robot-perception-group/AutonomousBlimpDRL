@@ -67,6 +67,7 @@ class ROSObservation(ObservationType):
         self.ori_data = np.array([0, 0, 0, 0])
         self.ang_data = np.array([0, 0, 0])
         self.ang_vel_data = np.array([0, 0, 0])
+        self.airspeed_data = np.array([0])
 
         self.ros_cnt = 0
 
@@ -122,6 +123,9 @@ class ROSObservation(ObservationType):
         self.ori_data = utils.obj2array(msg.orientation)
         self.ang_data = quat2euler(self.ori_data)
         self.ang_vel_data = utils.obj2array(msg.angVelocity)
+        self.airspeed_data = np.array(msg.POI.x)
+        if self.airspeed_data < 0.25:
+            self.airspeed_data = 0
 
         if self.dbg_ros:
             print(
@@ -143,6 +147,10 @@ class ROSObservation(ObservationType):
             print(
                 "[ KinematicObservation ] pose_callback: ang_vel",
                 self.ang_vel_data,
+            )
+            print(
+                "[ KinematicObservation ] pose_callback: airspeed",
+                self.airspeed_data,
             )
 
     def check_connection(self):
@@ -207,12 +215,14 @@ class PlanarKinematicsObservation(ROSObservation):
         noise_stdv=0.02,
         scale_obs=True,
         enable_rsdact_feedback=True,
+        enable_airspeed_sensor=False,
         **kwargs: dict
     ) -> None:
         super().__init__(env, **kwargs)
         self.noise_stdv = noise_stdv
         self.scale_obs = scale_obs
         self.enable_rsdact_feedback = enable_rsdact_feedback
+        self.enable_airspeed_sensor = enable_airspeed_sensor
 
         self.obs_name = self.OBS.copy()
         self.obs_dim = len(self.OBS)
@@ -221,6 +231,11 @@ class PlanarKinematicsObservation(ROSObservation):
         if self.enable_rsdact_feedback:
             self.obs_dim += 4
             self.obs_name.append("residual_act")
+
+        if self.enable_airspeed_sensor:
+            self.obs_dim += 1
+            self.obs_name.append("airspeed")
+            self.range_dict.update({"airspeed": [0, 7]})
 
         self.obs_dim += 4
         self.obs_name.append("actuator")
@@ -243,6 +258,7 @@ class PlanarKinematicsObservation(ROSObservation):
             "orientation": self.ori_data,
             "angle": self.ang_data,
             "angular_velocity": self.ang_vel_data,
+            "airspeed": self.airspeed_data,
         }
 
         goal_dict = self.env.goal
@@ -284,6 +300,9 @@ class PlanarKinematicsObservation(ROSObservation):
             "vel": vel,
             "yaw_vel": obs_dict["angular_velocity"][2],
         }
+        if self.enable_airspeed_sensor:
+            state_dict.update({"airspeed": obs_dict["airspeed"]})
+
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
 

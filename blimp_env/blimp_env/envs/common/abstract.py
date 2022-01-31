@@ -150,6 +150,7 @@ class ROSAbstractEnv(AbstractEnv):
                 "name_space": "machine_",
                 "DBG": False,
                 "evaluation_mode": False,  # if true, robot_id always 0
+                "real_experiment": False,  # real world experiment
                 "simulation": {
                     "robot_id": "0",
                     "ros_ip": "localhost",
@@ -204,14 +205,20 @@ class ROSAbstractEnv(AbstractEnv):
             assert (
                 config.worker_index >= 0
             ), f"worker_index should be a positive integer, worker_index: {config.worker_index}"
+
             config["robot_id"] = (
                 str(0)
                 if config.get("evaluation_mode", False)
                 else str(config.worker_index - 1)
             )
+
             config["seed"] = int(config.worker_index) + 123
 
         super().__init__(config=config)
+
+        self.real_exp = self.config["real_experiment"]
+        if self.real_exp:  # setup real world experiment parameters
+            self.config["simulation_frequency"] = self.config["policy_frequency"]
 
         if self.config["simulation"]["auto_start_simulation"]:
             self.setup_env(int(self.config["robot_id"]))
@@ -226,12 +233,13 @@ class ROSAbstractEnv(AbstractEnv):
             disable_signals=True,
         )
         time.sleep(0.5)
-        self.gaz = GazeboConnection(
-            start_init_physics_parameters=True, reset_world_or_sim="WORLD"
-        )
-        self.controllers_object = ControllersConnection(
-            namespace=self.config["name_space"]
-        )
+        if not self.real_exp:
+            self.gaz = GazeboConnection(
+                start_init_physics_parameters=True, reset_world_or_sim="WORLD"
+            )
+            self.controllers_object = ControllersConnection(
+                namespace=self.config["name_space"]
+            )
         self.rate = rospy.Rate(self.config["simulation_frequency"])
 
         self._pub_and_sub = False
@@ -244,7 +252,8 @@ class ROSAbstractEnv(AbstractEnv):
 
             self.wind_state = WindSpeed()
 
-        self.gaz.unpause_sim()
+        if not self.real_exp:
+            self.gaz.unpause_sim()
         rospy.loginfo("[ RL Node " + str(self.config["robot_id"]) + " ] Initialized")
 
     def configure(self, config: Optional[Dict[Any, Any]]) -> None:
@@ -269,6 +278,10 @@ class ROSAbstractEnv(AbstractEnv):
         self.config = update_dict(self.config, "robot_id", str(self.config["robot_id"]))
         self.config = update_dict(self.config, "ros_port", int(self.config["ros_port"]))
         self.config = update_dict(self.config, "gaz_port", int(self.config["gaz_port"]))
+        self.config = update_dict(
+            self.config, "real_experiment", bool(self.config["real_experiment"])
+        )
+
         self.config = update_dict(self.config, "name_space", name_space)
         self.config = update_dict(self.config, "target_name_space", target_name_space)
 
@@ -332,7 +345,8 @@ class ROSAbstractEnv(AbstractEnv):
         return obs
 
     def _reset(self):
-        self._reset_gazebo()
+        if not self.real_exp:
+            self._reset_gazebo()
         self._update_goal_and_env()
 
     def _reset_gazebo(self):
@@ -361,9 +375,12 @@ class ROSAbstractEnv(AbstractEnv):
         Returns:
             Tuple[Observation, float, bool, dict]: [environment information]
         """
-        self.gaz.unpause_sim()
-        obs, reward, terminal, info = self.one_step(action)
-        self.gaz.pause_sim()
+        if not self.real_exp:
+            self.gaz.unpause_sim()
+            obs, reward, terminal, info = self.one_step(action)
+            self.gaz.pause_sim()
+        else:
+            obs, reward, terminal, info = self.one_step(action)
 
         self.steps += 1
 

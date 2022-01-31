@@ -321,6 +321,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_rsdact_feedback": True,
+                "enable_airspeed_sensor": False,
             }
         )
         config["action"].update(
@@ -348,7 +349,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                     [100, 0.8, 0.2]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
-                    [0.3, 0.40, 0.20, 0.10]
+                    [0.40, 0.30, 0.20, 0.10]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff
                 "success_threshhold": 10,  # [meters]
                 "reward_scale": 0.1,

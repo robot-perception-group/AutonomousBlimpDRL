@@ -59,11 +59,12 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
             "enable_wind": True,
             "enable_wind_sampling": True,
-            "wind_speed": 1.5,
+            "wind_speed": 1.3,
             "enable_buoyancy_sampling": True,
         },
         "observation": {
             "enable_rsdact_feedback": True,
+            "enable_airspeed_sensor": True,
         },
         "action": {
             "disable_servo": False,
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": 5,  # [meters]
         "enable_residual_ctrl": True,
-        "reward_scale": 0.05,
+        "reward_scale": 0.01,
         "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.5,
@@ -84,8 +85,8 @@ if __name__ == "__main__":
     if args.use_lstm:
         custom_model = "bnrnn_model"
         custom_model_config = {
-            "hidden_sizes": [64, 64],
-            "lstm_cell_size": 64,
+            "hidden_sizes": [128, 128],
+            "lstm_cell_size": 128,
             "lstm_use_prev_action": True,
             "lstm_use_prev_reward": True,
         }
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         name=exp_name,
         config=config,
         stop=stop,
-        checkpoint_freq=2000,
+        checkpoint_freq=500,
         checkpoint_at_end=True,
         reuse_actors=False,
         restore=restore,
