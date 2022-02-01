@@ -125,7 +125,7 @@ class ROSObservation(ObservationType):
         self.ang_vel_data = utils.obj2array(msg.angVelocity)
         self.airspeed_data = np.array(msg.POI.x)
         if self.airspeed_data < 0.25:
-            self.airspeed_data = 0
+            self.airspeed_data = np.zeros(1)
 
         if self.dbg_ros:
             print(
@@ -155,7 +155,7 @@ class ROSObservation(ObservationType):
 
     def check_connection(self):
         """check ros connection"""
-        while (self.pos_data == np.array([0, 0, 0])).all():
+        while (self.pos_data == np.zeros(3)).all():
             rospy.loginfo("[ observation ] waiting for pose subscriber...")
             try:
                 pose_data = rospy.wait_for_message(
