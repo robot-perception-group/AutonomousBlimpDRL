@@ -3,7 +3,8 @@ import pickle
 
 import numpy as np
 import ray
-import rl.rllib_script.agent.model
+
+# import rl.rllib_script.agent.model
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 from ray.rllib.agents import ppo
@@ -16,7 +17,7 @@ checkpoint_path = os.path.expanduser(
 )
 
 robot_id = "1"
-simulation_mode = True  # if realworld exp or simulation
+simulation_mode = False  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
 online_training = True  # if training during test
 
