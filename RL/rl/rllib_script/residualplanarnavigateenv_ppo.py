@@ -60,7 +60,7 @@ if __name__ == "__main__":
             "enable_wind": True,
             "enable_wind_sampling": True,
             "wind_speed": 1.0,
-            "enable_buoyancy_sampling": True,
+            "enable_buoyancy_sampling": False,
         },
         "observation": {
             "enable_rsdact_feedback": True,
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         },
         "action": {
             "disable_servo": False,
-            "max_servo": -0.3,
+            "max_servo": -0.5,
         },
         "reward_weights": np.array([100, 0.8, 0.2]),  # success, tracking, action
         "tracking_reward_weights": np.array(
@@ -85,8 +85,8 @@ if __name__ == "__main__":
     if args.use_lstm:
         custom_model = "bnrnn_model"
         custom_model_config = {
-            "hidden_sizes": [128, 128],
-            "lstm_cell_size": 128,
+            "hidden_sizes": [128, 64],
+            "lstm_cell_size": 64,
             "lstm_use_prev_action": True,
             "lstm_use_prev_reward": True,
         }
