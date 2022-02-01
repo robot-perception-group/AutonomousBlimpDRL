@@ -85,7 +85,7 @@ if __name__ == "__main__":
     if args.use_lstm:
         custom_model = "bnrnn_model"
         custom_model_config = {
-            "hidden_sizes": [128, 64],
+            "hidden_sizes": [64, 64],
             "lstm_cell_size": 64,
             "lstm_use_prev_action": True,
             "lstm_use_prev_reward": True,

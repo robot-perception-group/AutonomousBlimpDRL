@@ -204,7 +204,7 @@ class ROSAbstractEnv(AbstractEnv):
             assert (
                 config.worker_index >= 0
             ), f"worker_index should be a positive integer, worker_index: {config.worker_index}"
-            if not config["evaluation_mode"]:
+            if not config.get("evaluation_mode", False):
                 # if rllib parallelization, use worker index as robot_id except in evaluation mode
                 config["robot_id"] = str(config.worker_index - 1)
 
