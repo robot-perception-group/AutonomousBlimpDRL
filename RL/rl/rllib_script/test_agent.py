@@ -19,7 +19,7 @@ checkpoint_path = os.path.expanduser(
 robot_id = "1"
 simulation_mode = False  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
-online_training = True  # if training during test
+online_training = False  # if training during test
 
 # in real world experiment "auto_start_simulation" should always be false
 if not simulation_mode:
