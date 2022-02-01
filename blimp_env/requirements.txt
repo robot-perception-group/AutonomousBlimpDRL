@@ -1,9 +1,7 @@
 sensor_msgs==1.13.1
-tf==1.13.2
 numpy==1.18.5
 gym==0.17.3
 rospy==1.15.11
 controller_manager_msgs==0.19.5
-stable_baselines3==1.1.0
 rosgraph==1.15.11
 pytest==5.4.3
