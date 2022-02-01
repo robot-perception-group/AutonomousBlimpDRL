@@ -1,5 +1,8 @@
 from setuptools import find_packages, setup
 
+with open("README.rst", "r") as longdesc:
+    long_description = longdesc.read()
+
 
 setup(
     name="rl",
