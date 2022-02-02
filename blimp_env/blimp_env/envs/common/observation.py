@@ -214,8 +214,9 @@ class PlanarKinematicsObservation(ROSObservation):
         env: "AbstractEnv",
         noise_stdv=0.02,
         scale_obs=True,
-        enable_rsdact_feedback=True,
-        enable_airspeed_sensor=False,
+        enable_rsdact_feedback=True,  # observe other control command source
+        enable_airspeed_sensor=False,  # add airspeed sensor
+        enable_next_goal=False,  # add next goal, only used with multigoal
         **kwargs: dict
     ) -> None:
         super().__init__(env, **kwargs)
@@ -223,6 +224,7 @@ class PlanarKinematicsObservation(ROSObservation):
         self.scale_obs = scale_obs
         self.enable_rsdact_feedback = enable_rsdact_feedback
         self.enable_airspeed_sensor = enable_airspeed_sensor
+        self.enable_next_goal = enable_next_goal
 
         self.obs_name = self.OBS.copy()
         self.obs_dim = len(self.OBS)
@@ -236,6 +238,15 @@ class PlanarKinematicsObservation(ROSObservation):
             self.obs_dim += 1
             self.obs_name.append("airspeed")
             self.range_dict.update({"airspeed": [0, 7]})
+
+        if self.enable_next_goal:
+            self.obs_dim += 1
+            self.obs_name.append("next_yaw_diff")
+            self.range_dict.update(
+                {
+                    "next_yaw_diff": [-np.pi, np.pi],
+                }
+            )
 
         self.obs_dim += 4
         self.obs_name.append("actuator")
@@ -285,7 +296,11 @@ class PlanarKinematicsObservation(ROSObservation):
     def process_obs(
         self, obs_dict: dict, goal_dict: dict, scale_obs: bool = True
     ) -> dict:
-        obs_pos, goal_pos = obs_dict["position"], goal_dict["position"]
+        obs_pos, goal_pos, next_goal_pos = (
+            obs_dict["position"],
+            goal_dict["position"],
+            goal_dict["next_position"],
+        )
         vel = np.linalg.norm(obs_dict["velocity"])
         goal_vel = goal_dict["velocity"]
 
@@ -300,8 +315,15 @@ class PlanarKinematicsObservation(ROSObservation):
             "vel": vel,
             "yaw_vel": obs_dict["angular_velocity"][2],
         }
+
         if self.enable_airspeed_sensor:
             state_dict.update({"airspeed": obs_dict["airspeed"]})
+
+        if self.enable_next_goal:
+            next_yaw_diff = self.compute_yaw_diff(
+                next_goal_pos, obs_pos, obs_dict["angle"][2]
+            )
+            state_dict.update({"next_yaw_diff": next_yaw_diff})
 
         if scale_obs:
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)

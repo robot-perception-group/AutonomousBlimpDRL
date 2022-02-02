@@ -15,10 +15,15 @@ from rl.rllib_script.util import find_nearest_power_of_two
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "test_lstm"
+exp_name_posfix = "disturbed_lstm_multigoal"
+
+env_default_config = ENV.default_config()
+duration = env_default_config["duration"]
+simulation_frequency = env_default_config["simulation_frequency"]
+policy_frequency = env_default_config["policy_frequency"]
 
 days = 20
-one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
+one_day_ts = 24 * 3600 * policy_frequency
 TIMESTEP = int(days * one_day_ts)
 
 restore = None
@@ -59,8 +64,9 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
             "enable_wind": True,
             "enable_wind_sampling": True,
-            "wind_speed": 1.0,
-            "enable_buoyancy_sampling": False,
+            "wind_speed": 1.5,
+            "enable_buoyancy_sampling": True,
+            "enable_next_goal": True,
         },
         "observation": {
             "enable_rsdact_feedback": True,
@@ -70,16 +76,16 @@ if __name__ == "__main__":
             "disable_servo": False,
             "max_servo": -0.5,
         },
-        "reward_weights": np.array([100, 0.8, 0.2]),  # success, tracking, action
+        "reward_weights": np.array([100, 0.9, 0.1]),  # success, tracking, action
         "tracking_reward_weights": np.array(
-            [0.4, 0.25, 0.25, 0.1]
+            [0.4, 0.3, 0.2, 0.1]
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": 5,  # [meters]
         "enable_residual_ctrl": True,
         "reward_scale": 0.01,
         "clip_reward": False,
         "mixer_type": "absolute",
-        "beta": 0.5,
+        "beta": 0.4,
     }
 
     if args.use_lstm:
@@ -103,6 +109,7 @@ if __name__ == "__main__":
 
     train_batch_size = args.num_workers * 1600
     sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
+    episode_ts = duration * policy_frequency / simulation_frequency
 
     config = AGENT.DEFAULT_CONFIG.copy()
     config.update(
@@ -119,8 +126,8 @@ if __name__ == "__main__":
             "gamma": 0.999,
             "lambda": 0.9,
             "kl_coeff": 1.0,
-            "horizon": 400,
-            "rollout_fragment_length": 400,
+            "horizon": episode_ts,
+            "rollout_fragment_length": episode_ts,
             "train_batch_size": train_batch_size,
             "sgd_minibatch_size": sgd_minibatch_size,
             "num_sgd_iter": 32,
