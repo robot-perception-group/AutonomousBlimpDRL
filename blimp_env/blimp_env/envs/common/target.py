@@ -9,6 +9,8 @@ from gym import spaces
 from librepilot.msg import AutopilotInfo
 from transforms3d.euler import euler2quat, quat2euler
 from visualization_msgs.msg import InteractiveMarkerInit, Marker, MarkerArray
+from geometry_msgs.msg import Point
+
 import time
 
 if TYPE_CHECKING:
@@ -16,10 +18,13 @@ if TYPE_CHECKING:
 
 
 class WayPoint:
-    def __init__(self, position=np.zeros(3), velocity=0.0, angle=np.zeros(3)):
+    def __init__(self, position=np.zeros(3), velocity=np.zeros(1), angle=np.zeros(3)):
         self.position = np.array(position)
-        self.velocity = float(velocity)
+        self.velocity = np.array(velocity)
         self.angle = np.array(angle)
+
+    def to_ENU(self):
+        return np.array([self.position[1], self.position[0], -self.position[2]])
 
 
 class TargetType:
@@ -40,6 +45,9 @@ class TargetType:
         """sample a goal"""
         raise NotImplementedError()
 
+    def check_connection(self):
+        pass
+
 
 class RandomGoal(TargetType):
     """a random generated goal during training"""
@@ -50,6 +58,9 @@ class RandomGoal(TargetType):
         target_name_space="target_0",
         new_target_every_ts: int = 1200,
         DBG_ROS=False,
+        xy_range=[-105, 105],
+        z_range=[-5, -210],
+        v_range=[2, 7],
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(env)
@@ -58,15 +69,17 @@ class RandomGoal(TargetType):
         self.dbg_ros = DBG_ROS
         self.target_dim = 9
 
-        self.pos_cmd_data = np.array([0, 0, 0])
-        self.vel_cmd_data = 0.0
-        self.ang_cmd_data = np.array([0, 0, 0])
+        self.pos_cmd_data = np.zeros(3)
+        self.vel_cmd_data = np.zeros(1)
+        self.ang_cmd_data = np.zeros(3)
 
         self.new_target_every_ts = new_target_every_ts
-        self.x_range = [-105, 105]
-        self.y_range = [-105, 105]
-        self.z_range = [-5, -210]
-        self.v_range = [3, 8]
+        self.x_range, self.y_range, self.z_range, self.v_range = (
+            xy_range,
+            xy_range,
+            z_range,
+            v_range,
+        )
 
         self._pub_and_sub = False
         self._create_pub_and_sub()
@@ -117,17 +130,16 @@ class RandomGoal(TargetType):
         q_cmd = euler2quat(0, 0, psi)
         return pos_cmd, v_cmd, ang_cmd, q_cmd
 
-    def check_planar_distance_to_origin(
-        self, position, origin=np.array([0, 0, 100]), min_dist=30
-    ):
-        dist = np.linalg.norm(position[0:2] - origin[0:2])
+    def check_planar_distance(self, waypoint0, waypoint1, min_dist=30):
+        """check if planar distance between 2 waypoints are greater than min_dist"""
+        dist = np.linalg.norm(waypoint0[0:2] - waypoint1[0:2])
         return dist > min_dist
 
-    def sample_new_goal(self):
+    def sample_new_goal(self, origin=np.array([0, 0, -100])):
         far_enough = False
         while far_enough == False:
             pos_cmd, v_cmd, ang_cmd, _ = self.generate_goal()
-            far_enough = self.check_planar_distance_to_origin(pos_cmd)
+            far_enough = self.check_planar_distance(pos_cmd, origin)
 
         self.pos_cmd_data = pos_cmd
         self.vel_cmd_data = v_cmd
@@ -147,9 +159,6 @@ class RandomGoal(TargetType):
             "velocity": self.vel_cmd_data,
             "angle": self.ang_cmd_data,
         }
-
-    def check_connection(self):
-        pass
 
 
 class MultiGoal(TargetType):
@@ -179,13 +188,13 @@ class MultiGoal(TargetType):
         for wp in wp_list:
             self.wp_list.append(WayPoint(wp[0:3], wp[3]))
 
-        self.trigger_dist = trigger_dist
         self.wp_max_index = len(self.wp_list)
         self.wp_index = 0
+        self.next_wp_index = self.wp_index + 1
+        self.wp = self.wp_list[self.wp_index]
+        self.next_wp = self.wp_list[self.next_wp_index]
 
-        self.pos_cmd_data = self.wp_list[0].position
-        self.vel_cmd_data = self.wp_list[0].velocity
-        self.ang_cmd_data = self.wp_list[0].angle
+        self.trigger_dist = trigger_dist
 
         self._pub_and_sub = False
         self._create_pub_and_sub()
@@ -203,39 +212,69 @@ class MultiGoal(TargetType):
         self.wp_viz_publisher = rospy.Publisher(
             self.target_name_space + "/rviz_pos_cmd", Marker, queue_size=1
         )
+        self.wplist_viz_publisher = rospy.Publisher(
+            self.target_name_space + "/rviz_waypoint_list", MarkerArray, queue_size=10
+        )
+        self.path_viz_publisher = rospy.Publisher(
+            self.target_name_space + "/rviz_path", Marker, queue_size=5
+        )
         self._pub_and_sub = True
 
-    def publish_waypoint_toRviz(self, waypoint):
+    def create_rviz_marker(
+        self, waypoint: np.array, scale=(2, 2, 2), color=(1, 1, 1, 0)
+    ):
         marker = Marker()
         marker.header.frame_id = "world"
         marker.header.stamp = rospy.Time.now()
         marker.action = marker.ADD
         marker.type = marker.SPHERE
         marker.id = 0
-        marker.scale.x, marker.scale.y, marker.scale.z = 2, 2, 2
-        marker.color.a, marker.color.r, marker.color.g, marker.color.b = 1, 1, 1, 0
+        marker.scale.x, marker.scale.y, marker.scale.z = scale
+        marker.color.a, marker.color.r, marker.color.g, marker.color.b = color
         marker.pose.position.x, marker.pose.position.y, marker.pose.position.z = (
             waypoint[1],
             waypoint[0],
             -waypoint[2],
         )  ## NED --> rviz(ENU)
         marker.pose.orientation.w = 1
+        return marker
+
+    def publish_waypoint_toRviz(
+        self, waypoint: WayPoint, scale: Tuple = (4, 4, 4), color: Tuple = (1, 0, 0, 1)
+    ):
+        marker = self.create_rviz_marker(waypoint.position, scale=scale, color=color)
         self.wp_viz_publisher.publish(marker)
 
-    def sample_new_goal(self):
-        self.wp_index += 1
+    def publish_wplist_toRviz(self, wp_list: Tuple[WayPoint]):
+        markerArray = MarkerArray()
 
+        for wp in wp_list:
+            marker = self.create_rviz_marker(wp.position)
+            markerArray.markers.append(marker)
+
+            id = 0
+            for m in markerArray.markers:
+                m.id = id
+                id += 1
+
+            self.wplist_viz_publisher.publish(markerArray)
+
+    def check_planar_distance(self, waypoint0, waypoint1, min_dist=30):
+        """check if planar distance between 2 waypoints are greater than min_dist"""
+        return np.linalg.norm(waypoint0[0:2] - waypoint1[0:2]) > min_dist
+
+    def close_enough(self, waypoint0, waypoint1, trigger_dist=5):
+        """check if planar distance between 2 waypoints are less than trigger_dist"""
+        return np.linalg.norm(waypoint0[0:2] - waypoint1[0:2]) < trigger_dist
+
+    def _wp_index_plus_one(self):
+        self.wp_index += 1
         if self.wp_index >= self.wp_max_index:
             self.wp_index = 0
 
-        pos_cmd = self.wp_list[self.wp_index].position
-        v_cmd = self.wp_list[self.wp_index].velocity
-        ang_cmd = self.wp_list[self.wp_index].angle
-        q_cmd = euler2quat(*ang_cmd)
-        return pos_cmd, v_cmd, ang_cmd, q_cmd
-
-    def check_planar_distance(self, goal_pos, machine_pos, trigger_dist=5):
-        return np.linalg.norm(goal_pos[0:2] - machine_pos[0:2]) < trigger_dist
+        self.next_wp_index = self.wp_index + 1
+        if self.next_wp_index >= self.wp_max_index:
+            self.next_wp_index = 0
 
     def sample(self) -> Dict[str, np.ndarray]:
         """sample target state
@@ -244,25 +283,63 @@ class MultiGoal(TargetType):
             dict: target info dictionary with key specified by self.target_name
         """
 
-        if self.env._pub_and_sub and self.check_planar_distance(
-            self.pos_cmd_data, self.env.observation_type.pos_data, self.trigger_dist
-        ):
-            (
-                self.pos_cmd_data,
-                self.vel_cmd_data,
-                self.ang_cmd_data,
-                _,
-            ) = self.sample_new_goal()
+        if self.env._pub_and_sub:
+            if self.close_enough(
+                self.wp_list[self.wp_index].position,
+                self.env.observation_type.pos_data,
+                self.trigger_dist,
+            ):
+                self._wp_index_plus_one()
+                self.wp, self.next_wp = (
+                    self.wp_list[self.wp_index],
+                    self.wp_list[self.next_wp_index],
+                )
 
-        self.publish_waypoint_toRviz(self.pos_cmd_data)
+            self.publish_waypoint_toRviz(self.wp)
+            self.publish_wplist_toRviz(self.wp_list)
+
         return {
-            "position": self.pos_cmd_data,
-            "velocity": self.vel_cmd_data,
-            "angle": self.ang_cmd_data,
+            "position": self.wp.position,
+            "velocity": self.wp.velocity,
+            "angle": self.wp.angle,
+            "next_position": self.next_wp.position,
         }
 
-    def check_connection(self):
-        pass
+    def _generate_waypoint(
+        self,
+        x_range=[-105, 105],
+        y_range=[-105, 105],
+        z_range=[-5, -210],
+        v_range=[2, 7],
+    ):
+        x = np.random.uniform(*x_range)
+        y = np.random.uniform(*y_range)
+        z = np.random.uniform(*z_range)
+        v = np.random.uniform(*v_range)
+        return np.array([x, y, z]), np.array([v])
+
+    def _generate_valid_waypoint(self, prev_pos_cmd=np.array([0, 0, -100])):
+        far_enough = False
+        while far_enough == False:
+            pos_cmd, v_cmd = self._generate_waypoint()
+            far_enough = self.check_planar_distance(pos_cmd, prev_pos_cmd)
+        return WayPoint(pos_cmd, v_cmd)
+
+    def _generate_random_wplist(self, n_waypoints, origin=np.array([0, 0, -100])):
+        wp_list = []
+        wp = WayPoint(origin, 0)
+        for _ in range(n_waypoints):
+            wp = self._generate_valid_waypoint(prev_pos_cmd=wp.position)
+            wp_list.append(wp)
+        return wp_list
+
+    def sample_new_wplist(self, n_waypoints=4):
+        self.wp_list = self._generate_random_wplist(n_waypoints)
+        self.wp_max_index = len(self.wp_list)
+        self.wp_index = 0
+        self.next_wp_index = self.wp_index + 1
+        self.wp = self.wp_list[self.wp_index]
+        self.next_wp = self.wp_list[self.next_wp_index]
 
 
 class ROSTarget(TargetType):

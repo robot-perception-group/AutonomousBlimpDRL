@@ -181,6 +181,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         self.done = False
         self._reset()
 
+        if self.config["target"]["type"] == "MultiGoal":
+            self.target_type.sample_new_wplist()
         if self.config["simulation"]["enable_wind_sampling"]:
             self._sample_wind_state()
         if self.config["simulation"]["enable_buoyancy_sampling"]:
@@ -190,10 +192,13 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         return obs
 
     def _update_goal_and_env(self):
-        """sample new goal and update env state"""
+        """update goal and env state"""
         self.goal = self.target_type.sample()
 
-        if self.config["simulation"]["enable_wind_sampling"]:
+        if (
+            self.config["simulation"]["enable_wind"]
+            and self.config["simulation"]["enable_wind_sampling"]
+        ):
             self.wind_state_pub.publish(self.wind_state)
 
     def _sample_wind_state(self):
@@ -276,7 +281,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         """
         return (
             1.0
-            if np.round(np.linalg.norm(pos[0:2] - goal_pos[0:2]), 5)
+            if np.linalg.norm(pos[0:2] - goal_pos[0:2])
             < self.config["success_threshhold"]
             else 0.0
         )
@@ -292,10 +297,14 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         if self.config["duration"] is not None:
             time = self.steps >= int(self.config["duration"]) - 1
 
-        success_reward = self.compute_success_rew(
-            obs_info["position"], self.goal["position"]
-        )
-        success = success_reward >= 1
+        success = False
+        if self.config["target"]["type"] == "MultiGoal":
+            success = self.target_type.wp_index == self.target_type.wp_max_index
+        else:
+            success_reward = self.compute_success_rew(
+                obs_info["position"], self.goal["position"]
+            )
+            success = success_reward >= 1.0
 
         return time or success
 
@@ -321,7 +330,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "noise_stdv": 0.015,
                 "scale_obs": True,
                 "enable_rsdact_feedback": True,
-                "enable_airspeed_sensor": False,
+                "enable_airspeed_sensor": True,
+                "enable_next_goal": True,
             }
         )
         config["action"].update(
@@ -333,16 +343,17 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "max_thrust": 0.5,
             }
         )
+        trigger_dist = 5
         config["target"].update(
             {
-                "type": "RandomGoal",
+                "type": "MultiGoal",
                 "target_name_space": "goal_",
-                "new_target_every_ts": 1200,
+                "trigger_dist": trigger_dist,
             }
         )
         config.update(
             {
-                "duration": 1200,
+                "duration": 2400,
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
@@ -351,7 +362,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "tracking_reward_weights": np.array(
                     [0.40, 0.30, 0.20, 0.10]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff
-                "success_threshhold": 10,  # [meters]
+                "success_threshhold": trigger_dist,  # [meters]
                 "reward_scale": 0.1,
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
@@ -557,8 +568,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             )
             success = success_reward >= 1.0
 
-        # return time or success
-        return False  # TODO debugging purpose
+        return time or success
 
 
 class TestYawEnv(ResidualPlanarNavigateEnv):
