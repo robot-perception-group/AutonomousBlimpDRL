@@ -4,7 +4,7 @@ import numpy as np
 import ray
 import rl.rllib_script.agent.model
 from blimp_env.envs import ResidualPlanarNavigateEnv
-from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
+from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
 from ray.rllib.agents.ppo import PPOTrainer
@@ -17,7 +17,7 @@ ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 TRAINER = PPOTrainer
 AGENT_NAME = "PPO"
-exp_name_posfix = "curriculum_test"
+exp_name_posfix = "disturbed_curriculum_multigoal"
 
 env_default_config = ENV.default_config()
 duration = env_default_config["duration"]
@@ -78,7 +78,7 @@ def train_fn(
     return state, passed_ts
 
 
-def my_train_fn(config, reporter):
+def curriculum_training(config, reporter):
     total_ts = TIMESTEP
     passed_ts = 0
     total_phase = 3
@@ -99,6 +99,7 @@ def my_train_fn(config, reporter):
             "buoyancy_range": [0.95, 1.05],
         }
     )
+    env_config["target"].update({"trigger_dist": env_config["success_threshhold"]})
     config.update({"env_config": env_config})
     state, passed_ts = train_fn(
         config=config,
@@ -126,6 +127,7 @@ def my_train_fn(config, reporter):
             "buoyancy_range": [0.9, 1.1],
         }
     )
+    env_config["target"].update({"trigger_dist": env_config["success_threshhold"]})
     config.update({"env_config": env_config})
     state, passed_ts = train_fn(
         config=config,
@@ -153,6 +155,7 @@ def my_train_fn(config, reporter):
             "buoyancy_range": [0.85, 1.15],
         }
     )
+    env_config["target"].update({"trigger_dist": env_config["success_threshhold"]})
     config.update({"env_config": env_config})
     state, passed_ts = train_fn(
         config=config,
@@ -175,9 +178,10 @@ if __name__ == "__main__":
     ray.init()
 
     register_env(env_name, env_creator)
+    trigger_dist = 5
     env_config = {
         "seed": 123,
-        "DBG": True,
+        "DBG": False,
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
@@ -195,11 +199,14 @@ if __name__ == "__main__":
             "disable_servo": False,
             "max_servo": -0.5,
         },
+        "target": {
+            "trigger_dist": trigger_dist,
+        },
         "reward_weights": np.array([100, 1.0, 0.0]),  # success, tracking, action
         "tracking_reward_weights": np.array(
             [0.4, 0.3, 0.2, 0.1]
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
-        "success_threshhold": 5,  # [meters]
+        "success_threshhold": trigger_dist,  # [meters]
         "enable_residual_ctrl": True,
         "reward_scale": 0.01,
         "clip_reward": False,
@@ -267,7 +274,7 @@ if __name__ == "__main__":
 
     print(config)
     results = tune.run(
-        my_train_fn,
+        curriculum_training,
         resources_per_trial=PPOTrainer.default_resource_request(config),
         name=exp_name,
         config=config,
