@@ -35,7 +35,7 @@ parser.add_argument(
     "--num_workers", type=int, default=7, help="Number of workers to use"
 )
 parser.add_argument(
-    "--stop-timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
+    "--stop_timesteps", type=int, default=TIMESTEP, help="Number of timesteps to train."
 )
 parser.add_argument(
     "--resume", type=bool, default=False, help="resume the last experiment"

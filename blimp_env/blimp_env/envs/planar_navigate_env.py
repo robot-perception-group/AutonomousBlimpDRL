@@ -32,6 +32,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "enable_wind_sampling": False,
                 "wind_speed": 2.0,
                 "enable_buoyancy_sampling": False,
+                "buoyancy_range": [0.9, 1.1],
             }
         )
         config["observation"].update(
@@ -186,7 +187,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         if self.config["simulation"]["enable_wind_sampling"]:
             self._sample_wind_state()
         if self.config["simulation"]["enable_buoyancy_sampling"]:
-            self._sample_buoyancy()
+            self._sample_buoyancy(
+                buoyancy_range=self.config["simulation"]["buoyancy_range"]
+            )
 
         obs, _ = self.observation_type.observe()
         return obs
@@ -304,7 +307,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             success_reward = self.compute_success_rew(
                 obs_info["position"], self.goal["position"]
             )
-            success = success_reward >= 1.0
+            success = success_reward >= 0.9
 
         return time or success
 
@@ -363,7 +366,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                     [0.40, 0.30, 0.20, 0.10]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff
                 "success_threshhold": trigger_dist,  # [meters]
-                "reward_scale": 0.1,
+                "reward_scale": 0.01,
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
                 "mixer_type": "relative",
@@ -566,7 +569,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             success_reward = self.compute_success_rew(
                 obs_info["position"], self.goal["position"]
             )
-            success = success_reward >= 1.0
+            success = success_reward >= 0.9
 
         return time or success
 
