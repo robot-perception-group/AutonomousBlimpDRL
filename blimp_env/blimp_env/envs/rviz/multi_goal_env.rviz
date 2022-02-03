@@ -197,7 +197,16 @@ Visualization Manager:
                       top_rud_base_joint_link0:
                         top_rud_base_joint_link1:
                           top_rud_base_joint_link:
-                            {}
+                            top_rud_part1_link:
+                              gps_machine_0_link:
+                                {}
+                              imutail_link:
+                                {}
+                              odometry_sensortail_link:
+                                {}
+                              top_rud_joint_link:
+                                top_rud_part2_link:
+                                  {}
             gondola_left_support_link:
               {}
             gondola_right_support_link:
@@ -214,16 +223,6 @@ Visualization Manager:
               right_blade_link:
                 {}
               right_wing_link:
-                {}
-          top_rud_part1_link:
-            gps_machine_0_link:
-              {}
-            imutail_link:
-              {}
-            odometry_sensortail_link:
-              {}
-            top_rud_joint_link:
-              top_rud_part2_link:
                 {}
       Update Interval: 0
       Value: true
@@ -287,14 +286,6 @@ Visualization Manager:
         "": true
       Queue Size: 100
       Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /goal_0/rviz_path
-      Name: Marker
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -323,7 +314,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 490.4537048339844
+      Distance: 258.82806396484375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
