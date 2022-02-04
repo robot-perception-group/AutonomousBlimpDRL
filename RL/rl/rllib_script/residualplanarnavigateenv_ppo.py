@@ -82,7 +82,7 @@ if __name__ == "__main__":
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": 5,  # [meters]
         "enable_residual_ctrl": True,
-        "reward_scale": 0.01,
+        "reward_scale": 0.05,
         "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.4,
@@ -107,9 +107,9 @@ if __name__ == "__main__":
         "custom_model_config": custom_model_config,
     }
 
-    train_batch_size = args.num_workers * 1600
-    sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
     episode_ts = duration * policy_frequency / simulation_frequency
+    train_batch_size = args.num_workers * 4 * episode_ts
+    sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
 
     config = AGENT.DEFAULT_CONFIG.copy()
     config.update(

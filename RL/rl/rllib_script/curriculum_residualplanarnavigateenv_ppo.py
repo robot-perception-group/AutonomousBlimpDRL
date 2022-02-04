@@ -1,14 +1,18 @@
 import argparse
+import os
+import tempfile
+from datetime import datetime
 
 import numpy as np
 import ray
 import rl.rllib_script.agent.model
 from blimp_env.envs import ResidualPlanarNavigateEnv
-from blimp_env.envs.script import close_simulation
+from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 from ray import tune
 from ray.rllib.agents import ppo
 from ray.rllib.agents.ppo import PPOTrainer
 from ray.tune import sample_from
+from ray.tune.logger import UnifiedLogger
 from ray.tune.registry import register_env
 from rl.rllib_script.util import find_nearest_power_of_two
 
@@ -49,40 +53,78 @@ def env_creator(env_config):
     return ENV(env_config)
 
 
+def custom_log_creator(custom_path, custom_str):
+
+    timestr = datetime.today().strftime("%Y-%m-%d_%H-%M-%S")
+    logdir_prefix = "{}_{}".format(custom_str, timestr)
+
+    def logger_creator(config):
+
+        if not os.path.exists(custom_path):
+            os.makedirs(custom_path)
+        logdir = tempfile.mkdtemp(prefix=logdir_prefix, dir=custom_path)
+        return UnifiedLogger(config, logdir, loggers=None)
+
+    return logger_creator
+
+
 def train_fn(
     config,
     reporter,
     phase,
-    total_phase,
     passed_ts,
+    total_phase,
     total_ts,
+    exp_name,
     state=None,
 ):
+    close_simulation()
+
     prev_phase_time = passed_ts
-    trainer = TRAINER(env=env_name, config=config)
+    print(
+        f"Start Training Phase_{phase}: total_phase={total_phase}, total_ts={total_ts}, passed_ts={passed_ts}"
+    )
+
+    trainer = TRAINER(
+        env=config["env"],
+        config=config,
+        logger_creator=custom_log_creator(
+            os.path.expanduser("~/ray_results/" + exp_name), f"phase_{phase}"
+        ),
+    )
     if state is not None:
         trainer.restore(state)
+        print(f"Training Phase_{phase} restored from {state}")
 
-    while passed_ts <= (total_ts * phase / total_phase):
+    print(f"Training Phase_{phase} started with {passed_ts} time steps.")
+    while passed_ts < int(total_ts * phase / total_phase):
         result = trainer.train()
 
-        ts_total = result["timesteps_total"]
-        passed_ts += ts_total
+        rollout_ts = result["timesteps_total"]
+        passed_ts += rollout_ts
 
-        result["phase"] = 1
-        result["timesteps_total"] += prev_phase_time
-        reporter(**result)
+        # result["phase"] = phase
+        # result["timesteps_total"] += prev_phase_time
+        # reporter(**result)
+        print(f"Episode finished with {rollout_ts} time steps.")
 
     state = trainer.save()
     trainer.stop()
-    return state, passed_ts
+    print(
+        f"Training Phase_{phase} complete with {passed_ts} time steps. Trainer is saved at {state}"
+    )
+    return (state, passed_ts, reporter)
 
 
 def curriculum_training(config, reporter):
-    total_ts = TIMESTEP
+    exp_name = config["env_config"].get("exp_name", "curriculum_training")
+    total_ts = config["env_config"].get("stop_timesteps", TIMESTEP)
     passed_ts = 0
     total_phase = 3
 
+    # =============================== Phase 1 =============================== #
+
+    phase = 1
     config.update({"lr": 1e-4})
     env_config = config["env_config"]
     env_config.update(
@@ -101,16 +143,19 @@ def curriculum_training(config, reporter):
     )
     env_config["target"].update({"trigger_dist": env_config["success_threshhold"]})
     config.update({"env_config": env_config})
-    state, passed_ts = train_fn(
+    state, passed_ts, reporter = train_fn(
         config=config,
         reporter=reporter,
-        phase=1,
+        phase=phase,
         total_phase=total_phase,
         passed_ts=passed_ts,
         total_ts=total_ts,
+        exp_name=exp_name,
         state=None,
     )
 
+    # =============================== Phase 2 =============================== #
+    phase = 2
     config.update({"lr": 5e-5})
     env_config = config["env_config"]
     env_config.update(
@@ -129,16 +174,18 @@ def curriculum_training(config, reporter):
     )
     env_config["target"].update({"trigger_dist": env_config["success_threshhold"]})
     config.update({"env_config": env_config})
-    state, passed_ts = train_fn(
+    state, passed_ts, reporter = train_fn(
         config=config,
         reporter=reporter,
-        phase=2,
-        total_phase=total_phase,
+        phase=phase,
         passed_ts=passed_ts,
+        total_phase=total_phase,
         total_ts=total_ts,
+        exp_name=exp_name,
         state=state,
     )
-
+    # =============================== Phase 3 =============================== #
+    phase = 3
     config.update({"lr": 1e-5})
     env_config = config["env_config"]
     env_config.update(
@@ -157,15 +204,18 @@ def curriculum_training(config, reporter):
     )
     env_config["target"].update({"trigger_dist": env_config["success_threshhold"]})
     config.update({"env_config": env_config})
-    state, passed_ts = train_fn(
+    state, passed_ts, reporter = train_fn(
         config=config,
         reporter=reporter,
-        phase=3,
+        phase=phase,
         total_phase=total_phase,
         passed_ts=passed_ts,
         total_ts=total_ts,
+        exp_name=exp_name,
         state=state,
     )
+
+    # =================================================================================
 
 
 if __name__ == "__main__":
@@ -182,6 +232,8 @@ if __name__ == "__main__":
     env_config = {
         "seed": 123,
         "DBG": False,
+        "stop_timesteps": args.stop_timesteps,  # smuggle this parmaeter to curriculum_training fn
+        "exp_name": exp_name,  # smuggle this parmaeter to curriculum_training fn
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
@@ -208,7 +260,7 @@ if __name__ == "__main__":
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": trigger_dist,  # [meters]
         "enable_residual_ctrl": True,
-        "reward_scale": 0.01,
+        "reward_scale": 0.05,
         "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.4,
@@ -236,9 +288,9 @@ if __name__ == "__main__":
     if env_config["simulation"]["auto_start_simulation"]:
         close_simulation()
 
-    train_batch_size = args.num_workers * 1600
-    sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
     episode_ts = duration * policy_frequency / simulation_frequency
+    train_batch_size = args.num_workers * 4 * episode_ts
+    sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
 
     config = AGENT.DEFAULT_CONFIG.copy()
     config.update(
@@ -268,9 +320,6 @@ if __name__ == "__main__":
             "batch_mode": "truncate_episodes",
         }
     )
-    stop = {
-        "timesteps_total": args.stop_timesteps,
-    }
 
     print(config)
     results = tune.run(
@@ -280,6 +329,6 @@ if __name__ == "__main__":
         config=config,
         restore=restore,
         resume=args.resume,
-        verbose=1,
+        verbose=0,
     )
     ray.shutdown()
