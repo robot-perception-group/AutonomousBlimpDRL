@@ -16,7 +16,7 @@ DEFAULT_ROSPORT = 11311
 DEFAULT_GAZPORT = 11351
 
 
-# ============ utility function ============#
+# ============ utility ============#
 
 
 def change_buoynacy(
@@ -88,6 +88,7 @@ def spawn_ros_master(
             + f"/spawn_rosmaster.sh -i {robot_id} -p {gaz_port} -r {ros_port}",
             shell=True,
         )
+        time.sleep(3)
     return int(call_reply)
 
 
@@ -106,6 +107,8 @@ def spawn_world(
             + f"/spawn_world.sh -i {robot_id} -g {gui} -d {world} -p {gaz_port} -r {ros_port}",
             shell=True,
         )
+        time.sleep(3)
+
     return int(call_reply)
 
 
@@ -157,6 +160,7 @@ def spawn_goal(
                 -px {range_x} -py {range_y} -pza {min_z} -pzb {max_z} -v {target_velocity_range}",
             shell=True,
         )
+        time.sleep(3)
     return int(call_reply)
 
 
@@ -172,6 +176,7 @@ def spawn_square(
             str(path) + f"/spawn_square.sh -i {robot_id} -r {ros_port} -p {gaz_port}",
             shell=True,
         )
+        time.sleep(3)
     return int(call_reply)
 
 
@@ -184,6 +189,7 @@ def spawn_path(robot_id: int = 0) -> int:
             str(path) + f"/spawn_path.sh -i {robot_id}",
             shell=True,
         )
+        time.sleep(3)
     return int(call_reply)
 
 
@@ -197,12 +203,14 @@ def spawn_target(
     """spawn target"""
     if target_type == "InteractiveGoal":
         spawn_fn = spawn_goal
-    elif target_type == "RandomGoal":
-        spawn_fn = None
     elif target_type == "Path":
         spawn_fn = spawn_path
     elif target_type == "Square":
         spawn_fn = spawn_square
+    elif target_type == "RandomGoal":
+        spawn_fn = None
+    elif target_type == "MultiGoal":
+        spawn_fn = None
     else:
         raise ValueError("Unknown target type")
 
@@ -372,7 +380,7 @@ def respawn_model(
         ros_port=ros_port,
         gaz_port=gaz_port,
         enable_meshes=enable_meshes,
-        enable_wind=False,  # TODO: check if wind plugin still function after model removal
+        enable_wind=False,  # TODO: check if wind plugin still function after model removed
         wind_direction=wind_direction,
         wind_speed=wind_speed,
         position=position,
