@@ -168,15 +168,16 @@ class MultiGoal(TargetType):
         self,
         env: "AbstractEnv",
         target_name_space="goal_0",
-        trigger_dist=5,  # meter
-        min_dist=10,  # meter
+        trigger_dist=5,  # [m] dist to trigger next waypoint
         wp_list=[
             (50, 50, -30, 5),
             (50, -50, -30, 5),
             (-50, -50, -30, 5),
             (-50, 50, -30, 5),
         ],
-        enable_dependent_wp=False,
+        enable_dependent_wp=False,  # waypoint generated depend on previous waypoint
+        wp_range=15,  # [m] new wp within range^2 of prev wp
+        min_dist=10,  # [m] minimum dist between waypoint
         DBG_ROS=False,
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
@@ -188,6 +189,7 @@ class MultiGoal(TargetType):
         self.dbg_ros = DBG_ROS
         self.target_dim = 9
         self.min_dist = min_dist
+        self.wp_range = wp_range
 
         self.wp_list = []
         for wp in wp_list:
@@ -326,8 +328,8 @@ class MultiGoal(TargetType):
     def _generate_valid_waypoint(self, prev_pos_cmd=np.array([0, 0, -100])):
         far_enough = False
         if self.enable_dependent_wp:
-            x_range = prev_pos_cmd[0] + np.array([-15, 15])
-            y_range = prev_pos_cmd[1] + np.array([-15, 15])
+            x_range = prev_pos_cmd[0] + np.array([-self.wp_range, self.wp_range])
+            y_range = prev_pos_cmd[1] + np.array([-self.wp_range, self.wp_range])
 
         while far_enough == False:
             pos_cmd, v_cmd = self._generate_waypoint(x_range=x_range, y_range=y_range)
