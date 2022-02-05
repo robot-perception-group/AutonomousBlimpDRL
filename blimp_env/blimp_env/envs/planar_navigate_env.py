@@ -185,7 +185,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         self._reset()
 
         if self.config["target"]["type"] == "MultiGoal":
-            self.target_type.sample_new_wplist()
+            n_waypoints = np.random.randint(4, 8)
+            self.target_type.sample_new_wplist(n_waypoints=n_waypoints)
         if self.config["simulation"]["enable_wind_sampling"]:
             self._sample_wind_state()
         if self.config["simulation"]["enable_buoyancy_sampling"]:
