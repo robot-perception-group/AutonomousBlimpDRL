@@ -57,6 +57,7 @@ if __name__ == "__main__":
     ray.init(local_mode=False)
 
     register_env(env_name, env_creator)
+    trigger_dist = 5
     env_config = {
         "seed": 123,
         "simulation": {
@@ -76,11 +77,17 @@ if __name__ == "__main__":
             "disable_servo": False,
             "max_servo": -0.5,
         },
+        "target": {
+            "trigger_dist": trigger_dist,
+            "enable_dependent_wp": True,
+            "wp_range": 15,
+            "min_dist": 10,
+        },
         "reward_weights": np.array([100, 0.9, 0.1]),  # success, tracking, action
         "tracking_reward_weights": np.array(
             [0.4, 0.3, 0.15, 0.15]
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
-        "success_threshhold": 5,  # [meters]
+        "success_threshhold": trigger_dist,  # [meters]
         "enable_residual_ctrl": True,
         "reward_scale": 0.05,
         "clip_reward": False,
