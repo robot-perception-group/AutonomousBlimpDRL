@@ -72,10 +72,12 @@ if __name__ == "__main__":
         "observation": {
             "enable_rsdact_feedback": True,
             "enable_airspeed_sensor": True,
+            "enable_next_goal": True,
         },
         "action": {
             "disable_servo": False,
             "max_servo": -0.5,
+            "max_thrust": 0.5,
         },
         "target": {
             "trigger_dist": trigger_dist,
@@ -90,7 +92,6 @@ if __name__ == "__main__":
         "success_threshhold": trigger_dist,  # [meters]
         "enable_residual_ctrl": True,
         "reward_scale": 0.05,
-        "clip_reward": False,
         "mixer_type": "absolute",
         "beta": 0.5,
     }
