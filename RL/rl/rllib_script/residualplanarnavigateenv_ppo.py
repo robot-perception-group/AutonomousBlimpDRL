@@ -64,7 +64,7 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
             "enable_wind": True,
             "enable_wind_sampling": True,
-            "wind_speed": 1.5,
+            "wind_speed": 1.3,
             "enable_buoyancy_sampling": True,
             "enable_next_goal": True,
         },
@@ -78,14 +78,14 @@ if __name__ == "__main__":
         },
         "reward_weights": np.array([100, 0.9, 0.1]),  # success, tracking, action
         "tracking_reward_weights": np.array(
-            [0.4, 0.3, 0.2, 0.1]
+            [0.4, 0.3, 0.15, 0.15]
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": 5,  # [meters]
         "enable_residual_ctrl": True,
         "reward_scale": 0.05,
         "clip_reward": False,
         "mixer_type": "absolute",
-        "beta": 0.4,
+        "beta": 0.5,
     }
 
     if args.use_lstm:

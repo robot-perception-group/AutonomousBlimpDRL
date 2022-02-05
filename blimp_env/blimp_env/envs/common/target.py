@@ -169,20 +169,25 @@ class MultiGoal(TargetType):
         env: "AbstractEnv",
         target_name_space="goal_0",
         trigger_dist=5,  # meter
+        min_dist=10,  # meter
         wp_list=[
             (50, 50, -30, 5),
             (50, -50, -30, 5),
             (-50, -50, -30, 5),
             (-50, 50, -30, 5),
         ],
+        enable_dependent_wp=False,
         DBG_ROS=False,
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(env)
 
+        self.enable_dependent_wp = enable_dependent_wp
+
         self.target_name_space = target_name_space
         self.dbg_ros = DBG_ROS
         self.target_dim = 9
+        self.min_dist = min_dist
 
         self.wp_list = []
         for wp in wp_list:
@@ -259,7 +264,7 @@ class MultiGoal(TargetType):
 
             self.wplist_viz_publisher.publish(markerArray)
 
-    def check_planar_distance(self, waypoint0, waypoint1, min_dist=30):
+    def check_planar_distance(self, waypoint0, waypoint1, min_dist=10):
         """check if planar distance between 2 waypoints are greater than min_dist"""
         return np.linalg.norm(waypoint0[0:2] - waypoint1[0:2]) > min_dist
 
@@ -307,10 +312,10 @@ class MultiGoal(TargetType):
 
     def _generate_waypoint(
         self,
-        x_range=[-105, 105],
-        y_range=[-105, 105],
-        z_range=[-5, -210],
-        v_range=[2, 7],
+        x_range=np.array([-105, 105]),
+        y_range=np.array([-105, 105]),
+        z_range=np.array([-5, -210]),
+        v_range=np.array([1, 7]),
     ):
         x = np.random.uniform(*x_range)
         y = np.random.uniform(*y_range)
@@ -320,9 +325,15 @@ class MultiGoal(TargetType):
 
     def _generate_valid_waypoint(self, prev_pos_cmd=np.array([0, 0, -100])):
         far_enough = False
+        if self.enable_dependent_wp:
+            x_range = prev_pos_cmd[0] + np.array([-15, 15])
+            y_range = prev_pos_cmd[1] + np.array([-15, 15])
+
         while far_enough == False:
-            pos_cmd, v_cmd = self._generate_waypoint()
-            far_enough = self.check_planar_distance(pos_cmd, prev_pos_cmd)
+            pos_cmd, v_cmd = self._generate_waypoint(x_range=x_range, y_range=y_range)
+            far_enough = self.check_planar_distance(
+                pos_cmd, prev_pos_cmd, min_dist=self.min_dist
+            )
         return WayPoint(pos_cmd, v_cmd)
 
     def _generate_random_wplist(self, n_waypoints, origin=np.array([0, 0, -100])):
