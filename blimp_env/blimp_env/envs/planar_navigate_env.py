@@ -355,6 +355,9 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "type": "MultiGoal",
                 "target_name_space": "goal_",
                 "trigger_dist": trigger_dist,
+                "enable_dependent_wp": True,
+                "wp_range":15, 
+                "min_dist":10,  
             }
         )
         config.update(
