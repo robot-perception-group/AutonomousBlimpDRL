@@ -7,10 +7,7 @@ from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
 from ray.tune.registry import register_env
-from rl.rllib_script.agent.model.ray_model import (
-    TorchBatchNormModel,
-    TorchBatchNormRNNModel,
-)
+import rl.rllib_script.agent.model.ray_model
 from rl.rllib_script.util import find_nearest_power_of_two
 
 # exp setup
