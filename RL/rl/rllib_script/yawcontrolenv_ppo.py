@@ -34,6 +34,7 @@ parser.add_argument(
 parser.add_argument(
     "--resume", type=bool, default=False, help="resume the last experiment"
 )
+parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
 
 
 def env_creator(env_config):
@@ -63,10 +64,9 @@ if __name__ == "__main__":
         "pid_param": tune.grid_search(
             [good_pid, bad_pid]
         ),  # bad:[1.0,0,0], good:[1.0,0,0.05]
-        "use_lstm": tune.grid_search([True, False]),  # dummy var to use tune
     }
 
-    if env_config["use_lstm"]:
+    if args.use_lstm:
         custom_model = "bnrnn_model"
         custom_model_config = {
             "hidden_sizes": [64, 64],
