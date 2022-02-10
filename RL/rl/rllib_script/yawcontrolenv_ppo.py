@@ -16,8 +16,13 @@ AGENT = ppo
 AGENT_NAME = "PPO"
 exp_name_posfix = "lstm_pid_mixer"
 
+env_default_config = ENV.default_config()
+duration = env_default_config["duration"]
+simulation_frequency = env_default_config["simulation_frequency"]
+policy_frequency = env_default_config["policy_frequency"]
+
 days = 1
-one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
+one_day_ts = 24 * 3600 * policy_frequency
 TIMESTEP = int(days * one_day_ts)
 
 restore = None  # path to checkpoint
@@ -85,7 +90,8 @@ if __name__ == "__main__":
         "custom_model_config": custom_model_config,
     }
 
-    train_batch_size = args.num_workers * 1600
+    episode_ts = duration * policy_frequency / simulation_frequency
+    train_batch_size = args.num_workers * 4 * episode_ts
     sgd_minibatch_size = find_nearest_power_of_two(train_batch_size / 10)
 
     config = AGENT.DEFAULT_CONFIG.copy()
