@@ -39,7 +39,13 @@ parser.add_argument(
 parser.add_argument(
     "--resume", type=bool, default=False, help="resume the last experiment"
 )
-parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
+parser.add_argument(
+    "--use_lstm",
+    dest="use_lstm",
+    default=True,
+    action="store_false",
+    help="enable lstm cell",
+)
 
 
 def env_creator(env_config):
@@ -79,12 +85,14 @@ if __name__ == "__main__":
             "lstm_use_prev_action": True,
             "lstm_use_prev_reward": True,
         }
+        print("BNRNN model selected")
     else:
         custom_model = "bn_model"
         custom_model_config = {
             "actor_sizes": [64, 64],
             "critic_sizes": [128, 128],
         }
+        print("BN model selected")
     model_config = {
         "custom_model": custom_model,
         "custom_model_config": custom_model_config,

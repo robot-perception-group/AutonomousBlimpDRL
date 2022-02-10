@@ -330,13 +330,12 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "enable_wind_sampling": True,
                 "wind_speed": 1.5,
                 "enable_buoyancy_sampling": True,
-                "enable_next_goal": True,
             }
         )
         config["observation"].update(
             {
                 "type": "PlanarKinematics",
-                "noise_stdv": 0.015,
+                "noise_stdv": 0.02,
                 "scale_obs": True,
                 "enable_rsdact_feedback": True,
                 "enable_airspeed_sensor": True,
@@ -596,10 +595,19 @@ class YawControlEnv(ResidualPlanarNavigateEnv):
     @classmethod
     def default_config(cls) -> dict:
         config = super().default_config()
+        config["simulation"].update(
+            {
+                "enable_wind": False,
+                "enable_wind_sampling": False,
+                "wind_speed": 0.0,
+                "enable_buoyancy_sampling": False,
+                "enable_next_goal": False,
+            }
+        )
         config["observation"].update(
             {
                 "type": "DummyYaw",
-                "noise_stdv": 0.015,
+                "noise_stdv": 0.02,
                 "scale_obs": True,
                 "enable_rsdact_feedback": True,
             }
