@@ -15,14 +15,14 @@ from rl.rllib_script.util import find_nearest_power_of_two
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "disturbed_lstm_multidependentgoal"
+exp_name_posfix = "hybridmix"
 
 env_default_config = ENV.default_config()
 duration = env_default_config["duration"]
 simulation_frequency = env_default_config["simulation_frequency"]
 policy_frequency = env_default_config["policy_frequency"]
 
-days = 20
+days = 28
 one_day_ts = 24 * 3600 * policy_frequency
 TIMESTEP = int(days * one_day_ts)
 
@@ -57,43 +57,13 @@ if __name__ == "__main__":
     ray.init(local_mode=False)
 
     register_env(env_name, env_creator)
-    trigger_dist = 5
     env_config = {
-        "seed": 123,
+        "seed": tune.grid_search([123, 456, 789]),
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
-            "enable_wind": True,
-            "enable_wind_sampling": True,
-            "wind_speed": 1.5,
-            "enable_buoyancy_sampling": True,
-            "enable_next_goal": True,
         },
-        "observation": {
-            "enable_rsdact_feedback": True,
-            "enable_airspeed_sensor": True,
-            "enable_next_goal": True,
-        },
-        "action": {
-            "disable_servo": False,
-            "max_servo": -0.5,
-            "max_thrust": 0.5,
-        },
-        "target": {
-            "trigger_dist": trigger_dist,
-            "enable_dependent_wp": True,
-            "dist_range": [10, 40],
-            "enable_random_goal": True,
-        },
-        "reward_weights": np.array([100, 0.9, 0.1]),  # success, tracking, action
-        "tracking_reward_weights": np.array(
-            [0.6, 0.2, 0.10, 0.10]
-        ),  # z_diff, planar_dist, yaw_diff, vel_diff
-        "success_threshhold": trigger_dist,  # [meters]
-        "enable_residual_ctrl": True,
-        "reward_scale": 0.05,
-        "mixer_type": "hybrid",
-        "beta": 0.5,
+        "mixer_type": "hybrid",  # absolute, relative, hybrid
     }
 
     if args.use_lstm:

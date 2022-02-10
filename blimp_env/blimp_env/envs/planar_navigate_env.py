@@ -326,10 +326,11 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         config = super().default_config()
         config["simulation"].update(
             {
-                "enable_wind": False,
-                "enable_wind_sampling": False,
-                "wind_speed": 2.0,
-                "enable_buoyancy_sampling": False,
+                "enable_wind": True,
+                "enable_wind_sampling": True,
+                "wind_speed": 1.5,
+                "enable_buoyancy_sampling": True,
+                "enable_next_goal": True,
             }
         )
         config["observation"].update(
@@ -346,7 +347,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             {
                 "type": "SimpleContinuousDifferentialAction",
                 "act_noise_stdv": 0.05,
-                "disable_servo": True,
+                "disable_servo": False,
                 "max_servo": -0.5,
                 "max_thrust": 0.5,
             }
@@ -358,6 +359,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "target_name_space": "goal_",
                 "trigger_dist": trigger_dist,
                 "enable_dependent_wp": True,
+                "enable_random_goal": True,
                 "dist_range": [10, 40],
             }
         )
@@ -370,7 +372,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                     [100, 0.9, 0.1]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
-                    [0.55, 0.15, 0.15, 0.15]
+                    [0.6, 0.2, 0.1, 0.1]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff
                 "success_threshhold": trigger_dist,  # [meters]
                 "reward_scale": 0.05,
