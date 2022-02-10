@@ -7,7 +7,6 @@ from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
-from ray.tune import sample_from
 from ray.tune.registry import register_env
 from rl.rllib_script.util import find_nearest_power_of_two
 
