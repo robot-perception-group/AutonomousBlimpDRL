@@ -15,7 +15,7 @@ from rl.rllib_script.util import find_nearest_power_of_two
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "disturbed_lstm_multigoal"
+exp_name_posfix = "disturbed_lstm_multidependentgoal"
 
 env_default_config = ENV.default_config()
 duration = env_default_config["duration"]
@@ -82,17 +82,17 @@ if __name__ == "__main__":
         "target": {
             "trigger_dist": trigger_dist,
             "enable_dependent_wp": True,
-            "wp_range": 15,
-            "min_dist": 10,
+            "dist_range": [10, 40],
+            "enable_random_goal": True,
         },
         "reward_weights": np.array([100, 0.9, 0.1]),  # success, tracking, action
         "tracking_reward_weights": np.array(
-            [0.4, 0.3, 0.15, 0.15]
+            [0.55, 0.15, 0.15, 0.15]
         ),  # z_diff, planar_dist, yaw_diff, vel_diff
         "success_threshhold": trigger_dist,  # [meters]
         "enable_residual_ctrl": True,
         "reward_scale": 0.05,
-        "mixer_type": "absolute",
+        "mixer_type": "hybrid",
         "beta": 0.5,
     }
 
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             "lr": 1e-4,
             "lr_schedule": [
                 [0, 1e-4],
-                [args.stop_timesteps, 1e-12],
+                [args.stop_timesteps, 5e-6],
             ],
             "clip_param": 0.2,
             "vf_clip_param": 10,

@@ -184,7 +184,9 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         self.done = False
         self._reset()
 
-        if self.config["target"]["type"] == "MultiGoal":
+        if self.config["target"]["type"] == "MultiGoal" and self.config["target"].get(
+            "enable_random_goal", True
+        ):
             n_waypoints = np.random.randint(4, 8)
             self.target_type.sample_new_wplist(n_waypoints=n_waypoints)
         if self.config["simulation"]["enable_wind_sampling"]:
@@ -356,8 +358,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "target_name_space": "goal_",
                 "trigger_dist": trigger_dist,
                 "enable_dependent_wp": True,
-                "wp_range":15, 
-                "min_dist":10,  
+                "wp_range": 15,
+                "min_dist": 10,
             }
         )
         config.update(
@@ -375,7 +377,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "reward_scale": 0.01,
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
-                "mixer_type": "relative",
+                "mixer_type": "relative",  # absolute, relative, hybrid
+                "alpha": 0.5,
                 "beta": 0.5,
             }
         )
@@ -384,7 +387,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
 
-        self.pid_act = np.zeros(self.action_type.act_dim)
+        self.base_act = np.zeros(self.action_type.act_dim)
 
         self.delta_t = 1 / self.config["policy_frequency"] * 10
         self.yaw_err_i, self.prev_yaw = 0, 0
@@ -395,8 +398,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.ang_vel_rviz_pub = rospy.Publisher(
             self.config["name_space"] + "/rviz_ang_vel", Point, queue_size=1
         )
-        self.pid_act_rviz_pub = rospy.Publisher(
-            self.config["name_space"] + "/rviz_pid_act", Quaternion, queue_size=1
+        self.base_act_rviz_pub = rospy.Publisher(
+            self.config["name_space"] + "/rviz_base_act", Quaternion, queue_size=1
         )
         return super()._create_pub_and_sub()
 
@@ -414,13 +417,15 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 terminal: bool,
                 info: dictionary of all the step info,
         """
-        joint_act = self.mixer(action, self.pid_act, self.config["beta"])
+        joint_act = self.mixer(
+            action, self.base_act, self.config["beta"], self.config["alpha"]
+        )
         self._simulate(joint_act)
 
-        self.pid_act = (
-            self.residual_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(4)
+        self.base_act = (
+            self.base_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(4)
         )
-        obs, obs_info = self.observation_type.observe(self.pid_act.copy())
+        obs, obs_info = self.observation_type.observe(self.base_act.copy())
         reward, reward_info = self._reward(
             obs.copy(), joint_act, copy.deepcopy(obs_info)
         )
@@ -430,7 +435,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             "obs": obs,
             "obs_info": obs_info,
             "act": action,
-            "pid_act": self.pid_act,
+            "base_act": self.base_act,
             "joint_act": joint_act,
             "reward": reward,
             "reward_info": reward_info,
@@ -447,26 +452,30 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         proc_info = obs_info["proc_dict"]
 
         self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["yaw_vel"]))
-        self.pid_act_rviz_pub.publish(Quaternion(*info["pid_act"]))
+        self.base_act_rviz_pub.publish(Quaternion(*info["base_act"]))
         return super()._step_info(info)
 
-    def mixer(self, action, pid_act, beta=0.5):
+    def mixer(self, action, base_act, beta=0.5, alpha=0.5):
         if self.config["enable_residual_ctrl"] == False:
             return action
 
         if self.config["mixer_type"] == "absolute":
-            joint_act = beta * action + (1 - beta) * pid_act
+            joint_act = beta * action + (1 - beta) * base_act
         elif self.config["mixer_type"] == "relative":
-            joint_act = pid_act * (1 + beta * action)
+            joint_act = base_act * (1 + beta * action)
+        elif self.config["mixer_type"] == "hybrid":
+            absolute = beta * action + (1 - beta) * base_act
+            relative = base_act * (1 + beta * action)
+            joint_act = alpha * absolute + (1 - alpha) * relative
         else:
             raise NotImplementedError
 
         joint_act[2] = action[2]
         return np.clip(joint_act, -1, 1)
 
-    def residual_ctrl(self):
+    def base_ctrl(self):
         """
-        use PID controller to generate control signal
+        generate base control signal
         """
         obs, obs_dict = self.observation_type.observe()
 
@@ -489,10 +498,6 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
 
         return np.clip(np.array([yaw_ctrl, alt_ctrl, ser_ctrl, vel_ctrl]), -1, 1)
 
-    def clear_pid_param(self):
-        self.yaw_err_i, self.alt_err_i, self.vel_err_i = 0, 0, 0
-        self.prev_yaw, self.prev_alt, self.prev_vel = 0, 0, 0
-
     def pid_ctrl(
         self,
         err,
@@ -512,6 +517,10 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
 
         ctrl = np.dot(pid_coeff, np.array([err, err_i, err_d])) + offset
         return ctrl, err_i, err
+
+    def clear_pid_param(self):
+        self.yaw_err_i, self.alt_err_i, self.vel_err_i = 0, 0, 0
+        self.prev_yaw, self.prev_alt, self.prev_vel = 0, 0, 0
 
     def reset(self) -> Observation:
         self.clear_pid_param()
@@ -627,7 +636,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
         self.success_cnt = 0
-        self.pid_act = 0
+        self.base_act = 0
 
     @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
@@ -643,12 +652,12 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 terminal: bool,
                 info: dictionary of all the step info,
         """
-        joint_act = self.mixer(action, self.pid_act, self.config["beta"])
+        joint_act = self.mixer(action, self.base_act, self.config["beta"])
         self._simulate(joint_act)
-        self.pid_act = (
-            self.residual_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(1)
+        self.base_act = (
+            self.base_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(1)
         )
-        obs, obs_info = self.observation_type.observe(self.pid_act.copy())
+        obs, obs_info = self.observation_type.observe(self.base_act.copy())
         reward, reward_info = self._reward(
             obs.copy(), joint_act, copy.deepcopy(obs_info)
         )
@@ -658,7 +667,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             "obs": obs,
             "obs_info": obs_info,
             "act": action,
-            "pid_act": self.pid_act,
+            "base_act": self.base_act,
             "joint_act": joint_act,
             "reward": reward,
             "reward_info": reward_info,
@@ -685,8 +694,8 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
         self.ang_vel_rviz_pub.publish(Point(0, 0, proc_info["yaw_vel"]))
 
         self.act_rviz_pub.publish(Quaternion(*info["act"], 0, 0, 0))
-        self.pid_act_rviz_pub.publish(
-            Quaternion(*info["pid_act"], *info["joint_act"], 0, 0)
+        self.base_act_rviz_pub.publish(
+            Quaternion(*info["base_act"], *info["joint_act"], 0, 0)
         )
 
         self.pos_cmd_pub.publish(Point(*self.goal["position"]))
@@ -698,22 +707,22 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             print("STEP INFO:", info)
             print("\r")
 
-    def mixer(self, action, pid_act, beta=0.5):
+    def mixer(self, action, base_act, beta=0.5):
         if self.config["enable_residual_ctrl"] == False:
             return action
 
         if self.config["mixer_type"] == "absolute":
-            joint_act = beta * action + (1 - beta) * pid_act
+            joint_act = beta * action + (1 - beta) * base_act
         elif self.config["mixer_type"] == "relative":
-            joint_act = pid_act * (1 + beta * action)
+            joint_act = base_act * (1 + beta * action)
         else:
             raise NotImplementedError
 
         return np.clip(joint_act, -1, 1)
 
-    def residual_ctrl(self):
+    def base_ctrl(self):
         """
-        use PID controller to generate a residual signal
+        generate base control signal
         """
         obs, obs_dict = self.observation_type.observe()
 
