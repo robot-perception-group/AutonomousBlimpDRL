@@ -11,11 +11,11 @@ from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 
 robot_id = "0"
 simulation_mode = True  # if realworld exp or simulation
-auto_start_simulation = True  # start simulation
+auto_start_simulation = False  # start simulation
 online_training = False  # if training during test
 duration = 5e3
 train_iter = 1e20
-use_pid = False
+run_pid = True
 
 
 ###########################################
@@ -42,7 +42,7 @@ with open(config_path, "rb") as f:
 if not simulation_mode:
     auto_start_simulation = False
 
-if use_pid:
+if run_pid:
     beta = 0.0
     disable_servo = True
 else:
@@ -62,7 +62,6 @@ env_config.update(
         "duration": duration,
         "beta": beta,
         "reward_weights": np.array([0, 0.9, 0.1]),
-        "tracking_reward_weights": np.array([0.55, 0.15, 0.15, 0.15]),
         "success_threshhold": trigger_dist,  # [meters]
     }
 )
@@ -72,9 +71,9 @@ env_config["simulation"].update(
         "gui": True,
         "auto_start_simulation": auto_start_simulation,
         "enable_meshes": True,
-        "enable_wind": False,
+        "enable_wind": True,
         "enable_wind_sampling": False,
-        "wind_speed": 1.5,
+        "wind_speed": 0.6,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, 50),
