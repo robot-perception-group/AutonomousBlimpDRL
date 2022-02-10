@@ -1,28 +1,23 @@
 import argparse
-import random
 
 import numpy as np
 import ray
-from ray.rllib.evaluation import episode
-from blimp_env.envs import TestYawEnv
+from blimp_env.envs import YawControlEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
-from ray.rllib.models import ModelCatalog
-from ray.tune import sample_from
 from ray.tune.registry import register_env
-from rl.rllib_script.agent.model import TorchBatchNormModel, TorchBatchNormRNNModel
+from rl.rllib_script.agent.model.ray_model import (
+    TorchBatchNormModel,
+    TorchBatchNormRNNModel,
+)
 from rl.rllib_script.util import find_nearest_power_of_two
-from ray.rllib.agents.ppo import PPOTrainer
-
-ModelCatalog.register_custom_model("bn_model", TorchBatchNormModel)
-ModelCatalog.register_custom_model("bnrnn_model", TorchBatchNormRNNModel)
 
 # exp setup
-ENV = TestYawEnv
+ENV = YawControlEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "goodPID_hybridmixer_beta"
+exp_name_posfix = "lstm_pid_mixer"
 
 days = 1
 one_day_ts = 24 * 3600 * ENV.default_config()["policy_frequency"]
@@ -42,7 +37,6 @@ parser.add_argument(
 parser.add_argument(
     "--resume", type=bool, default=False, help="resume the last experiment"
 )
-parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
 
 
 def env_creator(env_config):
@@ -59,25 +53,23 @@ if __name__ == "__main__":
     ray.init(local_mode=False)
 
     register_env(env_name, env_creator)
+    good_pid = np.array([1.0, 0.0, 0.05])
+    bad_pid = np.array([1.0, 0.0, 0.0])
     env_config = {
-        "seed": 123,
+        "seed": tune.grid_search([123, 456, 789]),
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
         },
-        "observation": {
-            "enable_rsdact_feedback": True,
-        },
         "reward_weights": np.array([1.0, 1.0, 0]),  # success, tracking, action
-        "enable_residual_ctrl": True,
-        "reward_scale": 0.1,
-        "clip_reward": False,
-        "mixer_type": "absolute",
-        "pid_param": np.array([1.0, 0.0, 0.05]),  # bad:[1.0,0,0], good:[1.0,0,0.05]
-        "beta": 0.5,
+        "mixer_type": tune.grid_search(["absolute", "relative", "hybrid"]),
+        "pid_param": tune.grid_search(
+            [good_pid, bad_pid]
+        ),  # bad:[1.0,0,0], good:[1.0,0,0.05]
+        "use_lstm": tune.grid_search([True, False]),  # dummy var to use tune
     }
 
-    if args.use_lstm:
+    if env_config["use_lstm"]:
         custom_model = "bnrnn_model"
         custom_model_config = {
             "hidden_sizes": [64, 64],
@@ -122,7 +114,7 @@ if __name__ == "__main__":
             "lr": 1e-4,
             "lr_schedule": [
                 [0, 1e-4],
-                [args.stop_timesteps, 1e-12],
+                [args.stop_timesteps, 5e-6],
             ],
             "clip_param": 0.2,
             "vf_clip_param": 10,

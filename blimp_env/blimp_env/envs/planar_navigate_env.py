@@ -358,8 +358,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "target_name_space": "goal_",
                 "trigger_dist": trigger_dist,
                 "enable_dependent_wp": True,
-                "wp_range": 15,
-                "min_dist": 10,
+                "dist_range": [10, 40],
             }
         )
         config.update(
@@ -368,18 +367,17 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
-                    [100, 0.8, 0.2]
+                    [100, 0.9, 0.1]
                 ),  # success, tracking, action
                 "tracking_reward_weights": np.array(
-                    [0.40, 0.30, 0.20, 0.10]
+                    [0.55, 0.15, 0.15, 0.15]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff
                 "success_threshhold": trigger_dist,  # [meters]
-                "reward_scale": 0.01,
+                "reward_scale": 0.05,
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
                 "mixer_type": "relative",  # absolute, relative, hybrid
-                "alpha": 0.5,
-                "beta": 0.5,
+                "mixer_param": (0.5, 0.5),  # alpha, beta
             }
         )
         return config
@@ -418,7 +416,10 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 info: dictionary of all the step info,
         """
         joint_act = self.mixer(
-            action, self.base_act, self.config["beta"], self.config["alpha"]
+            action,
+            self.base_act,
+            self.config["mixer_param"][0],
+            self.config["mixer_param"][1],
         )
         self._simulate(joint_act)
 
@@ -455,7 +456,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.base_act_rviz_pub.publish(Quaternion(*info["base_act"]))
         return super()._step_info(info)
 
-    def mixer(self, action, base_act, beta=0.5, alpha=0.5):
+    def mixer(self, action, base_act, alpha=0.5, beta=0.5):
         if self.config["enable_residual_ctrl"] == False:
             return action
 
@@ -589,7 +590,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         return time or success
 
 
-class TestYawEnv(ResidualPlanarNavigateEnv):
+class YawControlEnv(ResidualPlanarNavigateEnv):
     @classmethod
     def default_config(cls) -> dict:
         config = super().default_config()
@@ -627,8 +628,8 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
                 "mixer_type": "absolute",  # absolute, relative, hybrid
+                "mixer_param": (0.5, 0.5),  # alpha, beta
                 "pid_param": np.array([1.0, 0.0, 0.05]),
-                "beta": 0.5,
             }
         )
         return config
@@ -652,7 +653,12 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
                 terminal: bool,
                 info: dictionary of all the step info,
         """
-        joint_act = self.mixer(action, self.base_act, self.config["beta"])
+        joint_act = self.mixer(
+            action,
+            self.base_act,
+            self.config["mixer_param"][0],
+            self.config["mixer_param"][1],
+        )
         self._simulate(joint_act)
         self.base_act = (
             self.base_ctrl() if self.config["enable_residual_ctrl"] else np.zeros(1)
@@ -707,7 +713,7 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             print("STEP INFO:", info)
             print("\r")
 
-    def mixer(self, action, base_act, beta=0.5):
+    def mixer(self, action, base_act, alpha=0.5, beta=0.5):
         if self.config["enable_residual_ctrl"] == False:
             return action
 
@@ -715,6 +721,10 @@ class TestYawEnv(ResidualPlanarNavigateEnv):
             joint_act = beta * action + (1 - beta) * base_act
         elif self.config["mixer_type"] == "relative":
             joint_act = base_act * (1 + beta * action)
+        elif self.config["mixer_type"] == "hybrid":
+            absolute = beta * action + (1 - beta) * base_act
+            relative = base_act * (1 + beta * action)
+            joint_act = alpha * absolute + (1 - alpha) * relative
         else:
             raise NotImplementedError
 
@@ -834,7 +844,7 @@ if __name__ == "__main__":
     if auto_start_simulation:
         close_simulation()
 
-    ENV = ResidualPlanarNavigateEnv  # PlanarNavigateEnv, ResidualPlanarNavigateEnv, TestYawEnv
+    ENV = ResidualPlanarNavigateEnv  # PlanarNavigateEnv, ResidualPlanarNavigateEnv, YawControlEnv
     env_kwargs = {
         "DBG": True,
         "simulation": {
