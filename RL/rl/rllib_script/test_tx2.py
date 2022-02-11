@@ -9,7 +9,7 @@ from rl.rllib_script.agent.model.tx2_model import TorchBatchNormRNNModel
 from rl.rllib_script.agent.model.action_dist import TorchDiagGaussian
 from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 
-robot_id = "0"
+robot_id = "1"
 simulation_mode = False  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
 online_training = False  # if training during test
@@ -18,7 +18,7 @@ train_iter = 1e20
 run_pid = True
 
 checkpoint_path = os.path.expanduser(
-    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
+    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/mypolicy.pickle"
 )
 
 ###########################################
@@ -31,7 +31,7 @@ run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 
 config_path = os.path.join(checkpoint_path)
 with open(config_path, "rb") as f:
-    obj = pickle.load(f)
+    mypolicy = pickle.load(f)
 
 config_path = os.path.join(run_base_dir, "params.pkl")
 with open(config_path, "rb") as f:
@@ -118,10 +118,10 @@ if auto_start_simulation:
 
 ###########################################
 
-worker = pickle.loads(obj["worker"])
-weights = worker["state"]["default_policy"]["weights"]
-observation_space = worker["policy_specs"]["default_policy"][1]
-action_space = worker["policy_specs"]["default_policy"][2]
+weights = mypolicy["weights"]
+observation_space = mypolicy["observation_space"]
+action_space = mypolicy["action_space"]
+
 num_outputs = dist_cls.required_model_output_shape(action_space, config)
 model_config = config["model"]
 name = config["model"]["custom_model"]
