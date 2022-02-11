@@ -134,3 +134,5 @@ action, state, _ = policy.compute_single_action(
     prev_action=prev_action,
     prev_reward=prev_reward,
 )
+
+print(action)
