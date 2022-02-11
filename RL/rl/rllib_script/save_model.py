@@ -61,7 +61,7 @@ action_space = loaded["action_space"]
 
 ########################################### save config
 
-myconfig = {"config": config}
+myconfig = {"env_config": config["env_config"]}
 
 file_to_store = open(
     os.path.join(checkpoint_base_dir, "myconfig.pickle"),
