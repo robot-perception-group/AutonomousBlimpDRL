@@ -1,5 +1,5 @@
 import os
-import pickle
+import pickle5 as pickle
 import json
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.planar_navigate_env import Observation
