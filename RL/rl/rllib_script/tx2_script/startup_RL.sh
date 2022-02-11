@@ -52,7 +52,9 @@ screen -d -m -S ROSBAGSELF bash -i -c ./log.sh
 screen -d -m -S BANDWIDTHLOG bash -i -c ./bandwidth.sh
 
 echo "starting RL node"
-screen -d -m -S RLNODE -i -c ./rl_node.sh
+screen -d -m -S RLNODE screen bash -c "\
+	source ~/venv/blimpRL/bin/activate;\
+	python3 ~/src/AutonomousBlimpDRL/RL/rl/rllib_script/tx2_script/test_tx2.py;"
 
 
 echo "everything is running. waiting for shutdown"
