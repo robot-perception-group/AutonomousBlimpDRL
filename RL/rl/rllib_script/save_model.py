@@ -68,6 +68,7 @@ myconfig = {
     "env_config": config["env_config"],
     "model": config["model"],
     "normalize_actions": config["normalize_actions"],
+    "clip_actions": config["clip_actions"],
 }
 
 file_to_store = open(
