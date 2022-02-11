@@ -5,7 +5,7 @@ import numpy as np
 from rl.rllib_script.agent.model.tx2_model import TorchBatchNormRNNModel
 from rl.rllib_script.agent.model.action_dist import TorchDiagGaussian
 from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
-
+import inspect
 
 checkpoint_path = os.path.expanduser(
     "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
@@ -60,17 +60,19 @@ observation_space = loaded["observation_space"]
 action_space = loaded["action_space"]
 
 ########################################### save config
-# myconfig = {}
-# for k, v in config.items():
-#     myconfig[k] = config[k]
+myconfig = {}
+for k, v in config.items():
+    if not inspect.isclass(v):
+        # save the parameter if it is not a (ray) object
+        myconfig[k] = config[k]
 
-myconfig = {
-    "env_config": config["env_config"],
-    "model": config["model"],
-    "normalize_actions": config["normalize_actions"],
-    "clip_actions": config["clip_actions"],
-    "explore": config["explore"],
-}
+# myconfig = {
+#     "env_config": config["env_config"],
+#     "model": config["model"],
+#     "normalize_actions": config["normalize_actions"],
+#     "clip_actions": config["clip_actions"],
+#     "explore": config["explore"],
+# }
 
 file_to_store = open(
     os.path.join(checkpoint_base_dir, "myconfig.pickle"),
