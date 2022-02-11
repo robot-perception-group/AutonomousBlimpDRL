@@ -28,7 +28,7 @@ with open(config_path, "rb") as f:
     config = pickle.load(f)
 
 
-###########################################
+########################################### save policy
 
 worker = pickle.loads(obj["worker"])
 print(worker)
@@ -50,7 +50,6 @@ pickle.dump(to_pickle, file_to_store)
 file_to_store.close()
 
 
-###########################################
 file_to_read = open(os.path.join(checkpoint_base_dir, "mypolicy.pickle"), "rb")
 loaded = pickle.load(file_to_read)
 
@@ -60,12 +59,24 @@ weights = loaded["weights"]
 observation_space = loaded["observation_space"]
 action_space = loaded["action_space"]
 
-###########################################
+########################################### save config
 
 
-# weights = worker["state"]["default_policy"]["weights"]
-# observation_space = worker["policy_specs"]["default_policy"][1]
-# action_space = worker["policy_specs"]["default_policy"][2]
+file_to_store = open(
+    os.path.join(checkpoint_base_dir, "myconfig.pickle"),
+    "wb",
+)
+pickle.dump(config, file_to_store)
+file_to_store.close()
+
+file_to_read = open(os.path.join(checkpoint_base_dir, "myconfig.pickle"), "rb")
+loaded = pickle.load(file_to_read)
+print("aaaaaaaaaaaaaaaaaaaaaaaaa")
+print(loaded)
+
+
+########################################### test
+
 
 num_outputs = dist_cls.required_model_output_shape(action_space, config)
 model_config = config["model"]
