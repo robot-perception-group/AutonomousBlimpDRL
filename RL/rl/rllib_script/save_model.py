@@ -61,18 +61,19 @@ action_space = loaded["action_space"]
 
 ########################################### save config
 
+myconfig = {"config": config}
 
 file_to_store = open(
     os.path.join(checkpoint_base_dir, "myconfig.pickle"),
     "wb",
 )
-pickle.dump(config, file_to_store)
+pickle.dump(myconfig, file_to_store)
 file_to_store.close()
 
 file_to_read = open(os.path.join(checkpoint_base_dir, "myconfig.pickle"), "rb")
 loaded = pickle.load(file_to_read)
-print("aaaaaaaaaaaaaaaaaaaaaaaaa")
 print(loaded)
+print(type(loaded))
 
 
 ########################################### test
