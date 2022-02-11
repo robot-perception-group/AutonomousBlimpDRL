@@ -34,8 +34,8 @@ with open(config_path, "rb") as f:
 
 config_path = os.path.join(checkpoint_base_dir, "myconfig.pickle")
 with open(config_path, "rb") as f:
-    config = pickle.load(f)
-
+    myconfig = pickle.load(f)
+config = myconfig["config"]
 
 # in real world experiment "auto_start_simulation" should always be false
 if not simulation_mode:
