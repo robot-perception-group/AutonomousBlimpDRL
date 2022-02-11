@@ -28,14 +28,13 @@ dist_cls = TorchDiagGaussian
 
 checkpoint_base_dir = os.path.dirname(checkpoint_path)
 
-config_path = os.path.join(checkpoint_base_dir, "mypolicy.pickle")
-with open(config_path, "rb") as f:
+policy_path = os.path.join(checkpoint_base_dir, "mypolicy.pickle")
+with open(policy_path, "rb") as f:
     mypolicy = pickle.load(f)
 
-config_path = os.path.join(checkpoint_base_dir, "myconfig.pickle")
-with open(config_path, "rb") as f:
-    myconfig = pickle.load(f)
-config = myconfig["config"]
+myconfig_path = os.path.join(checkpoint_base_dir, "myconfig.pickle")
+with open(myconfig_path, "rb") as fh:
+    config = pickle.load(fh)
 
 # in real world experiment "auto_start_simulation" should always be false
 if not simulation_mode:
