@@ -60,11 +60,15 @@ observation_space = loaded["observation_space"]
 action_space = loaded["action_space"]
 
 ########################################### save config
+myconfig = {}
+for k, v in config.items():
+    myconfig[k] = config[k]
 
-myconfig = {
-    "env_config": config["env_config"],
-    "model": config["model"],
-}
+# myconfig = {
+#     "env_config": config["env_config"],
+#     "model": config["model"],
+#     "normalize_actions": config["normalize_actions"],
+# }
 
 file_to_store = open(
     os.path.join(checkpoint_base_dir, "myconfig.pickle"),
@@ -76,8 +80,6 @@ file_to_store.close()
 file_to_read = open(os.path.join(checkpoint_base_dir, "myconfig.pickle"), "rb")
 loaded = pickle.load(file_to_read)
 print(loaded)
-print(type(loaded))
-
 
 ########################################### test
 
