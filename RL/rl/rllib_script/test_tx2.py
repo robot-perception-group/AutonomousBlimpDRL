@@ -18,7 +18,7 @@ train_iter = 1e20
 run_pid = True
 
 checkpoint_path = os.path.expanduser(
-    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/mypolicy.pickle"
+    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/"
 )
 
 ###########################################
@@ -27,13 +27,12 @@ ENV = ResidualPlanarNavigateEnv
 dist_cls = TorchDiagGaussian
 
 checkpoint_base_dir = os.path.dirname(checkpoint_path)
-run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 
-config_path = os.path.join(checkpoint_path)
+config_path = os.path.join(checkpoint_base_dir, "mypolicy.pickle")
 with open(config_path, "rb") as f:
     mypolicy = pickle.load(f)
 
-config_path = os.path.join(run_base_dir, "params.pkl")
+config_path = os.path.join(checkpoint_base_dir, "myconfig.pickle")
 with open(config_path, "rb") as f:
     config = pickle.load(f)
 
