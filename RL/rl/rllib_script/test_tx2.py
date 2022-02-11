@@ -154,6 +154,7 @@ policy = MyTorchPolicy(
     max_seq_len=max_seq_len,
     get_batch_divisibility_req=get_batch_divisibility_req,
 )
+policy.set_weights(weights)
 
 ###########################################
 
