@@ -2,19 +2,19 @@ import argparse
 
 import numpy as np
 import ray
+import rl.rllib_script.agent.model.ray_model
 from blimp_env.envs import YawControlEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
 from ray.rllib.agents import ppo
 from ray.tune.registry import register_env
-import rl.rllib_script.agent.model.ray_model
 from rl.rllib_script.util import find_nearest_power_of_two
 
 # exp setup
 ENV = YawControlEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "lstm_pid_mixer"
+exp_name_posfix = "nolstm_pid_mixer"
 
 env_default_config = ENV.default_config()
 duration = env_default_config["duration"]

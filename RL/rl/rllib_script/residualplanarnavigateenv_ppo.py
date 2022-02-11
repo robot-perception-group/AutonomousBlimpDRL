@@ -1,8 +1,8 @@
 import argparse
+import os
 
-import numpy as np
 import ray
-import rl.rllib_script.agent.model
+import rl.rllib_script.agent.model.ray_model
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation
 from ray import tune
@@ -14,18 +14,20 @@ from rl.rllib_script.util import find_nearest_power_of_two
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "hybridmix"
+exp_name_posfix = "disturbed_lstm_multidependentgoal"
 
 env_default_config = ENV.default_config()
 duration = env_default_config["duration"]
 simulation_frequency = env_default_config["simulation_frequency"]
 policy_frequency = env_default_config["policy_frequency"]
 
-days = 28
+days = 35
 one_day_ts = 24 * 3600 * policy_frequency
 TIMESTEP = int(days * one_day_ts)
 
-restore = None
+restore = os.path.expanduser(
+    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -57,7 +59,8 @@ if __name__ == "__main__":
 
     register_env(env_name, env_creator)
     env_config = {
-        "seed": tune.grid_search([123, 456, 789]),
+        # "seed": tune.grid_search([123, 456, 789]),
+        "seed": 123,
         "simulation": {
             "gui": args.gui,
             "auto_start_simulation": True,
@@ -73,12 +76,15 @@ if __name__ == "__main__":
             "lstm_use_prev_action": True,
             "lstm_use_prev_reward": True,
         }
+        print("BNRNN model selected")
     else:
         custom_model = "bn_model"
         custom_model_config = {
             "actor_sizes": [64, 64],
             "critic_sizes": [128, 128],
         }
+        print("BN model selected")
+
     model_config = {
         "custom_model": custom_model,
         "custom_model_config": custom_model_config,

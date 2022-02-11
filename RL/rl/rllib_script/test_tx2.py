@@ -10,22 +10,22 @@ from rl.rllib_script.agent.model.action_dist import TorchDiagGaussian
 from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 
 robot_id = "0"
-simulation_mode = True  # if realworld exp or simulation
+simulation_mode = False  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
 online_training = False  # if training during test
 duration = 5e3
 train_iter = 1e20
 run_pid = True
 
+checkpoint_path = os.path.expanduser(
+    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
+)
 
 ###########################################
 
 ENV = ResidualPlanarNavigateEnv
 dist_cls = TorchDiagGaussian
 
-checkpoint_path = os.path.expanduser(
-    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
-)
 checkpoint_base_dir = os.path.dirname(checkpoint_path)
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 
@@ -158,6 +158,7 @@ policy = MyTorchPolicy(
 ###########################################
 
 env_config["simulation"]["auto_start_simulation"] = False
+
 n_steps = int(duration)
 total_reward = 0
 cell_size = config["model"]["custom_model_config"].get("lstm_cell_size", 64)
