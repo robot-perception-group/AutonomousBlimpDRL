@@ -6,8 +6,17 @@ import functools
 import logging
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
-from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple,
-                    Type, Union)
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 import threading
 
 import gym
@@ -15,13 +24,19 @@ import numpy as np
 import torch
 from gym.spaces import Box
 from rl.rllib_script.agent.model.action_dist import TorchDistributionWrapper
-from rl.rllib_script.agent.model.misc import (ModelV2, Exploration, ViewRequirement,
-                                              clip_action,
-                                              convert_to_non_torch_type,
-                                              get_action_shape,
-                                              get_base_struct_from_space,
-                                              get_dummy_batch_for_space,
-                                              unbatch, unsquash_action, convert_to_torch_tensor)
+from rl.rllib_script.agent.model.misc import (
+    ModelV2,
+    Exploration,
+    ViewRequirement,
+    clip_action,
+    convert_to_non_torch_type,
+    get_action_shape,
+    get_base_struct_from_space,
+    get_dummy_batch_for_space,
+    unbatch,
+    unsquash_action,
+    convert_to_torch_tensor,
+)
 from rl.rllib_script.agent.model.tx2_model import TorchModelV2
 from rl.rllib_script.agent.model.sample_batch import SampleBatch
 from rl.rllib_script.agent.utils import from_config, with_lock
@@ -66,11 +81,11 @@ PolicySpec = namedtuple(
         # Overrides defined keys in the main Trainer config.
         # If None, use {}.
         "config",
-    ])  # defaults=(None, None, None, None)
+    ],
+)  # defaults=(None, None, None, None)
 # TODO: From 3.7 on, we could pass `defaults` into the above constructor.
 #  We still support py3.6.
 PolicySpec.__new__.__defaults__ = (None, None, None, None)
-
 
 
 class Policy(metaclass=ABCMeta):
@@ -96,9 +111,12 @@ class Policy(metaclass=ABCMeta):
             computing actions, or None.
     """
 
-    
-    def __init__(self, observation_space: gym.spaces.Space,
-                 action_space: gym.spaces.Space, config: TrainerConfigDict):
+    def __init__(
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        config: TrainerConfigDict,
+    ):
         """Initialize the graph.
 
         This is the standard constructor for policies. The policy
@@ -142,17 +160,17 @@ class Policy(metaclass=ABCMeta):
 
     @abstractmethod
     def compute_actions(
-            self,
-            obs_batch: Union[List[TensorType], TensorType],
-            state_batches: Optional[List[TensorType]] = None,
-            prev_action_batch: Union[List[TensorType], TensorType] = None,
-            prev_reward_batch: Union[List[TensorType], TensorType] = None,
-            info_batch: Optional[Dict[str, list]] = None,
-            episodes: Optional[List["MultiAgentEpisode"]] = None,
-            explore: Optional[bool] = None,
-            timestep: Optional[int] = None,
-            **kwargs) -> \
-            Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
+        self,
+        obs_batch: Union[List[TensorType], TensorType],
+        state_batches: Optional[List[TensorType]] = None,
+        prev_action_batch: Union[List[TensorType], TensorType] = None,
+        prev_reward_batch: Union[List[TensorType], TensorType] = None,
+        info_batch: Optional[Dict[str, list]] = None,
+        episodes: Optional[List["MultiAgentEpisode"]] = None,
+        explore: Optional[bool] = None,
+        timestep: Optional[int] = None,
+        **kwargs,
+    ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
         """Computes actions for the current policy.
 
         Args:
@@ -189,21 +207,20 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def compute_single_action(
-            self,
-            obs: TensorType,
-            state: Optional[List[TensorType]] = None,
-            prev_action: Optional[TensorType] = None,
-            prev_reward: Optional[TensorType] = None,
-            info: dict = None,
-            episode: Optional["MultiAgentEpisode"] = None,
-            clip_actions: bool = None,
-            explore: Optional[bool] = None,
-            timestep: Optional[int] = None,
-            unsquash_actions: bool = None,
-            **kwargs) -> \
-            Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
+        self,
+        obs: TensorType,
+        state: Optional[List[TensorType]] = None,
+        prev_action: Optional[TensorType] = None,
+        prev_reward: Optional[TensorType] = None,
+        info: dict = None,
+        episode: Optional["MultiAgentEpisode"] = None,
+        clip_actions: bool = None,
+        explore: Optional[bool] = None,
+        timestep: Optional[int] = None,
+        unsquash_actions: bool = None,
+        **kwargs,
+    ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
         """Unbatched version of compute_actions.
 
         Args:
@@ -237,11 +254,14 @@ class Policy(metaclass=ABCMeta):
         """
         # If policy works in normalized space, we should unsquash the action.
         # Use value of config.normalize_actions, if None.
-        unsquash_actions = \
-            unsquash_actions if unsquash_actions is not None \
+        unsquash_actions = (
+            unsquash_actions
+            if unsquash_actions is not None
             else self.config["normalize_actions"]
-        clip_actions = clip_actions if clip_actions is not None else \
-            self.config["clip_actions"]
+        )
+        clip_actions = (
+            clip_actions if clip_actions is not None else self.config["clip_actions"]
+        )
 
         prev_action_batch = None
         prev_reward_batch = None
@@ -259,8 +279,9 @@ class Policy(metaclass=ABCMeta):
         if state is not None:
             state_batch = [
                 s.unsqueeze(0)
-                if torch and isinstance(s, torch.Tensor) else np.expand_dims(
-                    s, 0) for s in state
+                if torch and isinstance(s, torch.Tensor)
+                else np.expand_dims(s, 0)
+                for s in state
             ]
 
         out = self.compute_actions(
@@ -271,7 +292,8 @@ class Policy(metaclass=ABCMeta):
             info_batch=info_batch,
             episodes=episodes,
             explore=explore,
-            timestep=timestep)
+            timestep=timestep,
+        )
 
         # Some policies don't return a tuple, but always just a single action.
         # E.g. ES and ARS.
@@ -289,26 +311,26 @@ class Policy(metaclass=ABCMeta):
         # If we work in normalized action space (normalize_actions=True),
         # we re-translate here into the env's action space.
         if unsquash_actions:
-            single_action = unsquash_action(single_action,
-                                            self.action_space_struct)
+            single_action = unsquash_action(single_action, self.action_space_struct)
         # Clip, according to env's action space.
         elif clip_actions:
-            single_action = clip_action(single_action,
-                                        self.action_space_struct)
+            single_action = clip_action(single_action, self.action_space_struct)
 
         # Return action, internal state(s), infos.
-        return single_action, [s[0] for s in state_out], \
-            {k: v[0] for k, v in info.items()}
+        return (
+            single_action,
+            [s[0] for s in state_out],
+            {k: v[0] for k, v in info.items()},
+        )
 
-    
     def compute_actions_from_input_dict(
-            self,
-            input_dict: SampleBatch,
-            explore: bool = None,
-            timestep: Optional[int] = None,
-            episodes: Optional[List["MultiAgentEpisode"]] = None,
-            **kwargs) -> \
-            Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
+        self,
+        input_dict: SampleBatch,
+        explore: bool = None,
+        timestep: Optional[int] = None,
+        episodes: Optional[List["MultiAgentEpisode"]] = None,
+        **kwargs,
+    ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
         """Computes actions from collected samples (across multiple-agents).
 
         Uses the currently "forward-pass-registered" samples from the collector
@@ -336,9 +358,7 @@ class Policy(metaclass=ABCMeta):
         """
         # Default implementation just passes obs, prev-a/r, and states on to
         # `self.compute_actions()`.
-        state_batches = [
-            s for k, s in input_dict.items() if k[:9] == "state_in_"
-        ]
+        state_batches = [s for k, s in input_dict.items() if k[:9] == "state_in_"]
         return self.compute_actions(
             input_dict[SampleBatch.OBS],
             state_batches,
@@ -351,17 +371,14 @@ class Policy(metaclass=ABCMeta):
             **kwargs,
         )
 
-    
     def compute_log_likelihoods(
-            self,
-            actions: Union[List[TensorType], TensorType],
-            obs_batch: Union[List[TensorType], TensorType],
-            state_batches: Optional[List[TensorType]] = None,
-            prev_action_batch: Optional[Union[List[TensorType],
-                                              TensorType]] = None,
-            prev_reward_batch: Optional[Union[List[TensorType],
-                                              TensorType]] = None,
-            actions_normalized: bool = True,
+        self,
+        actions: Union[List[TensorType], TensorType],
+        obs_batch: Union[List[TensorType], TensorType],
+        state_batches: Optional[List[TensorType]] = None,
+        prev_action_batch: Optional[Union[List[TensorType], TensorType]] = None,
+        prev_reward_batch: Optional[Union[List[TensorType], TensorType]] = None,
+        actions_normalized: bool = True,
     ) -> TensorType:
         """Computes the log-prob/likelihood for a given action and observation.
 
@@ -388,13 +405,14 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def postprocess_trajectory(
-            self,
-            sample_batch: SampleBatch,
-            other_agent_batches: Optional[Dict[AgentID, Tuple[
-                "Policy", SampleBatch]]] = None,
-            episode: Optional["MultiAgentEpisode"] = None) -> SampleBatch:
+        self,
+        sample_batch: SampleBatch,
+        other_agent_batches: Optional[
+            Dict[AgentID, Tuple["Policy", SampleBatch]]
+        ] = None,
+        episode: Optional["MultiAgentEpisode"] = None,
+    ) -> SampleBatch:
         """Implements algorithm-specific trajectory postprocessing.
 
         This will be called on each trajectory fragment computed during policy
@@ -416,7 +434,6 @@ class Policy(metaclass=ABCMeta):
         """
         return sample_batch
 
-    
     def learn_on_batch(self, samples: SampleBatch) -> Dict[str, TensorType]:
         """Fused compute gradients and apply gradients call.
 
@@ -439,9 +456,9 @@ class Policy(metaclass=ABCMeta):
         self.apply_gradients(grads)
         return grad_info
 
-    
-    def compute_gradients(self, postprocessed_batch: SampleBatch) -> \
-            Tuple[ModelGradients, Dict[str, TensorType]]:
+    def compute_gradients(
+        self, postprocessed_batch: SampleBatch
+    ) -> Tuple[ModelGradients, Dict[str, TensorType]]:
         """Computes gradients against a batch of experiences.
 
         Either this or learn_on_batch() must be implemented by subclasses.
@@ -457,7 +474,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def apply_gradients(self, gradients: ModelGradients) -> None:
         """Applies previously computed gradients.
 
@@ -469,7 +485,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def get_weights(self) -> ModelWeights:
         """Returns model weights.
 
@@ -481,7 +496,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def set_weights(self, weights: ModelWeights) -> None:
         """Sets this Policy's model's weights.
 
@@ -490,7 +504,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def get_exploration_state(self) -> Dict[str, TensorType]:
         """Returns the current exploration information of this policy.
 
@@ -505,7 +518,6 @@ class Policy(metaclass=ABCMeta):
     def get_exploration_info(self) -> Dict[str, TensorType]:
         return self.get_exploration_state()
 
-    
     def is_recurrent(self) -> bool:
         """Whether this Policy holds a recurrent Model.
 
@@ -514,7 +526,6 @@ class Policy(metaclass=ABCMeta):
         """
         return False
 
-    
     def num_state_tensors(self) -> int:
         """The number of internal states needed by the RNN-Model of the Policy.
 
@@ -523,7 +534,6 @@ class Policy(metaclass=ABCMeta):
         """
         return 0
 
-    
     def get_initial_state(self) -> List[TensorType]:
         """Returns initial RNN state for the current policy.
 
@@ -532,9 +542,7 @@ class Policy(metaclass=ABCMeta):
         """
         return []
 
-    
-    def load_batch_into_buffer(self, batch: SampleBatch,
-                               buffer_index: int = 0) -> int:
+    def load_batch_into_buffer(self, batch: SampleBatch, buffer_index: int = 0) -> int:
         """Bulk-loads the given SampleBatch into the devices' memories.
 
         The data is split equally across all the devices. If the data is not
@@ -550,7 +558,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def get_num_samples_loaded_into_buffer(self, buffer_index: int = 0) -> int:
         """Returns the number of currently loaded samples in the given buffer.
 
@@ -564,7 +571,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def learn_on_loaded_batch(self, offset: int = 0, buffer_index: int = 0):
         """Runs a single step of SGD on already loaded data in a buffer.
 
@@ -587,7 +593,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def get_state(self) -> Union[Dict[str, TensorType], List[TensorType]]:
         """Returns all local state.
 
@@ -605,7 +610,6 @@ class Policy(metaclass=ABCMeta):
         }
         return state
 
-    
     def set_state(self, state: object) -> None:
         """Restores all local state to the provided `state`.
 
@@ -616,7 +620,6 @@ class Policy(metaclass=ABCMeta):
         self.set_weights(state["weights"])
         self.global_timestep = state["global_timestep"]
 
-    
     def on_global_var_update(self, global_vars: Dict[str, TensorType]) -> None:
         """Called on an update to global vars.
 
@@ -628,9 +631,7 @@ class Policy(metaclass=ABCMeta):
         # steps).
         self.global_timestep = global_vars["timestep"]
 
-    
-    def export_model(self, export_dir: str,
-                     onnx: Optional[int] = None) -> None:
+    def export_model(self, export_dir: str, onnx: Optional[int] = None) -> None:
         """Exports the Policy's Model to local directory for serving.
 
         Note: The file format will depend on the deep learning framework used.
@@ -644,7 +645,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def import_model_from_h5(self, import_file: str) -> None:
         """Imports Policy from local file.
 
@@ -653,7 +653,6 @@ class Policy(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    
     def get_session(self) -> Optional["tf1.Session"]:
         """Returns tf.Session object to use for computing actions or None.
 
@@ -679,15 +678,14 @@ class Policy(metaclass=ABCMeta):
 
         exploration = from_config(
             Exploration,
-            self.config.get("exploration_config",
-                            {"type": "StochasticSampling"}),
+            self.config.get("exploration_config", {"type": "StochasticSampling"}),
             action_space=self.action_space,
             policy_config=self.config,
             model=getattr(self, "model", None),
             num_workers=self.config.get("num_workers", 0),
             worker_index=self.config.get("worker_index", 0),
-            framework=getattr(self, "framework",
-                              self.config.get("framework", "tf")))
+            framework=getattr(self, "framework", self.config.get("framework", "tf")),
+        )
         return exploration
 
     def _get_default_view_requirements(self):
@@ -706,22 +704,22 @@ class Policy(metaclass=ABCMeta):
         return {
             SampleBatch.OBS: ViewRequirement(space=self.observation_space),
             SampleBatch.NEXT_OBS: ViewRequirement(
-                data_col=SampleBatch.OBS,
-                shift=1,
-                space=self.observation_space),
+                data_col=SampleBatch.OBS, shift=1, space=self.observation_space
+            ),
             SampleBatch.ACTIONS: ViewRequirement(
-                space=self.action_space, used_for_compute_actions=False),
+                space=self.action_space, used_for_compute_actions=False
+            ),
             # For backward compatibility with custom Models that don't specify
             # these explicitly (will be removed by Policy if not used).
             SampleBatch.PREV_ACTIONS: ViewRequirement(
-                data_col=SampleBatch.ACTIONS,
-                shift=-1,
-                space=self.action_space),
+                data_col=SampleBatch.ACTIONS, shift=-1, space=self.action_space
+            ),
             SampleBatch.REWARDS: ViewRequirement(),
             # For backward compatibility with custom Models that don't specify
             # these explicitly (will be removed by Policy if not used).
             SampleBatch.PREV_REWARDS: ViewRequirement(
-                data_col=SampleBatch.REWARDS, shift=-1),
+                data_col=SampleBatch.REWARDS, shift=-1
+            ),
             SampleBatch.DONES: ViewRequirement(),
             SampleBatch.INFOS: ViewRequirement(),
             SampleBatch.EPS_ID: ViewRequirement(),
@@ -731,9 +729,9 @@ class Policy(metaclass=ABCMeta):
         }
 
     def _initialize_loss_from_dummy_batch(
-            self,
-            auto_remove_unneeded_view_reqs: bool = True,
-            stats_fn=None,
+        self,
+        auto_remove_unneeded_view_reqs: bool = True,
+        stats_fn=None,
     ) -> None:
         """Performs test calls through policy's model and loss.
 
@@ -755,26 +753,30 @@ class Policy(metaclass=ABCMeta):
         """
         sample_batch_size = max(self.batch_divisibility_req * 4, 32)
         self._dummy_batch = self._get_dummy_batch_from_view_requirements(
-            sample_batch_size)
+            sample_batch_size
+        )
         self._lazy_tensor_dict(self._dummy_batch)
-        actions, state_outs, extra_outs = \
-            self.compute_actions_from_input_dict(
-                self._dummy_batch, explore=False)
+        actions, state_outs, extra_outs = self.compute_actions_from_input_dict(
+            self._dummy_batch, explore=False
+        )
         # Add all extra action outputs to view reqirements (these may be
         # filtered out later again, if not needed for postprocessing or loss).
         for key, value in extra_outs.items():
             self._dummy_batch[key] = value
             if key not in self.view_requirements:
-                self.view_requirements[key] = \
-                    ViewRequirement(space=gym.spaces.Box(
-                        -1.0, 1.0, shape=value.shape[1:], dtype=value.dtype),
-                    used_for_compute_actions=False)
+                self.view_requirements[key] = ViewRequirement(
+                    space=gym.spaces.Box(
+                        -1.0, 1.0, shape=value.shape[1:], dtype=value.dtype
+                    ),
+                    used_for_compute_actions=False,
+                )
         for key in self._dummy_batch.accessed_keys:
             if key not in self.view_requirements:
                 self.view_requirements[key] = ViewRequirement()
             self.view_requirements[key].used_for_compute_actions = True
         self._dummy_batch = self._get_dummy_batch_from_view_requirements(
-            sample_batch_size)
+            sample_batch_size
+        )
         self._dummy_batch.set_get_interceptor(None)
         self.exploration.postprocess_trajectory(self, self._dummy_batch)
         postprocessed_batch = self.postprocess_trajectory(self._dummy_batch)
@@ -783,11 +785,13 @@ class Policy(metaclass=ABCMeta):
             B = 4  # For RNNs, have B=4, T=[depends on sample_batch_size]
             i = 0
             while "state_in_{}".format(i) in postprocessed_batch:
-                postprocessed_batch["state_in_{}".format(i)] = \
-                    postprocessed_batch["state_in_{}".format(i)][:B]
+                postprocessed_batch["state_in_{}".format(i)] = postprocessed_batch[
+                    "state_in_{}".format(i)
+                ][:B]
                 if "state_out_{}".format(i) in postprocessed_batch:
-                    postprocessed_batch["state_out_{}".format(i)] = \
-                        postprocessed_batch["state_out_{}".format(i)][:B]
+                    postprocessed_batch["state_out_{}".format(i)] = postprocessed_batch[
+                        "state_out_{}".format(i)
+                    ][:B]
                 i += 1
             seq_len = sample_batch_size // B
             seq_lens = np.array([seq_len for _ in range(B)], dtype=np.int32)
@@ -809,9 +813,11 @@ class Policy(metaclass=ABCMeta):
         # Add new columns automatically to view-reqs.
         if auto_remove_unneeded_view_reqs:
             # Add those needed for postprocessing and training.
-            all_accessed_keys = train_batch.accessed_keys | \
-                                self._dummy_batch.accessed_keys | \
-                                self._dummy_batch.added_keys
+            all_accessed_keys = (
+                train_batch.accessed_keys
+                | self._dummy_batch.accessed_keys
+                | self._dummy_batch.added_keys
+            )
             for key in all_accessed_keys:
                 if key not in self.view_requirements:
                     self.view_requirements[key] = ViewRequirement()
@@ -819,23 +825,38 @@ class Policy(metaclass=ABCMeta):
                 # Tag those only needed for post-processing (with some
                 # exceptions).
                 for key in self._dummy_batch.accessed_keys:
-                    if key not in train_batch.accessed_keys and \
-                            key in self.view_requirements and \
-                            key not in self.model.view_requirements and \
-                            key not in [
-                                SampleBatch.EPS_ID, SampleBatch.AGENT_INDEX,
-                                SampleBatch.UNROLL_ID, SampleBatch.DONES,
-                                SampleBatch.REWARDS, SampleBatch.INFOS]:
+                    if (
+                        key not in train_batch.accessed_keys
+                        and key in self.view_requirements
+                        and key not in self.model.view_requirements
+                        and key
+                        not in [
+                            SampleBatch.EPS_ID,
+                            SampleBatch.AGENT_INDEX,
+                            SampleBatch.UNROLL_ID,
+                            SampleBatch.DONES,
+                            SampleBatch.REWARDS,
+                            SampleBatch.INFOS,
+                        ]
+                    ):
                         self.view_requirements[key].used_for_training = False
                 # Remove those not needed at all (leave those that are needed
                 # by Sampler to properly execute sample collection).
                 # Also always leave DONES, REWARDS, INFOS, no matter what.
                 for key in list(self.view_requirements.keys()):
-                    if key not in all_accessed_keys and key not in [
-                        SampleBatch.EPS_ID, SampleBatch.AGENT_INDEX,
-                        SampleBatch.UNROLL_ID, SampleBatch.DONES,
-                        SampleBatch.REWARDS, SampleBatch.INFOS] and \
-                            key not in self.model.view_requirements:
+                    if (
+                        key not in all_accessed_keys
+                        and key
+                        not in [
+                            SampleBatch.EPS_ID,
+                            SampleBatch.AGENT_INDEX,
+                            SampleBatch.UNROLL_ID,
+                            SampleBatch.DONES,
+                            SampleBatch.REWARDS,
+                            SampleBatch.INFOS,
+                        ]
+                        and key not in self.model.view_requirements
+                    ):
                         # If user deleted this key manually in postprocessing
                         # fn, warn about it and do not remove from
                         # view-requirements.
@@ -845,12 +866,14 @@ class Policy(metaclass=ABCMeta):
                                 "postprocessing function! RLlib will "
                                 "automatically remove non-used items from the "
                                 "data stream. Remove the `del` from your "
-                                "postprocessing function.".format(key))
+                                "postprocessing function.".format(key)
+                            )
                         else:
                             del self.view_requirements[key]
 
     def _get_dummy_batch_from_view_requirements(
-            self, batch_size: int = 1) -> SampleBatch:
+        self, batch_size: int = 1
+    ) -> SampleBatch:
         """Creates a numpy dummy batch based on the Policy's view requirements.
 
         Args:
@@ -861,40 +884,39 @@ class Policy(metaclass=ABCMeta):
         """
         ret = {}
         for view_col, view_req in self.view_requirements.items():
-            if self.config["preprocessor_pref"] is not None and \
-                    isinstance(view_req.space,
-                               (gym.spaces.Dict, gym.spaces.Tuple)):
+            if self.config["preprocessor_pref"] is not None and isinstance(
+                view_req.space, (gym.spaces.Dict, gym.spaces.Tuple)
+            ):
                 # _, shape = ModelCatalog.get_action_shape(
                 #     view_req.space, framework=self.config["framework"])
                 _, shape = get_action_shape(
-                    view_req.space, framework=self.config["framework"])
+                    view_req.space, framework=self.config["framework"]
+                )
 
-                ret[view_col] = \
-                    np.zeros((batch_size, ) + shape[1:], np.float32)
+                ret[view_col] = np.zeros((batch_size,) + shape[1:], np.float32)
             else:
                 # Range of indices on time-axis, e.g. "-50:-1".
                 if view_req.shift_from is not None:
                     ret[view_col] = get_dummy_batch_for_space(
                         view_req.space,
                         batch_size=batch_size,
-                        time_size=view_req.shift_to - view_req.shift_from + 1)
+                        time_size=view_req.shift_to - view_req.shift_from + 1,
+                    )
                 # Sequence of (probably non-consecutive) indices.
                 elif isinstance(view_req.shift, (list, tuple)):
                     ret[view_col] = get_dummy_batch_for_space(
                         view_req.space,
                         batch_size=batch_size,
-                        time_size=len(view_req.shift))
+                        time_size=len(view_req.shift),
+                    )
                 # Single shift int value.
                 else:
                     if isinstance(view_req.space, gym.spaces.Space):
                         ret[view_col] = get_dummy_batch_for_space(
-                            view_req.space,
-                            batch_size=batch_size,
-                            fill_value=0.0)
+                            view_req.space, batch_size=batch_size, fill_value=0.0
+                        )
                     else:
-                        ret[view_col] = [
-                            view_req.space for _ in range(batch_size)
-                        ]
+                        ret[view_col] = [view_req.space for _ in range(batch_size)]
 
         # Due to different view requirements for the different columns,
         # columns in the resulting batch may not all have the same batch size.
@@ -918,17 +940,20 @@ class Policy(metaclass=ABCMeta):
         view_reqs = obj.view_requirements
         # Add state-ins to this model's view.
         init_state = []
-        if hasattr(obj, "get_initial_state") and callable(
-                obj.get_initial_state):
+        if hasattr(obj, "get_initial_state") and callable(obj.get_initial_state):
             init_state = obj.get_initial_state()
         else:
             # Add this functionality automatically for new native model API.
-            if tf and isinstance(model, tf.keras.Model) and \
-                    "state_in_0" not in view_reqs:
+            if (
+                tf
+                and isinstance(model, tf.keras.Model)
+                and "state_in_0" not in view_reqs
+            ):
                 obj.get_initial_state = lambda: [
                     np.zeros_like(view_req.space.sample())
                     for k, view_req in model.view_requirements.items()
-                    if k.startswith("state_in_")]
+                    if k.startswith("state_in_")
+                ]
             else:
                 obj.get_initial_state = lambda: []
                 if "state_in_0" in view_reqs:
@@ -936,17 +961,24 @@ class Policy(metaclass=ABCMeta):
 
         # Make sure auto-generated init-state view requirements get added
         # to both Policy and Model, no matter what.
-        view_reqs = [view_reqs] + ([self.view_requirements] if hasattr(
-            self, "view_requirements") else [])
+        view_reqs = [view_reqs] + (
+            [self.view_requirements] if hasattr(self, "view_requirements") else []
+        )
 
         for i, state in enumerate(init_state):
             # Allow `state` to be either a Space (use zeros as initial values)
             # or any value (e.g. a dict or a non-zero tensor).
-            fw = np if isinstance(state, np.ndarray) else torch if \
-                torch and torch.is_tensor(state) else None
+            fw = (
+                np
+                if isinstance(state, np.ndarray)
+                else torch
+                if torch and torch.is_tensor(state)
+                else None
+            )
             if fw:
-                space = Box(-1.0, 1.0, shape=state.shape) if \
-                    fw.all(state == 0.0) else state
+                space = (
+                    Box(-1.0, 1.0, shape=state.shape) if fw.all(state == 0.0) else state
+                )
             else:
                 space = state
             for vr in view_reqs:
@@ -958,13 +990,16 @@ class Policy(metaclass=ABCMeta):
                         shift=-1,
                         used_for_compute_actions=True,
                         batch_repeat_value=self.config.get("model", {}).get(
-                            "max_seq_len", 1),
-                        space=space)
+                            "max_seq_len", 1
+                        ),
+                        space=space,
+                    )
                 # Only override if user has not already provided
                 # custom view-requirements for state_out_n.
                 if "state_out_{}".format(i) not in vr:
                     vr["state_out_{}".format(i)] = ViewRequirement(
-                        space=space, used_for_training=True)
+                        space=space, used_for_training=True
+                    )
 
     def export_checkpoint(self, export_dir: str) -> None:
         """Export Policy checkpoint to local directory.
@@ -977,26 +1012,28 @@ class Policy(metaclass=ABCMeta):
 
 class MyTorchPolicy(Policy):
     def __init__(
-            self,
-            observation_space: gym.spaces.Space,
-            action_space: gym.spaces.Space,
-            config: TrainerConfigDict,
-            *,
-            model: ModelV2,
-            loss: Callable[[
-                Policy, ModelV2, Type[TorchDistributionWrapper], SampleBatch
-            ], Union[TensorType, List[TensorType]]],
-            action_distribution_class: Type[TorchDistributionWrapper],
-            action_sampler_fn: Optional[Callable[[
-                TensorType, List[TensorType]
-            ], Tuple[TensorType, TensorType]]] = None,
-            action_distribution_fn: Optional[Callable[[
-                Policy, ModelV2, TensorType, TensorType, TensorType
-            ], Tuple[TensorType, Type[TorchDistributionWrapper], List[
-                TensorType]]]] = None,
-            max_seq_len: int = 20,
-            get_batch_divisibility_req: Optional[Callable[[Policy],
-                                                          int]] = None,
+        self,
+        observation_space: gym.spaces.Space,
+        action_space: gym.spaces.Space,
+        config: TrainerConfigDict,
+        *,
+        model: ModelV2,
+        loss: Callable[
+            [Policy, ModelV2, Type[TorchDistributionWrapper], SampleBatch],
+            Union[TensorType, List[TensorType]],
+        ],
+        action_distribution_class: Type[TorchDistributionWrapper],
+        action_sampler_fn: Optional[
+            Callable[[TensorType, List[TensorType]], Tuple[TensorType, TensorType]]
+        ] = None,
+        action_distribution_fn: Optional[
+            Callable[
+                [Policy, ModelV2, TensorType, TensorType, TensorType],
+                Tuple[TensorType, Type[TorchDistributionWrapper], List[TensorType]],
+            ]
+        ] = None,
+        max_seq_len: int = 20,
+        get_batch_divisibility_req: Optional[Callable[[Policy], int]] = None,
     ):
         self.framework = "torch"
         super().__init__(observation_space, action_space, config)
@@ -1020,46 +1057,49 @@ class MyTorchPolicy(Policy):
         self.action_distribution_fn = action_distribution_fn
 
         self.max_seq_len = max_seq_len
-        self.batch_divisibility_req = get_batch_divisibility_req(self) if \
-            callable(get_batch_divisibility_req) else \
-            (get_batch_divisibility_req or 1)
-
+        self.batch_divisibility_req = (
+            get_batch_divisibility_req(self)
+            if callable(get_batch_divisibility_req)
+            else (get_batch_divisibility_req or 1)
+        )
 
     def compute_actions(
-            self,
-            obs_batch: Union[List[TensorType], TensorType],
-            state_batches: Optional[List[TensorType]] = None,
-            prev_action_batch: Union[List[TensorType], TensorType] = None,
-            prev_reward_batch: Union[List[TensorType], TensorType] = None,
-            info_batch: Optional[Dict[str, list]] = None,
-            episodes: Optional[List["MultiAgentEpisode"]] = None,
-            explore: Optional[bool] = None,
-            timestep: Optional[int] = None,
-            **kwargs) -> \
-            Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
+        self,
+        obs_batch: Union[List[TensorType], TensorType],
+        state_batches: Optional[List[TensorType]] = None,
+        prev_action_batch: Union[List[TensorType], TensorType] = None,
+        prev_reward_batch: Union[List[TensorType], TensorType] = None,
+        info_batch: Optional[Dict[str, list]] = None,
+        episodes: Optional[List["MultiAgentEpisode"]] = None,
+        explore: Optional[bool] = None,
+        timestep: Optional[int] = None,
+        **kwargs,
+    ) -> Tuple[TensorType, List[TensorType], Dict[str, TensorType]]:
 
         with torch.no_grad():
             seq_lens = torch.ones(len(obs_batch), dtype=torch.int32)
             input_dict = self._lazy_tensor_dict(
-                SampleBatch({
-                    SampleBatch.CUR_OBS: np.asarray(obs_batch),
-                }))
+                SampleBatch(
+                    {
+                        SampleBatch.CUR_OBS: np.asarray(obs_batch),
+                    }
+                )
+            )
             if prev_action_batch is not None:
-                input_dict[SampleBatch.PREV_ACTIONS] = \
-                    np.asarray(prev_action_batch)
+                input_dict[SampleBatch.PREV_ACTIONS] = np.asarray(prev_action_batch)
             if prev_reward_batch is not None:
-                input_dict[SampleBatch.PREV_REWARDS] = \
-                    np.asarray(prev_reward_batch)
+                input_dict[SampleBatch.PREV_REWARDS] = np.asarray(prev_reward_batch)
             state_batches = [
-                convert_to_torch_tensor(s, self.device)
-                for s in (state_batches or [])
+                convert_to_torch_tensor(s, self.device) for s in (state_batches or [])
             ]
-            return self._compute_action_helper(input_dict, state_batches,
-                                               seq_lens, explore, timestep)
+            return self._compute_action_helper(
+                input_dict, state_batches, seq_lens, explore, timestep
+            )
 
     @with_lock
-    def _compute_action_helper(self, input_dict, state_batches, seq_lens,
-                               explore, timestep):
+    def _compute_action_helper(
+        self, input_dict, state_batches, seq_lens, explore, timestep
+    ):
         """Shared forward pass logic (w/ and w/o trajectory view API).
 
         Returns:
@@ -1082,66 +1122,73 @@ class MyTorchPolicy(Policy):
                 input_dict,
                 state_batches,
                 explore=explore,
-                timestep=timestep)
+                timestep=timestep,
+            )
         else:
             # Call the exploration before_compute_actions hook.
-            self.exploration.before_compute_actions(
-                explore=explore, timestep=timestep)
+            self.exploration.before_compute_actions(explore=explore, timestep=timestep)
             if self.action_distribution_fn:
                 # Try new action_distribution_fn signature, supporting
                 # state_batches and seq_lens.
                 try:
-                    dist_inputs, dist_class, state_out = \
-                        self.action_distribution_fn(
-                            self,
-                            self.model,
-                            input_dict=input_dict,
-                            state_batches=state_batches,
-                            seq_lens=seq_lens,
-                            explore=explore,
-                            timestep=timestep,
-                            is_training=False)
+                    dist_inputs, dist_class, state_out = self.action_distribution_fn(
+                        self,
+                        self.model,
+                        input_dict=input_dict,
+                        state_batches=state_batches,
+                        seq_lens=seq_lens,
+                        explore=explore,
+                        timestep=timestep,
+                        is_training=False,
+                    )
                 # Trying the old way (to stay backward compatible).
                 # TODO: Remove in future.
                 except TypeError as e:
-                    if "positional argument" in e.args[0] or \
-                            "unexpected keyword argument" in e.args[0]:
-                        dist_inputs, dist_class, state_out = \
-                            self.action_distribution_fn(
-                                self,
-                                self.model,
-                                input_dict[SampleBatch.CUR_OBS],
-                                explore=explore,
-                                timestep=timestep,
-                                is_training=False)
+                    if (
+                        "positional argument" in e.args[0]
+                        or "unexpected keyword argument" in e.args[0]
+                    ):
+                        (
+                            dist_inputs,
+                            dist_class,
+                            state_out,
+                        ) = self.action_distribution_fn(
+                            self,
+                            self.model,
+                            input_dict[SampleBatch.CUR_OBS],
+                            explore=explore,
+                            timestep=timestep,
+                            is_training=False,
+                        )
                     else:
                         raise e
             else:
                 dist_class = self.dist_class
-                dist_inputs, state_out = self.model(input_dict, state_batches,
-                                                    seq_lens)
+                dist_inputs, state_out = self.model(input_dict, state_batches, seq_lens)
 
-            if not (isinstance(dist_class, functools.partial)
-                    or issubclass(dist_class, TorchDistributionWrapper)):
+            if not (
+                isinstance(dist_class, functools.partial)
+                or issubclass(dist_class, TorchDistributionWrapper)
+            ):
                 raise ValueError(
                     "`dist_class` ({}) not a TorchDistributionWrapper "
                     "subclass! Make sure your `action_distribution_fn` or "
                     "`make_model_and_action_dist` return a correct "
-                    "distribution class.".format(dist_class.__name__))
+                    "distribution class.".format(dist_class.__name__)
+                )
             action_dist = dist_class(dist_inputs, self.model)
 
             # Get the exploration action from the forward results.
-            actions, logp = \
-                self.exploration.get_exploration_action(
-                    action_distribution=action_dist,
-                    timestep=timestep,
-                    explore=explore)
+            actions, logp = self.exploration.get_exploration_action(
+                action_distribution=action_dist, timestep=timestep, explore=explore
+            )
 
         input_dict[SampleBatch.ACTIONS] = actions
 
         # Add default and custom fetches.
-        extra_fetches = self.extra_action_out(input_dict, state_batches,
-                                              self.model, action_dist)
+        extra_fetches = self.extra_action_out(
+            input_dict, state_batches, self.model, action_dist
+        )
 
         # Action-dist inputs.
         if dist_inputs is not None:
@@ -1149,8 +1196,7 @@ class MyTorchPolicy(Policy):
 
         # Action-logp and action-prob.
         if logp is not None:
-            extra_fetches[SampleBatch.ACTION_PROB] = \
-                torch.exp(logp.float())
+            extra_fetches[SampleBatch.ACTION_PROB] = torch.exp(logp.float())
             extra_fetches[SampleBatch.ACTION_LOGP] = logp
 
         # Update our global timestep by the batch size.
@@ -1163,15 +1209,17 @@ class MyTorchPolicy(Policy):
         if not isinstance(postprocessed_batch, SampleBatch):
             postprocessed_batch = SampleBatch(postprocessed_batch)
         postprocessed_batch.set_get_interceptor(
-            functools.partial(
-                convert_to_torch_tensor, device=device or self.device))
+            functools.partial(convert_to_torch_tensor, device=device or self.device)
+        )
         return postprocessed_batch
 
-
     def extra_action_out(
-            self, input_dict: Dict[str, TensorType],
-            state_batches: List[TensorType], model: TorchModelV2,
-            action_dist: TorchDistributionWrapper) -> Dict[str, TensorType]:
+        self,
+        input_dict: Dict[str, TensorType],
+        state_batches: List[TensorType],
+        model: TorchModelV2,
+        action_dist: TorchDistributionWrapper,
+    ) -> Dict[str, TensorType]:
         """Returns dict of extra info to include in experience batch.
 
         Args:
@@ -1187,6 +1235,13 @@ class MyTorchPolicy(Policy):
         """
         return {}
 
+    def get_weights(self) -> ModelWeights:
+        return {k: v.cpu().detach().numpy() for k, v in self.model.state_dict().items()}
+
+    def set_weights(self, weights: ModelWeights) -> None:
+        weights = convert_to_torch_tensor(weights, device=self.device)
+        self.model.load_state_dict(weights)
+
 
 def sequence_mask(lengths, maxlen=None, dtype=None, time_major=False):
     """Offers same behavior as tf.sequence_mask for torch.
@@ -1198,19 +1253,23 @@ def sequence_mask(lengths, maxlen=None, dtype=None, time_major=False):
     if maxlen is None:
         maxlen = int(lengths.max())
 
-    mask = ~(torch.ones(
-        (len(lengths), maxlen)).to(lengths.device).cumsum(dim=1).t() > lengths)
+    mask = ~(
+        torch.ones((len(lengths), maxlen)).to(lengths.device).cumsum(dim=1).t()
+        > lengths
+    )
     if not time_major:
         mask = mask.t()
     mask.type(dtype or torch.bool)
 
     return mask
 
+
 class Postprocessing:
     """Constant definitions for postprocessing."""
 
     ADVANTAGES = "advantages"
     VALUE_TARGETS = "value_targets"
+
 
 def explained_variance(y, pred):
     y_var = torch.var(y, dim=[0])
@@ -1220,9 +1279,11 @@ def explained_variance(y, pred):
 
 
 def ppo_surrogate_loss(
-        policy: Policy, model: ModelV2,
-        dist_class: Type[TorchDistributionWrapper],
-        train_batch: SampleBatch) -> Union[TensorType, List[TensorType]]:
+    policy: Policy,
+    model: ModelV2,
+    dist_class: Type[TorchDistributionWrapper],
+    train_batch: SampleBatch,
+) -> Union[TensorType, List[TensorType]]:
     """Constructs the loss for Proximal Policy Objective.
 
     Args:
@@ -1245,7 +1306,8 @@ def ppo_surrogate_loss(
         mask = sequence_mask(
             train_batch[SampleBatch.SEQ_LENS],
             max_seq_len,
-            time_major=model.is_time_major())
+            time_major=model.is_time_major(),
+        )
         mask = torch.reshape(mask, [-1])
         num_valid = torch.sum(mask)
 
@@ -1257,12 +1319,12 @@ def ppo_surrogate_loss(
         mask = None
         reduce_mean_valid = torch.mean
 
-    prev_action_dist = dist_class(train_batch[SampleBatch.ACTION_DIST_INPUTS],
-                                  model)
+    prev_action_dist = dist_class(train_batch[SampleBatch.ACTION_DIST_INPUTS], model)
 
     logp_ratio = torch.exp(
-        curr_action_dist.logp(train_batch[SampleBatch.ACTIONS]) -
-        train_batch[SampleBatch.ACTION_LOGP])
+        curr_action_dist.logp(train_batch[SampleBatch.ACTIONS])
+        - train_batch[SampleBatch.ACTION_LOGP]
+    )
     action_kl = prev_action_dist.kl(curr_action_dist)
     mean_kl_loss = reduce_mean_valid(action_kl)
 
@@ -1271,9 +1333,11 @@ def ppo_surrogate_loss(
 
     surrogate_loss = torch.min(
         train_batch[Postprocessing.ADVANTAGES] * logp_ratio,
-        train_batch[Postprocessing.ADVANTAGES] * torch.clamp(
-            logp_ratio, 1 - policy.config["clip_param"],
-            1 + policy.config["clip_param"]))
+        train_batch[Postprocessing.ADVANTAGES]
+        * torch.clamp(
+            logp_ratio, 1 - policy.config["clip_param"], 1 + policy.config["clip_param"]
+        ),
+    )
     mean_policy_loss = reduce_mean_valid(-surrogate_loss)
 
     # Compute a value function loss.
@@ -1281,32 +1345,38 @@ def ppo_surrogate_loss(
         prev_value_fn_out = train_batch[SampleBatch.VF_PREDS]
         value_fn_out = model.value_function()
         vf_loss1 = torch.pow(
-            value_fn_out - train_batch[Postprocessing.VALUE_TARGETS], 2.0)
+            value_fn_out - train_batch[Postprocessing.VALUE_TARGETS], 2.0
+        )
         vf_clipped = prev_value_fn_out + torch.clamp(
-            value_fn_out - prev_value_fn_out, -policy.config["vf_clip_param"],
-            policy.config["vf_clip_param"])
+            value_fn_out - prev_value_fn_out,
+            -policy.config["vf_clip_param"],
+            policy.config["vf_clip_param"],
+        )
         vf_loss2 = torch.pow(
-            vf_clipped - train_batch[Postprocessing.VALUE_TARGETS], 2.0)
+            vf_clipped - train_batch[Postprocessing.VALUE_TARGETS], 2.0
+        )
         vf_loss = torch.max(vf_loss1, vf_loss2)
         mean_vf_loss = reduce_mean_valid(vf_loss)
     # Ignore the value function.
     else:
         vf_loss = mean_vf_loss = 0.0
 
-    total_loss = reduce_mean_valid(-surrogate_loss +
-                                   policy.kl_coeff * action_kl +
-                                   policy.config["vf_loss_coeff"] * vf_loss -
-                                   policy.entropy_coeff * curr_entropy)
+    total_loss = reduce_mean_valid(
+        -surrogate_loss
+        + policy.kl_coeff * action_kl
+        + policy.config["vf_loss_coeff"] * vf_loss
+        - policy.entropy_coeff * curr_entropy
+    )
 
     # Store stats in policy for stats_fn.
     policy._total_loss = total_loss
     policy._mean_policy_loss = mean_policy_loss
     policy._mean_vf_loss = mean_vf_loss
     policy._vf_explained_var = explained_variance(
-        train_batch[Postprocessing.VALUE_TARGETS], model.value_function())
+        train_batch[Postprocessing.VALUE_TARGETS], model.value_function()
+    )
     policy._mean_entropy = mean_entropy
     # Backward compatibility: Deprecate policy._mean_kl.
     policy._mean_kl_loss = policy._mean_kl = mean_kl_loss
 
     return total_loss
-
