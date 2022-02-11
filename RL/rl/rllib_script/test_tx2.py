@@ -13,9 +13,9 @@ robot_id = "1"
 simulation_mode = False  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
 online_training = False  # if training during test
-duration = 5e3
+duration = 1e20
 train_iter = 1e20
-run_pid = True
+run_pid = False
 
 checkpoint_path = os.path.expanduser(
     "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/"
@@ -131,7 +131,6 @@ model = TorchBatchNormRNNModel(
     model_config=model_config,
     name=name,
 )
-
 
 loss = ppo_surrogate_loss
 action_distribution_class = dist_cls
