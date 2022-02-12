@@ -47,7 +47,7 @@ screen -d -m -S TELEMETRY bash -i -c ./telemetry.sh
 screen -d -m -S ROSLINK bash -i -c ./roslink.sh
 sleep 10;
 echo "link established, starting ROS logging.."
-screen -d -m -S ROSBAGSELF bash -i -c ./log.sh
+screen -d -m -S ROSBAGSELF bash -i -c ./log_RL.sh
 #screen -d -m -S ROSBAGALL bash -i -c ./logall.sh
 screen -d -m -S BANDWIDTHLOG bash -i -c ./bandwidth.sh
 
