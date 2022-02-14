@@ -1,5 +1,7 @@
 import os
-import pickle5 as pickle
+
+# import pickle5 as pickle
+import pickle
 import json
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.planar_navigate_env import Observation
@@ -71,7 +73,7 @@ env_config["simulation"].update(
         "enable_meshes": True,
         "enable_wind": True,
         "enable_wind_sampling": False,
-        "wind_speed": 0.6,
+        "wind_speed": 1.3,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, 50),
