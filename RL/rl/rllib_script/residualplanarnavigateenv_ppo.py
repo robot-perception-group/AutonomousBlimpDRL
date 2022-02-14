@@ -21,13 +21,11 @@ duration = env_default_config["duration"]
 simulation_frequency = env_default_config["simulation_frequency"]
 policy_frequency = env_default_config["policy_frequency"]
 
-days = 35
+days = 28
 one_day_ts = 24 * 3600 * policy_frequency
 TIMESTEP = int(days * one_day_ts)
 
-restore = os.path.expanduser(
-    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
-)
+restore = None
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
@@ -66,6 +64,7 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
         },
         "mixer_type": "hybrid",  # absolute, relative, hybrid
+        "mixer_param": (0.5, 0.7),
     }
 
     if args.use_lstm:

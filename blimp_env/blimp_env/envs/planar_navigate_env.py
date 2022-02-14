@@ -256,7 +256,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         reward_weights = self.config["reward_weights"].copy()
 
         success_reward = self.compute_success_rew(
-            obs_info["position"], self.goal["position"]
+            obs_info["position"], obs_info["goal_dict"]["position"]
         )
         obs[1] = (obs[1] + 1) / 2  # dist -1 should have max reward
         tracking_reward = np.dot(track_weights, -np.abs(obs[0:4]))
@@ -290,7 +290,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
         return (
             1.0
             if np.linalg.norm(pos[0:2] - goal_pos[0:2])
-            < self.config["success_threshhold"]
+            <= self.config["success_threshhold"]
             else 0.0
         )
 
@@ -310,7 +310,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             success = self.target_type.wp_index == self.target_type.wp_max_index
         else:
             success_reward = self.compute_success_rew(
-                obs_info["position"], self.goal["position"]
+                obs_info["position"], obs_info["goal_dict"]["position"]
             )
             success = success_reward >= 0.9
 
@@ -368,8 +368,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
-                    [100, 0.9, 0.1]
-                ),  # success, tracking, action
+                    [100, 0.85, 0.1, 0.05]
+                ),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array(
                     [0.6, 0.2, 0.1, 0.1]
                 ),  # z_diff, planar_dist, yaw_diff, vel_diff
@@ -549,7 +549,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         reward_weights = self.config["reward_weights"].copy()
 
         success_reward = self.compute_success_rew(
-            obs_info["position"], self.goal["position"]
+            obs_info["position"], obs_info["goal_dict"]["position"]
         )
 
         obs[1] = (obs[1] + 1) / 2  # dist -1 should have max reward
@@ -557,14 +557,30 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
 
         action_reward = self.action_type.action_rew()
 
+        bonus_reward = 0
+        if self.config["observation"][
+            "enable_next_goal"
+        ]:  # receive next_yaw_rew when l less than 2*success_threshhold
+            dist = np.linalg.norm(
+                obs_info["position"][0:2] - obs_info["goal_dict"]["position"][0:2]
+            )
+            if dist <= 2 * self.config["success_threshhold"]:
+                bonus_reward += -np.abs(obs_info["next_yaw_diff"])
+
         reward = self.config["reward_scale"] * np.dot(
             reward_weights,
-            (success_reward, tracking_reward, action_reward),
+            (success_reward, tracking_reward, action_reward, bonus_reward),
         )
         if self.config["clip_reward"]:
             reward = np.clip(reward, -1, 1)
 
-        rew_info = (reward, success_reward, tracking_reward, action_reward)
+        rew_info = (
+            reward,
+            success_reward,
+            tracking_reward,
+            action_reward,
+            bonus_reward,
+        )
 
         return float(reward), {"rew_info": rew_info}
 
@@ -584,7 +600,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             success = self.target_type.wp_index == self.target_type.wp_max_index
         else:
             success_reward = self.compute_success_rew(
-                obs_info["position"], self.goal["position"]
+                obs_info["position"], obs_info["goal_dict"]["position"]
             )
             success = success_reward >= 0.9
 

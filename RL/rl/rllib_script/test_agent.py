@@ -4,34 +4,46 @@ import pickle
 import numpy as np
 import ray
 
-# import rl.rllib_script.agent.model
+import rl.rllib_script.agent.model.ray_model
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 from ray.rllib.agents import ppo
 from ray.tune.logger import pretty_print
 
-ENV = ResidualPlanarNavigateEnv
 
-checkpoint_path = os.path.expanduser(
-    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_LSTM_AbsMix/checkpoint_002700/checkpoint-2700"
-)
-
-robot_id = "1"
-simulation_mode = False  # if realworld exp or simulation
+robot_id = "0"
+simulation_mode = True  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
 online_training = False  # if training during test
-
-# in real world experiment "auto_start_simulation" should always be false
-if not simulation_mode:
-    auto_start_simulation = False
-
 duration = 1e20
 train_iter = 1e20
+run_pid = True
+
+checkpoint_path = os.path.expanduser(
+    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_cb3a8_00000_0_2022-02-10_17-30-44/checkpoint_001000/checkpoint-1000"
+)
+
+###########################################
+
+ENV = ResidualPlanarNavigateEnv
 
 run_base_dir = os.path.dirname(os.path.dirname(checkpoint_path))
 config_path = os.path.join(run_base_dir, "params.pkl")
 with open(config_path, "rb") as f:
     config = pickle.load(f)
+
+# in real world experiment "auto_start_simulation" should always be false
+if not simulation_mode:
+    auto_start_simulation = False
+
+if run_pid:
+    beta = 0.0
+    disable_servo = True
+else:
+    beta = 0.5
+    disable_servo = False
+
+trigger_dist = 5
 
 env_config = config["env_config"]
 env_config.update(
@@ -42,7 +54,9 @@ env_config.update(
         "real_experiment": not simulation_mode,
         "seed": 123,
         "duration": duration,
-        # "beta": 0.5,
+        "beta": beta,
+        "reward_weights": np.array([0, 0.9, 0.1]),
+        "success_threshhold": trigger_dist,  # [meters]
     }
 )
 env_config["simulation"].update(
@@ -53,25 +67,39 @@ env_config["simulation"].update(
         "enable_meshes": True,
         "enable_wind": True,
         "enable_wind_sampling": False,
-        "wind_speed": 1.5,
+        "wind_speed": 1.3,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, 50),
     }
 )
-env_config["observation"].update(
-    {
+if "observation" in env_config:
+    env_config["observation"].update(
+        {
+            "noise_stdv": 0.0 if not simulation_mode else 0.02,
+        }
+    )
+else:
+    env_config["observation"] = {
         "noise_stdv": 0.0 if not simulation_mode else 0.02,
     }
-)
-env_config["action"].update(
-    {
+
+if "action" in env_config:
+    env_config["action"].update(
+        {
+            "act_noise_stdv": 0.0 if not simulation_mode else 0.05,
+            "disable_servo": disable_servo,
+            # "max_servo": -0.5,
+            # "max_thrust": 0.5,
+        }
+    )
+else:
+    env_config["action"] = {
         "act_noise_stdv": 0.0 if not simulation_mode else 0.05,
-        # "disable_servo": False,
+        "disable_servo": disable_servo,
         # "max_servo": -0.5,
         # "max_thrust": 0.5,
     }
-)
 
 
 wp_list = [
@@ -83,8 +111,9 @@ wp_list = [
 target_dict = {
     "type": "MultiGoal",  # InteractiveGoal
     "target_name_space": "goal_",
-    "trigger_dist": 10,
+    "trigger_dist": 5,
     "wp_list": wp_list,
+    "enable_random_goal": False,
 }
 if "target" in env_config:
     env_config["target"].update(target_dict)
@@ -162,6 +191,8 @@ else:
         prev_reward = reward
 
         if steps % 20 == 0:
-            print(f"Steps #{steps} Average Reward: {total_reward/(steps+1)}")
+            print(
+                f"Steps #{steps} Total Reward: {total_reward}, Average Reward: {total_reward/(steps+1)}"
+            )
             print(f"Steps #{steps} Action: {action}")
             print(f"Steps #{steps} Observation: {obs}")
