@@ -467,10 +467,10 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>x</field>
+                                    <field>data/0</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -480,7 +480,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -518,10 +518,10 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>y</field>
+                                    <field>data/1</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -531,7 +531,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -569,10 +569,10 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>z</field>
+                                    <field>data/2</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -582,7 +582,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -620,10 +620,10 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </x_axis>
                                 <y_axis>
-                                    <field>w</field>
+                                    <field>data/3</field>
                                     <field_type>0</field_type>
                                     <scale>
                                         <absolute_maximum>1000</absolute_maximum>
@@ -633,7 +633,7 @@
                                         <type>0</type>
                                     </scale>
                                     <topic>/machine_0/rviz_reward</topic>
-                                    <type>geometry_msgs/Quaternion</type>
+                                    <type>std_msgs/Float32MultiArray</type>
                                 </y_axis>
                             </axes>
                             <color>
@@ -658,6 +658,57 @@
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>act</title>
                         </curve_3>
+                        <curve_4>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_reward</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>data/4</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_reward</topic>
+                                    <type>std_msgs/Float32MultiArray</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#73d216</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>3</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>0</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>bonus</title>
+                        </curve_4>
                     </curves>
                     <legend>
                         <visible>true</visible>
@@ -1103,7 +1154,7 @@
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
-                                <pen_style>2</pen_style>
+                                <pen_style>1</pen_style>
                                 <pen_width>3</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
@@ -1144,7 +1195,7 @@
                                 </y_axis>
                             </axes>
                             <color>
-                                <custom_color>#f57900</custom_color>
+                                <custom_color>#cc0000</custom_color>
                                 <type>1</type>
                             </color>
                             <data>
@@ -1205,7 +1256,7 @@
                             </data>
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
-                                <pen_style>2</pen_style>
+                                <pen_style>1</pen_style>
                                 <pen_width>3</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
