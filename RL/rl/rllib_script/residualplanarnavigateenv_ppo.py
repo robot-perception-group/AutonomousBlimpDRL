@@ -64,7 +64,7 @@ if __name__ == "__main__":
             "auto_start_simulation": True,
         },
         "mixer_type": "hybrid",  # absolute, relative, hybrid
-        "mixer_param": (0.5, 0.7),
+        "mixer_param": (0.5, 0.7),  # alpha, beta
     }
 
     if args.use_lstm:

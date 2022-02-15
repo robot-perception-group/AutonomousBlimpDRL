@@ -44,7 +44,7 @@ parser.add_argument(
     dest="use_lstm",
     default=True,
     action="store_false",
-    help="enable lstm cell",
+    help="disable lstm cell",
 )
 
 
