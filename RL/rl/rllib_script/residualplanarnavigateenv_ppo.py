@@ -1,5 +1,4 @@
 import argparse
-import os
 
 import ray
 import rl.rllib_script.agent.model.ray_model
