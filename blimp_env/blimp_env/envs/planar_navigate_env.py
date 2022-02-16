@@ -341,7 +341,7 @@ class PIDController:
         self.err_sum, self.prev_err = 0.0, 0.0
         self.windup = 0.0
 
-    def action(self, err, err_i, err_d):
+    def action(self, err, err_i=0, err_d=0):
         if not self.i_from_sensor:
             self.err_sum += err * self.delta_t
             self.err_sum = np.clip(self.err_sum, -1, 1)
@@ -443,7 +443,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.base_act = np.zeros(self.action_type.act_dim)
         delta_t = 1 / self.config["policy_frequency"]
         self.yaw_basectrl = PIDController(
-            pid_param=np.array([1.0, 0.1, 0.05]), delta_t=delta_t, d_from_sensor=True
+            pid_param=np.array([0.08, 0.01, 0.03]), delta_t=delta_t, d_from_sensor=True
         )
         self.alt_basectrl = PIDController(delta_t=delta_t)
         self.vel_basectrl = PIDController(delta_t=delta_t)
@@ -888,7 +888,7 @@ if __name__ == "__main__":
     from blimp_env.envs.script import close_simulation
 
     # ============== profile ==============#
-    # 1. pip install line_profiler
+    # 1. pip install line-profiler
     # 2. in terminal:
     # kernprof -l -v blimp_env/envs/planar_navigate_env.py
 
