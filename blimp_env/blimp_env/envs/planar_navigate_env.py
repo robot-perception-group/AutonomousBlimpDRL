@@ -441,16 +441,12 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         super().__init__(config=config)
 
         self.base_act = np.zeros(self.action_type.act_dim)
-        delta_t = 10 / self.config["policy_frequency"]
+        delta_t = 1 / self.config["policy_frequency"]
         self.yaw_basectrl = PIDController(
             pid_param=np.array([1.0, 0.1, 0.05]), delta_t=delta_t, d_from_sensor=True
         )
-        self.alt_basectrl = PIDController()
-        self.vel_basectrl = PIDController()
-
-        # self.yaw_err_i, self.prev_yaw = 0, 0
-        # self.alt_err_i, self.prev_alt = 0, 0
-        # self.vel_err_i, self.prev_vel = 0, 0
+        self.alt_basectrl = PIDController(delta_t=delta_t)
+        self.vel_basectrl = PIDController(delta_t=delta_t)
 
     def _create_pub_and_sub(self):
         self.ang_vel_rviz_pub = rospy.Publisher(
@@ -540,21 +536,6 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         """
         obs, obs_dict = self.observation_type.observe()
 
-        # yaw_ctrl, self.yaw_err_i, _ = self.pid_ctrl(
-        #     -obs[2],
-        #     self.yaw_err_i,
-        #     obs_dict["angular_velocity"][2],
-        #     pid_coeff=np.array([1.0, 0.1, 0.05]),
-        #     d_from_sensor=True,
-        # )
-        # alt_ctrl, self.alt_err_i, self.prev_alt = self.pid_ctrl(
-        #     obs[0],
-        #     self.alt_err_i,
-        #     self.prev_alt,
-        # )
-        # vel_ctrl, self.vel_err_i, self.prev_vel = self.pid_ctrl(
-        #     -obs[3], self.vel_err_i, self.prev_vel
-        # )
         yaw_ctrl = self.yaw_basectrl.action(
             err=-obs[2], err_d=obs_dict["angular_velocity"][2]
         )
@@ -562,26 +543,6 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         vel_ctrl = self.vel_basectrl.action(-obs[3])
 
         return np.clip(np.array([yaw_ctrl, alt_ctrl, 0, vel_ctrl]), -1, 1)
-
-    # def pid_ctrl(
-    #     self,
-    #     err,
-    #     err_i,
-    #     err_d,
-    #     offset=0.0,
-    #     pid_coeff=np.array([1.0, 0.2, 0.05]),
-    #     i_from_sensor=False,
-    #     d_from_sensor=False,
-    # ):
-    #     if not i_from_sensor:
-    #         err_i += err * self.delta_t
-    #         err_i = np.clip(err_i, -1, 1)
-
-    #     if not d_from_sensor:
-    #         err_d = (err - err_d) / self.delta_t
-
-    #     ctrl = np.dot(pid_coeff, np.array([err, err_i, err_d])) + offset
-    # return ctrl, err_i, err
 
     def clear_basectrl_param(self):
         self.yaw_basectrl.clear()
@@ -727,7 +688,6 @@ class YawControlEnv(ResidualPlanarNavigateEnv):
 
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
-        # self.base_act = 0
         # self.base_act = np.zeros(self.action_type.act_dim)
         delta_t = 10 / self.config["policy_frequency"]
         self.yaw_basectrl = PIDController(
@@ -840,20 +800,7 @@ class YawControlEnv(ResidualPlanarNavigateEnv):
         yaw_ctrl = self.yaw_basectrl.action(
             err=-obs[0], err_d=obs_dict["angular_velocity"][2]
         )
-
-        # yaw_ctrl, self.yaw_err_i, _ = self.pid_ctrl(
-        #     -obs[0],
-        #     self.yaw_err_i,
-        #     obs_dict["angular_velocity"][2],
-        #     self.config["pid_param"],
-        # )
         return np.clip(np.array([yaw_ctrl]), -1, 1)
-
-    # def pid_ctrl(self, err, err_i, err_d, pid_coeff=np.array([1, 0.5, 0.3])):
-    #     err_i += err * self.delta_t
-    #     err_i = np.clip(err_i, -1, 1)
-    #     ctrl = np.dot(pid_coeff, np.array([err, err_i, err_d]))
-    #     return ctrl, err_i, err
 
     def _reward(
         self, obs: np.array, act: np.array, obs_info: dict

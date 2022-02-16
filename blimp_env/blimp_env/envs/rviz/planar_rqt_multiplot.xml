@@ -64,7 +64,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>3</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -137,57 +137,6 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/motor_speed/1</topic>
-                                    <type>std_msgs/Float32</type>
-                                </x_axis>
-                                <y_axis>
-                                    <field>data</field>
-                                    <field_type>0</field_type>
-                                    <scale>
-                                        <absolute_maximum>1000</absolute_maximum>
-                                        <absolute_minimum>0</absolute_minimum>
-                                        <relative_maximum>0</relative_maximum>
-                                        <relative_minimum>-1000</relative_minimum>
-                                        <type>0</type>
-                                    </scale>
-                                    <topic>/machine_0/motor_speed/1</topic>
-                                    <type>std_msgs/Float32</type>
-                                </y_axis>
-                            </axes>
-                            <color>
-                                <custom_color>#75507b</custom_color>
-                                <type>1</type>
-                            </color>
-                            <data>
-                                <circular_buffer_capacity>1000</circular_buffer_capacity>
-                                <time_frame_length>10</time_frame_length>
-                                <type>0</type>
-                            </data>
-                            <style>
-                                <lines_interpolate>false</lines_interpolate>
-                                <pen_style>2</pen_style>
-                                <pen_width>3</pen_width>
-                                <render_antialias>false</render_antialias>
-                                <steps_invert>false</steps_invert>
-                                <sticks_baseline>0</sticks_baseline>
-                                <sticks_orientation>2</sticks_orientation>
-                                <type>0</type>
-                            </style>
-                            <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>m1</title>
-                        </curve_2>
-                        <curve_3>
-                            <axes>
-                                <x_axis>
-                                    <field></field>
-                                    <field_type>1</field_type>
-                                    <scale>
-                                        <absolute_maximum>1000</absolute_maximum>
-                                        <absolute_minimum>0</absolute_minimum>
-                                        <relative_maximum>0</relative_maximum>
-                                        <relative_minimum>-1000</relative_minimum>
-                                        <type>0</type>
-                                    </scale>
                                     <topic>/machine_0/stick_joint_position_controller/command</topic>
                                     <type>std_msgs/Float64</type>
                                 </x_axis>
@@ -226,8 +175,8 @@
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>s</title>
-                        </curve_3>
-                        <curve_4>
+                        </curve_2>
+                        <curve_3>
                             <axes>
                                 <x_axis>
                                     <field></field>
@@ -268,7 +217,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>3</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -277,8 +226,8 @@
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>s_cmd</title>
-                        </curve_4>
-                        <curve_5>
+                        </curve_3>
+                        <curve_4>
                             <axes>
                                 <x_axis>
                                     <field></field>
@@ -290,7 +239,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_residual_act</topic>
+                                    <topic>/machine_0/rviz_base_act</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </x_axis>
                                 <y_axis>
@@ -303,7 +252,7 @@
                                         <relative_minimum>-1000</relative_minimum>
                                         <type>0</type>
                                     </scale>
-                                    <topic>/machine_0/rviz_residual_act</topic>
+                                    <topic>/machine_0/rviz_base_act</topic>
                                     <type>geometry_msgs/Quaternion</type>
                                 </y_axis>
                             </axes>
@@ -319,7 +268,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>3</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -328,8 +277,8 @@
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>rsd_yaw_cmd</title>
-                        </curve_5>
-                        <curve_6>
+                        </curve_4>
+                        <curve_5>
                             <axes>
                                 <x_axis>
                                     <field></field>
@@ -379,8 +328,8 @@
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>m2</title>
-                        </curve_6>
-                        <curve_7>
+                        </curve_5>
+                        <curve_6>
                             <axes>
                                 <x_axis>
                                     <field></field>
@@ -421,7 +370,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>1</pen_style>
-                                <pen_width>3</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -430,6 +379,57 @@
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>yaw_cmd</title>
+                        </curve_6>
+                        <curve_7>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>y</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#c4a000</custom_color>
+                                <type>1</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>2</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>alt_cmd</title>
                         </curve_7>
                     </curves>
                     <legend>
@@ -1206,7 +1206,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>2</pen_style>
-                                <pen_width>3</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -1214,7 +1214,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>cmd_u</title>
+                            <title>desire_u</title>
                         </curve_4>
                         <curve_5>
                             <axes>
@@ -1267,6 +1267,57 @@
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>u_diff</title>
                         </curve_5>
+                        <curve_6>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>w</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#204a87</custom_color>
+                                <type>1</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>2</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>act_cmd</title>
+                        </curve_6>
                     </curves>
                     <legend>
                         <visible>true</visible>
@@ -1384,7 +1435,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>2</pen_style>
-                                <pen_width>4</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -1392,7 +1443,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>cmd_x</title>
+                            <title>desire_x</title>
                         </curve_1>
                         <curve_2>
                             <axes>
@@ -1486,7 +1537,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>2</pen_style>
-                                <pen_width>4</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -1494,7 +1545,7 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>cmd_y</title>
+                            <title>desire_y</title>
                         </curve_3>
                         <curve_4>
                             <axes>
@@ -1588,7 +1639,7 @@
                             <style>
                                 <lines_interpolate>false</lines_interpolate>
                                 <pen_style>2</pen_style>
-                                <pen_width>4</pen_width>
+                                <pen_width>1</pen_width>
                                 <render_antialias>false</render_antialias>
                                 <steps_invert>false</steps_invert>
                                 <sticks_baseline>0</sticks_baseline>
@@ -1596,8 +1647,59 @@
                                 <type>0</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>cmd_z</title>
+                            <title>desire_z</title>
                         </curve_5>
+                        <curve_6>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>y</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#c4a000</custom_color>
+                                <type>1</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>2</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>alt_cmd</title>
+                        </curve_6>
                     </curves>
                     <legend>
                         <visible>true</visible>
@@ -1723,6 +1825,108 @@
                             <subscriber_queue_size>100</subscriber_queue_size>
                             <title>psi_diff</title>
                         </curve_1>
+                        <curve_2>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_base_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>x</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_base_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#e6194b</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>2</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>rsd_yaw_cmd</title>
+                        </curve_2>
+                        <curve_3>
+                            <axes>
+                                <x_axis>
+                                    <field></field>
+                                    <field_type>1</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </x_axis>
+                                <y_axis>
+                                    <field>x</field>
+                                    <field_type>0</field_type>
+                                    <scale>
+                                        <absolute_maximum>1000</absolute_maximum>
+                                        <absolute_minimum>0</absolute_minimum>
+                                        <relative_maximum>0</relative_maximum>
+                                        <relative_minimum>-1000</relative_minimum>
+                                        <type>0</type>
+                                    </scale>
+                                    <topic>/machine_0/rviz_act</topic>
+                                    <type>geometry_msgs/Quaternion</type>
+                                </y_axis>
+                            </axes>
+                            <color>
+                                <custom_color>#a40000</custom_color>
+                                <type>0</type>
+                            </color>
+                            <data>
+                                <circular_buffer_capacity>1000</circular_buffer_capacity>
+                                <time_frame_length>10</time_frame_length>
+                                <type>0</type>
+                            </data>
+                            <style>
+                                <lines_interpolate>false</lines_interpolate>
+                                <pen_style>1</pen_style>
+                                <pen_width>1</pen_width>
+                                <render_antialias>false</render_antialias>
+                                <steps_invert>false</steps_invert>
+                                <sticks_baseline>0</sticks_baseline>
+                                <sticks_orientation>2</sticks_orientation>
+                                <type>2</type>
+                            </style>
+                            <subscriber_queue_size>100</subscriber_queue_size>
+                            <title>yaw_cmd</title>
+                        </curve_3>
                     </curves>
                     <legend>
                         <visible>true</visible>
