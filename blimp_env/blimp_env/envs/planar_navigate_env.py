@@ -422,7 +422,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "simulation_frequency": 30,  # [hz]
                 "policy_frequency": 10,  # [hz] has to be greater than 5 to overwrite backup controller
                 "reward_weights": np.array(
-                    [100, 0.85, 0.1, 0.05]
+                    [100, 0.9, 0.1, 0.1]
                 ),  # success, tracking, action, bonus
                 "tracking_reward_weights": np.array(
                     [0.6, 0.2, 0.1, 0.1]
@@ -443,14 +443,10 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.base_act = np.zeros(self.action_type.act_dim)
         delta_t = 1 / self.config["policy_frequency"]
         self.yaw_basectrl = PIDController(
-            pid_param=np.array([0.5, 0.02, 0.25]), delta_t=delta_t, d_from_sensor=True
+            pid_param=np.array([1.0, 0.1, 0.05]), delta_t=delta_t, d_from_sensor=True
         )
-        self.alt_basectrl = PIDController(
-            pid_param=np.array([20, 1, 10]), delta_t=delta_t
-        )
-        self.vel_basectrl = PIDController(
-            pid_param=np.array([0.8, 0.05, 0.15]), delta_t=delta_t
-        )
+        self.alt_basectrl = PIDController(delta_t=delta_t)
+        self.vel_basectrl = PIDController(delta_t=delta_t)
 
     def _create_pub_and_sub(self):
         self.ang_vel_rviz_pub = rospy.Publisher(

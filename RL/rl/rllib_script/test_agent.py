@@ -13,14 +13,14 @@ from ray.tune.logger import pretty_print
 
 robot_id = "0"
 simulation_mode = True  # if realworld exp or simulation
-auto_start_simulation = False  # start simulation
+auto_start_simulation = True  # start simulation
 online_training = False  # if training during test
 duration = 1e20
 train_iter = 1e20
-run_pid = True
+run_pid = False
 
 checkpoint_path = os.path.expanduser(
-    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_cb3a8_00000_0_2022-02-10_17-30-44/checkpoint_001000/checkpoint-1000"
+    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_16d2f_00000_0_2022-02-14_15-26-25/checkpoint_001080"
 )
 
 ###########################################
@@ -186,9 +186,9 @@ else:
             prev_reward=prev_reward,
         )
         obs, reward, done, info = env.step(action)
-        total_reward += reward
         prev_action = action
         prev_reward = reward
+        total_reward += reward
 
         if steps % 20 == 0:
             print(
