@@ -276,7 +276,7 @@
                                 <type>2</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>rsd_yaw_cmd</title>
+                            <title>base_yaw_cmd</title>
                         </curve_4>
                         <curve_5>
                             <axes>
@@ -1874,7 +1874,7 @@
                                 <type>2</type>
                             </style>
                             <subscriber_queue_size>100</subscriber_queue_size>
-                            <title>rsd_yaw_cmd</title>
+                            <title>base_yaw_cmd</title>
                         </curve_2>
                         <curve_3>
                             <axes>
