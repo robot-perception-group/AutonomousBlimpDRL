@@ -12,15 +12,15 @@ from ray.tune.logger import pretty_print
 
 
 robot_id = "0"
-simulation_mode = True  # if realworld exp or simulation
-auto_start_simulation = True  # start simulation
-online_training = False  # if training during test
+simulation_mode = False  # if realworld exp or simulation
+auto_start_simulation = False  # start simulation
+online_training = True  # if training during test
 duration = 1e20
 train_iter = 1e20
 run_pid = False
 
 checkpoint_path = os.path.expanduser(
-    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_16d2f_00000_0_2022-02-14_15-26-25/checkpoint_001080"
+    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_16d2f_00000_0_2022-02-14_15-26-25/checkpoint_001000/checkpoint-1000"
 )
 
 ###########################################
@@ -55,7 +55,7 @@ env_config.update(
         "seed": 123,
         "duration": duration,
         "beta": beta,
-        "reward_weights": np.array([0, 0.9, 0.1]),
+        "reward_weights": np.array([100, 0.9, 0.1, 0.1]),
         "success_threshhold": trigger_dist,  # [meters]
     }
 )
@@ -66,8 +66,8 @@ env_config["simulation"].update(
         "auto_start_simulation": auto_start_simulation,
         "enable_meshes": True,
         "enable_wind": True,
-        "enable_wind_sampling": False,
-        "wind_speed": 1.3,
+        "enable_wind_sampling": True,
+        "wind_speed": 0.0,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, 50),
@@ -76,18 +76,18 @@ env_config["simulation"].update(
 if "observation" in env_config:
     env_config["observation"].update(
         {
-            "noise_stdv": 0.0 if not simulation_mode else 0.02,
+            "noise_stdv": 0.0 if not simulation_mode else 0.0,
         }
     )
 else:
     env_config["observation"] = {
-        "noise_stdv": 0.0 if not simulation_mode else 0.02,
+        "noise_stdv": 0.0 if not simulation_mode else 0.0,
     }
 
 if "action" in env_config:
     env_config["action"].update(
         {
-            "act_noise_stdv": 0.0 if not simulation_mode else 0.05,
+            "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
             "disable_servo": disable_servo,
             # "max_servo": -0.5,
             # "max_thrust": 0.5,
@@ -95,7 +95,7 @@ if "action" in env_config:
     )
 else:
     env_config["action"] = {
-        "act_noise_stdv": 0.0 if not simulation_mode else 0.05,
+        "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
         "disable_servo": disable_servo,
         # "max_servo": -0.5,
         # "max_thrust": 0.5,
@@ -137,8 +137,9 @@ if online_training:
             "rollout_fragment_length": 400,
             "train_batch_size": 1600,
             "sgd_minibatch_size": 128,
-            "lr": 1e-4,
+            "lr": 5e-4,
             "lr_schedule": None,
+            "num_sgd_iter": 16,
         }
     )
     print(config)

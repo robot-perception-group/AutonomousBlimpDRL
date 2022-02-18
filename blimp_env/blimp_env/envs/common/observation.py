@@ -206,7 +206,7 @@ class PlanarKinematicsObservation(ROSObservation):
         "yaw_diff": [-np.pi, np.pi],
         "vel_diff": [-11.5, 11.5],
         "vel": [0, 11.5],
-        "yaw_vel": [-15, 15],
+        "yaw_vel": [-27, 27],
     }
 
     def __init__(
@@ -301,7 +301,8 @@ class PlanarKinematicsObservation(ROSObservation):
             goal_dict["position"],
             goal_dict["next_position"],
         )
-        vel = np.linalg.norm(obs_dict["velocity"])
+        # vel = np.linalg.norm(obs_dict["velocity"]) #TODO
+        vel = obs_dict["airspeed"]
         goal_vel = goal_dict["velocity"]
 
         planar_dist = np.linalg.norm(obs_pos[0:2] - goal_pos[0:2])

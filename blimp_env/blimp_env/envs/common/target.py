@@ -169,11 +169,11 @@ class MultiGoal(TargetType):
         env: "AbstractEnv",
         target_name_space="goal_0",
         trigger_dist=5,  # [m] dist to trigger next waypoint
-        wp_list=[
-            (50, 50, -30, 5),
-            (50, -50, -30, 5),
-            (-50, -50, -30, 5),
-            (-50, 50, -30, 5),
+        wp_list=[  # TODO
+            (40, 40, -100, 3),
+            (40, -40, -100, 3),
+            (-40, -40, -100, 3),
+            (-40, 40, -100, 3),
         ],  # [m] (x, y, z, v) in NED
         enable_dependent_wp=False,  # waypoint generated depend on previous waypoint
         dist_range=[10, 40],  # [m] new wp range of prev wp
