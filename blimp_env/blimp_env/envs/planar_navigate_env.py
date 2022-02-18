@@ -348,11 +348,11 @@ class PIDController:
             err_i = self.err_sum * (1 - self.windup)
 
         if not self.d_from_sensor:
-            err_d = (err - self.prev_err) / (self.delta_t + 1)
+            err_d = (err - self.prev_err) / (self.delta_t)
             self.prev_err = err
 
         ctrl = np.dot(self.pid_param, np.array([err, err_i, err_d]))
-        ctrl, self.windup = self.anti_windup(ctrl)
+        # ctrl, self.windup = self.anti_windup(ctrl)
         return ctrl + self.offset
 
     def anti_windup(self, control, k_windup=1):
@@ -431,8 +431,20 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "reward_scale": 0.05,
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
-                "mixer_type": "relative",  # absolute, relative, hybrid
-                "mixer_param": (0.5, 0.5),  # alpha, beta
+                "mixer_type": "hybrid",  # absolute, relative, hybrid
+                "mixer_param": (0.5, 0.7),  # alpha, beta
+                "base_ctrl_config": {
+                    "yaw": {
+                        "pid_param": np.array([0.2, 0.002, 0.008]),
+                        "d_from_sensor": True,
+                    },
+                    "alt": {
+                        "pid_param": np.array([0.2, 0, 1.5]),
+                    },
+                    "vel": {
+                        "pid_param": np.array([0.4, 0, 1.7]),
+                    },
+                },
             }
         )
         return config
@@ -443,10 +455,17 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         self.base_act = np.zeros(self.action_type.act_dim)
         delta_t = 1 / self.config["policy_frequency"]
         self.yaw_basectrl = PIDController(
-            pid_param=np.array([1.0, 0.1, 0.05]), delta_t=delta_t, d_from_sensor=True
+            delta_t=delta_t,
+            **self.config["base_ctrl_config"]["yaw"],
         )
-        self.alt_basectrl = PIDController(delta_t=delta_t)
-        self.vel_basectrl = PIDController(delta_t=delta_t)
+        self.alt_basectrl = PIDController(
+            delta_t=delta_t,
+            **self.config["base_ctrl_config"]["alt"],
+        )
+        self.vel_basectrl = PIDController(
+            delta_t=delta_t,
+            **self.config["base_ctrl_config"]["vel"],
+        )
 
     def _create_pub_and_sub(self):
         self.ang_vel_rviz_pub = rospy.Publisher(
@@ -589,9 +608,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             dist = np.linalg.norm(
                 obs_info["position"][0:2] - obs_info["goal_dict"]["position"][0:2]
             )
-            bonus_reward += (
-                -np.abs(obs_info["proc_dict"]["next_yaw_diff"]) * 5 / (1 + dist)
-            )
+            bonus_reward += -np.abs(obs_info["proc_dict"]["next_yaw_diff"]) / (1 + dist)
 
         reward = self.config["reward_scale"] * np.dot(
             reward_weights,
@@ -688,7 +705,6 @@ class YawControlEnv(ResidualPlanarNavigateEnv):
 
     def __init__(self, config: Optional[Dict[Any, Any]] = None) -> None:
         super().__init__(config=config)
-        # self.base_act = np.zeros(self.action_type.act_dim)
         delta_t = 10 / self.config["policy_frequency"]
         self.yaw_basectrl = PIDController(
             pid_param=self.config["pid_param"], delta_t=delta_t, d_from_sensor=True
@@ -905,7 +921,7 @@ if __name__ == "__main__":
             "auto_start_simulation": auto_start_simulation,
             "enable_wind": False,
             "enable_wind_sampling": False,
-            "enable_buoyancy_sampling": True,
+            "enable_buoyancy_sampling": False,
         },
         "observation": {
             "DBG_ROS": False,
@@ -915,8 +931,14 @@ if __name__ == "__main__":
         "action": {
             "DBG_ACT": False,
             "act_noise_stdv": 0.0,
+            "disable_servo": True,
         },
-        "target": {"DBG_ROS": False},
+        "target": {
+            "DBG_ROS": False,
+            "enable_random_goal": False,
+        },
+        "mixer_type": "absolute",
+        "mixer_param": (0.5, 0),
     }
 
     @profile

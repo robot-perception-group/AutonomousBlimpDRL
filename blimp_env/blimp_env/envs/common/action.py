@@ -274,7 +274,7 @@ class ContinuousAction(ROSActionType):
 class SimpleContinuousDifferentialAction(ContinuousAction):
     """simplified action space by binding action that has similar dynamic effect"""
 
-    DIFF_ACT_SCALE = np.array([0.1, 0.1, 0.1, 0.04])
+    DIFF_ACT_SCALE = np.array([0.2, 0.2, 0.1, 0.05])
     ACT_DIM = 4
 
     def __init__(
