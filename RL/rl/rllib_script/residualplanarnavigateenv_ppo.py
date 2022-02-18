@@ -62,8 +62,8 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
-        "mixer_type": "hybrid",  # absolute, relative, hybrid
-        "mixer_param": (0.5, 0.7),  # alpha, beta
+        "mixer_type": "absolute",  # absolute, relative, hybrid
+        "mixer_param": (0.5, 0.5),  # alpha, beta
     }
 
     if args.use_lstm:

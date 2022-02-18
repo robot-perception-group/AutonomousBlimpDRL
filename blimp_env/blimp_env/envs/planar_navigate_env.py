@@ -389,7 +389,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
             {
                 "enable_wind": True,
                 "enable_wind_sampling": True,
-                "wind_speed": 1.5,
+                "wind_speed": 1.0,
                 "enable_buoyancy_sampling": True,
             }
         )
@@ -438,8 +438,8 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "reward_scale": 0.05,
                 "clip_reward": False,
                 "enable_residual_ctrl": True,
-                "mixer_type": "hybrid",  # absolute, relative, hybrid
-                "mixer_param": (0.5, 0.7),  # alpha, beta
+                "mixer_type": "absolute",  # absolute, relative, hybrid
+                "mixer_param": (0.5, 0.5),  # alpha, beta
                 "base_ctrl_config": {
                     "yaw": {
                         "pid_param": np.array([0.3, 0.003, 0.012]),
