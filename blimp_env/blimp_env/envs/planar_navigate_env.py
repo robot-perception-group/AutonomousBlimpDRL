@@ -41,6 +41,7 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 "type": "PlanarKinematics",
                 "noise_stdv": 0.02,
                 "scale_obs": True,
+                "enable_airspeed_sensor": True,
             }
         )
         config["action"].update(
@@ -107,6 +108,10 @@ class PlanarNavigateEnv(ROSAbstractEnv):
             self.wind_state_pub = rospy.Publisher(
                 self.config["name_space"] + "/wind_state", WindSpeed, queue_size=1
             )
+        if self.config["observation"]["enable_airspeed_sensor"]:
+            self.airspeed_rviz_pub = rospy.Publisher(
+                self.config["name_space"] + "/rviz_airspeed", Point, queue_size=1
+            )
 
     @profile
     def one_step(self, action: Action) -> Tuple[Observation, float, bool, dict]:
@@ -169,6 +174,8 @@ class PlanarNavigateEnv(ROSAbstractEnv):
                 proc_info["vel_diff"],
             )
         )
+        if self.config["observation"]["enable_airspeed_sensor"]:
+            self.airspeed_rviz_pub.publish(Point(obs_info["airspeed"], 0, 0))
         self.ang_rviz_pub.publish(Point(*obs_info["angle"]))
         self.ang_diff_rviz_pub.publish(Point(0, 0, proc_info["yaw_diff"]))
         self.act_rviz_pub.publish(Quaternion(*info["act"]))
@@ -435,7 +442,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "mixer_param": (0.5, 0.7),  # alpha, beta
                 "base_ctrl_config": {
                     "yaw": {
-                        "pid_param": np.array([0.2, 0.002, 0.008]),
+                        "pid_param": np.array([0.3, 0.003, 0.012]),
                         "d_from_sensor": True,
                     },
                     "alt": {
@@ -602,9 +609,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
         action_reward = self.action_type.action_rew()
 
         bonus_reward = 0
-        if self.config["observation"].get(
-            "enable_next_goal", False
-        ):  # receive next_yaw_rew when dist less than 2*success_threshhold
+        if self.config["observation"].get("enable_next_goal", False):
             dist = np.linalg.norm(
                 obs_info["position"][0:2] - obs_info["goal_dict"]["position"][0:2]
             )
@@ -919,9 +924,11 @@ if __name__ == "__main__":
             "gui": True,
             "enable_meshes": True,
             "auto_start_simulation": auto_start_simulation,
-            "enable_wind": False,
-            "enable_wind_sampling": False,
+            "enable_wind": True,
+            "enable_wind_sampling": True,
             "enable_buoyancy_sampling": False,
+            "wind_speed": 0.0,
+            "wind_direction": (1, 0),
         },
         "observation": {
             "DBG_ROS": False,
