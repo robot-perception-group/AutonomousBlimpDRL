@@ -274,7 +274,7 @@ class ContinuousAction(ROSActionType):
 class SimpleContinuousDifferentialAction(ContinuousAction):
     """simplified action space by binding action that has similar dynamic effect"""
 
-    DIFF_ACT_SCALE = np.array([0.2, 0.2, 0.1, 0.05])
+    DIFF_ACT_SCALE = np.array([0.4, 0.4, 0.1, 0.05])
     ACT_DIM = 4
 
     def __init__(
@@ -348,14 +348,12 @@ class SimpleContinuousDifferentialAction(ContinuousAction):
         cur_act += self.diff_act_scale * action
         cur_act = np.clip(cur_act, -1, 1)
 
-        if cur_act[2] > self.max_servo:  # only allow forward servo
+        if cur_act[2] > self.max_servo:
             cur_act[2] = self.max_servo
         if self.disable_servo:
             cur_act[2] = -1
 
-        cur_act[3] = np.clip(
-            cur_act[3], 0, self.max_thrust
-        )  # only allow foward thrust and 50% max thrust
+        cur_act[3] = np.clip(cur_act[3], 0, self.max_thrust)
 
         return cur_act
 
