@@ -334,14 +334,16 @@ class PIDController:
     def __init__(
         self,
         pid_param=np.array([1.0, 0.2, 0.05]),
+        gain=1.0,
         offset=0.0,
         delta_t=0.01,
         i_from_sensor=False,
         d_from_sensor=False,
     ):
-        self.delta_t = delta_t
         self.pid_param = pid_param
+        self.gain = gain
         self.offset = offset
+        self.delta_t = delta_t
         self.i_from_sensor = i_from_sensor
         self.d_from_sensor = d_from_sensor
 
@@ -358,23 +360,8 @@ class PIDController:
             err_d = (err - self.prev_err) / (self.delta_t)
             self.prev_err = err
 
-        ctrl = np.dot(self.pid_param, np.array([err, err_i, err_d]))
-        # ctrl, self.windup = self.anti_windup(ctrl)
+        ctrl = self.gain * np.dot(self.pid_param, np.array([err, err_i, err_d]))
         return ctrl + self.offset
-
-    def anti_windup(self, control, k_windup=1):
-        """cutoff integrator if windup detected
-
-        Args:
-            control ([float]): [pid output]
-
-        Returns:
-            clipped_control [float]: [clipped pid output]
-            if_windup [bool]: [wind up detected]
-        """
-        clipped_control = np.clip(control, -1, 1)
-        windup = np.clip(np.abs(clipped_control - control), 0, 1) / k_windup
-        return clipped_control, windup
 
     def clear(self):
         self.err_sum, self.prev_err = 0, 0
@@ -412,7 +399,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "max_thrust": 0.5,
             }
         )
-        trigger_dist = 5
+        trigger_dist = 10
         config["target"].update(
             {
                 "type": "MultiGoal",
@@ -442,14 +429,18 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "mixer_param": (0.5, 0.5),  # alpha, beta
                 "base_ctrl_config": {
                     "yaw": {
-                        "pid_param": np.array([0.3, 0.003, 0.012]),
+                        "pid_param": np.array([1.0, 0.01, 0.02]),
+                        "gain": 0.3,
                         "d_from_sensor": True,
                     },
                     "alt": {
-                        "pid_param": np.array([0.2, 0, 1.5]),
+                        "pid_param": np.array([0.5, 0.01, 1.0]),
+                        "gain": 5.0,
+                        "offset": 0,
                     },
                     "vel": {
-                        "pid_param": np.array([0.4, 0, 1.7]),
+                        "pid_param": np.array([0.5, 0.1, 1.0]),
+                        "gain": 5.0,
                     },
                 },
             }
@@ -929,6 +920,7 @@ if __name__ == "__main__":
             "enable_buoyancy_sampling": False,
             "wind_speed": 0.0,
             "wind_direction": (1, 0),
+            "position": (0, 0, 30),  # initial spawned position
         },
         "observation": {
             "DBG_ROS": False,
