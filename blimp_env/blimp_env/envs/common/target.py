@@ -316,7 +316,7 @@ class MultiGoal(TargetType):
         x_range=np.array([-105, 105]),
         y_range=np.array([-105, 105]),
         z_range=np.array([-5, -210]),
-        v_range=np.array([1, 7]),
+        v_range=np.array([1.5, 7]),
     ):
         x = np.random.uniform(*x_range)
         y = np.random.uniform(*y_range)
