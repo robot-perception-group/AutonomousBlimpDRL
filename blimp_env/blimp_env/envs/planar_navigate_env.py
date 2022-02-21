@@ -378,6 +378,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "enable_wind_sampling": True,
                 "wind_speed": 1.0,
                 "enable_buoyancy_sampling": True,
+                "buoyancy_range": [0.9, 1.1],
             }
         )
         config["observation"].update(
@@ -399,7 +400,7 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "max_thrust": 0.5,
             }
         )
-        trigger_dist = 10
+        trigger_dist = 5
         config["target"].update(
             {
                 "type": "MultiGoal",
@@ -429,18 +430,18 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                 "mixer_param": (0.5, 0.5),  # alpha, beta
                 "base_ctrl_config": {
                     "yaw": {
-                        "pid_param": np.array([1.0, 0.01, 0.02]),
+                        "pid_param": np.array([1.0, 0.01, 0.025]),
                         "gain": 0.3,
                         "d_from_sensor": True,
                     },
                     "alt": {
-                        "pid_param": np.array([0.5, 0.01, 1.0]),
-                        "gain": 5.0,
-                        "offset": 0,
+                        "pid_param": np.array([1.0, 0.01, 0.5]),
+                        "gain": 2.0,
+                        "offset": 0.005,
                     },
                     "vel": {
-                        "pid_param": np.array([0.5, 0.1, 1.0]),
-                        "gain": 5.0,
+                        "pid_param": np.array([0.7, 0.01, 0.5]),
+                        "gain": 1.0,
                     },
                 },
             }
@@ -918,23 +919,30 @@ if __name__ == "__main__":
             "enable_wind": True,
             "enable_wind_sampling": True,
             "enable_buoyancy_sampling": False,
-            "wind_speed": 0.0,
+            "wind_speed": 0,
             "wind_direction": (1, 0),
             "position": (0, 0, 30),  # initial spawned position
         },
         "observation": {
             "DBG_ROS": False,
             "DBG_OBS": False,
-            "noise_stdv": 0.0,
+            "noise_stdv": 0.02,
         },
         "action": {
             "DBG_ACT": False,
-            "act_noise_stdv": 0.0,
+            "act_noise_stdv": 0.05,
             "disable_servo": True,
         },
         "target": {
             "DBG_ROS": False,
             "enable_random_goal": False,
+            "trigger_dist": 5,
+            "wp_list": [
+                (40, 40, -30, 3),
+                (40, -40, -30, 3),
+                (-40, -40, -30, 3),
+                (-40, 40, -30, 3),
+            ],
         },
         "mixer_type": "absolute",
         "mixer_param": (0.5, 0),

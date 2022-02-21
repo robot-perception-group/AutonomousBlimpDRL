@@ -164,7 +164,7 @@ class ROSAbstractEnv(AbstractEnv):
                     "maximum_local_worker": 8,
                     "enable_wind": False,
                     "enable_wind_sampling": False,  # sample random wind speed and direction
-                    "wind_speed": 2.0,  # initial wind speed
+                    "wind_speed": 1.5,  # initial wind speed
                     "wind_direction": (1, 0),  # initial wind in x and y direction
                     "position": (0, 0, 100),  # initial spawned position
                 },
