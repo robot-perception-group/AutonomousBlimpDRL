@@ -1,7 +1,8 @@
 import os
 
-# import pickle5 as pickle
-import pickle
+import pickle5 as pickle
+
+# import pickle
 import json
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.planar_navigate_env import Observation
@@ -20,9 +21,17 @@ train_iter = 1e20
 run_pid = False
 
 checkpoint_path = os.path.expanduser(
-    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/"
+    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_000500/"
 )
 
+
+trigger_dist = 7
+wp_list = [
+    (40, 40, -30, 3),
+    (40, -40, -30, 3),
+    (-40, -40, -30, 3),
+    (-40, 40, -30, 3),
+]
 ###########################################
 
 ENV = ResidualPlanarNavigateEnv
@@ -49,7 +58,6 @@ else:
     beta = 0.5
     disable_servo = False
 
-trigger_dist = 5
 
 env_config = config["env_config"]
 env_config.update(
@@ -61,7 +69,7 @@ env_config.update(
         "seed": 123,
         "duration": duration,
         "beta": beta,
-        "reward_weights": np.array([0, 0.9, 0.1]),
+        # "reward_weights": np.array([100, 0.9, 0.1, 0.1]),
         "success_threshhold": trigger_dist,  # [meters]
     }
 )
@@ -93,12 +101,6 @@ env_config["action"].update(
     }
 )
 
-wp_list = [
-    (40, 40, -30, 3),
-    (40, -40, -30, 3),
-    (-40, -40, -30, 3),
-    (-40, 40, -30, 3),
-]
 target_dict = {
     "type": "MultiGoal",  # InteractiveGoal
     "target_name_space": "goal_",
