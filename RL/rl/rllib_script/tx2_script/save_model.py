@@ -8,7 +8,7 @@ from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 import inspect
 
 checkpoint_path = os.path.expanduser(
-    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_000500/checkpoint-500"
+    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_75b5a_00000_0_2022-02-21_17-15-18/checkpoint_000500/checkpoint-500"
 )
 
 
