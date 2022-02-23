@@ -37,6 +37,14 @@ weights = worker["state"]["default_policy"]["weights"]
 observation_space = worker["policy_specs"]["default_policy"][1]
 action_space = worker["policy_specs"]["default_policy"][2]
 
+
+###tmp
+weights["lstm.weight_ih_l0"] = weights.pop("rnn.weight_ih_l0")
+weights["lstm.weight_hh_l0"] = weights.pop("rnn.weight_hh_l0")
+weights["lstm.bias_ih_l0"] = weights.pop("rnn.bias_ih_l0")
+weights["lstm.bias_hh_l0"] = weights.pop("rnn.bias_hh_l0")
+###
+
 to_pickle = {
     "weights": weights,
     "observation_space": observation_space,
@@ -59,13 +67,6 @@ weights = loaded["weights"]
 observation_space = loaded["observation_space"]
 action_space = loaded["action_space"]
 
-
-###tmp
-weights["lstm.weight_ih_l0"] = weights.pop("rnn.weight_ih_l0")
-weights["lstm.weight_hh_l0"] = weights.pop("rnn.weight_hh_l0")
-weights["lstm.bias_ih_l0"] = weights.pop("rnn.bias_ih_l0")
-weights["lstm.bias_hh_l0"] = weights.pop("rnn.bias_hh_l0")
-###
 
 ########################################### save config
 myconfig = {}
