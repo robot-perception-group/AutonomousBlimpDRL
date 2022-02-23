@@ -15,7 +15,7 @@ from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 robot_id = "1"
 simulation_mode = False  # if realworld exp or simulation
 auto_start_simulation = False  # start simulation
-online_training = False  # if training during test
+online_training = False  # if training during test, currently disabled because cannot install ray on tx2
 duration = 1e20
 train_iter = 1e20
 run_pid = False
