@@ -145,7 +145,6 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
             "lstm_use_prev_reward", True
         )
 
-        # self.action_space_struct = get_base_struct_from_space(self.action_space)
         self.action_space_struct = get_base_struct_from_space(action_space)
         self.action_dim = 0
 
@@ -172,7 +171,7 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
             output_init_weights=1e-12,
             sizes=hidden_sizes,
         )
-        self.rnn = nn.LSTM(
+        self.lstm = nn.LSTM(
             lstm_input_size, self.cell_size, batch_first=not self.time_major
         )
         self._logits_branch = SlimFC(
@@ -285,7 +284,7 @@ class TorchBatchNormRNNModel(TorchRNN, nn.Module):
             NN Outputs (B x T x ...) as sequence.
             The state batches as a List of two items (c- and h-states).
         """
-        self._features, [h, c] = self.rnn(
+        self._features, [h, c] = self.lstm(
             inputs, [torch.unsqueeze(state[0], 0), torch.unsqueeze(state[1], 0)]
         )
         logits = self._logits_branch(self._features)

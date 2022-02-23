@@ -8,7 +8,7 @@ from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 import inspect
 
 checkpoint_path = os.path.expanduser(
-    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_ab21c_00000_0_2022-02-07_14-55-55/checkpoint_000772/checkpoint-772"
+    "/home/yliu2/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_000500/checkpoint-500"
 )
 
 
@@ -59,6 +59,14 @@ weights = loaded["weights"]
 observation_space = loaded["observation_space"]
 action_space = loaded["action_space"]
 
+
+###tmp
+weights["lstm.weight_ih_l0"] = weights.pop("rnn.weight_ih_l0")
+weights["lstm.weight_hh_l0"] = weights.pop("rnn.weight_hh_l0")
+weights["lstm.bias_ih_l0"] = weights.pop("rnn.bias_ih_l0")
+weights["lstm.bias_hh_l0"] = weights.pop("rnn.bias_hh_l0")
+###
+
 ########################################### save config
 myconfig = {}
 for k, v in config.items():
@@ -66,13 +74,6 @@ for k, v in config.items():
         # save the parameter if it is not a (ray) object
         myconfig[k] = config[k]
 
-# myconfig = {
-#     "env_config": config["env_config"],
-#     "model": config["model"],
-#     "normalize_actions": config["normalize_actions"],
-#     "clip_actions": config["clip_actions"],
-#     "explore": config["explore"],
-# }
 
 file_to_store = open(
     os.path.join(checkpoint_base_dir, "myconfig.pickle"),
