@@ -87,19 +87,25 @@ env_config["simulation"].update(
         "position": (0, 0, 50),
     }
 )
-env_config["observation"].update(
-    {
-        "noise_stdv": 0.0 if not simulation_mode else 0.02,
-    }
-)
-env_config["action"].update(
-    {
-        "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
-        "disable_servo": disable_servo,
-        # "max_servo": -0.5,
-        # "max_thrust": 0.5,
-    }
-)
+
+obs_dict = {
+    "noise_stdv": 0.0 if not simulation_mode else 0.02,
+}
+if "observation" in env_config:
+    env_config["observation"].update(obs_dict)
+else:
+    env_config["observation"] = obs_dict
+
+act_dict = {
+    "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
+    "disable_servo": disable_servo,
+    # "max_servo": -0.5,
+    # "max_thrust": 0.5,
+}
+if "action" in env_config:
+    env_config["action"].update(act_dict)
+else:
+    env_config["action"] = act_dict
 
 target_dict = {
     "type": "MultiGoal",  # InteractiveGoal
