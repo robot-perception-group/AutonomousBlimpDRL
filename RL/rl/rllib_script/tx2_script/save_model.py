@@ -8,7 +8,7 @@ from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 import inspect
 
 checkpoint_path = os.path.expanduser(
-    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_75b5a_00000_0_2022-02-21_17-15-18/checkpoint_000500/checkpoint-500"
+    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_75b5a_00000_0_2022-02-21_17-15-18/checkpoint_001080/checkpoint-1080"
 )
 
 
@@ -39,10 +39,10 @@ action_space = worker["policy_specs"]["default_policy"][2]
 
 
 ###tmp
-weights["lstm.weight_ih_l0"] = weights.pop("rnn.weight_ih_l0")
-weights["lstm.weight_hh_l0"] = weights.pop("rnn.weight_hh_l0")
-weights["lstm.bias_ih_l0"] = weights.pop("rnn.bias_ih_l0")
-weights["lstm.bias_hh_l0"] = weights.pop("rnn.bias_hh_l0")
+# weights["lstm.weight_ih_l0"] = weights.pop("rnn.weight_ih_l0")
+# weights["lstm.weight_hh_l0"] = weights.pop("rnn.weight_hh_l0")
+# weights["lstm.bias_ih_l0"] = weights.pop("rnn.bias_ih_l0")
+# weights["lstm.bias_hh_l0"] = weights.pop("rnn.bias_hh_l0")
 ###
 
 to_pickle = {

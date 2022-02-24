@@ -15,7 +15,7 @@ checkpoint_path = os.path.expanduser(
 )
 
 robot_id = "0"
-auto_start_simulation = True  # start simulation
+auto_start_simulation = False  # start simulation
 duration = int()
 run_pid = False
 
@@ -36,7 +36,6 @@ config_path = os.path.join(run_base_dir, "params.pkl")
 with open(config_path, "rb") as f:
     config = pickle.load(f)
 
-
 if run_pid:
     beta = 0.0
     disable_servo = True
@@ -56,7 +55,6 @@ env_config.update(
         "seed": 123,
         "duration": duration,
         "beta": beta,
-        "reward_weights": np.array([100, 0.9, 0.1, 0.1]),
         "success_threshhold": trigger_dist,  # [meters]
     }
 )
@@ -170,6 +168,7 @@ if online_training:
         print(pretty_print(result))
         if result["timesteps_total"] >= duration:
             break
+    print("done")
 else:
     config.update(
         {
