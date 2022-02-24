@@ -10,18 +10,22 @@ from blimp_env.envs.script import close_simulation, spawn_simulation_on_differen
 from ray.rllib.agents import ppo
 from ray.tune.logger import pretty_print
 
+checkpoint_path = os.path.expanduser(
+    "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_001080/checkpoint-1080"
+)
 
 robot_id = "0"
-simulation_mode = False  # if realworld exp or simulation
-auto_start_simulation = False  # start simulation
-online_training = True  # if training during test
-duration = 1e20
-train_iter = 1e20
+auto_start_simulation = True  # start simulation
+duration = int()
 run_pid = False
 
-checkpoint_path = os.path.expanduser(
-    "~/ray_results/ResidualPlanarNavigateEnv_PPO_disturbed_lstm_multidependentgoal/PPO_ResidualPlanarNavigateEnv_16d2f_00000_0_2022-02-14_15-26-25/checkpoint_001000/checkpoint-1000"
-)
+traj = "coil"
+
+num_workers = 2
+evaluation_mode = False
+
+online_training = True  # if training during test
+train_ts = duration
 
 ###########################################
 
@@ -32,9 +36,6 @@ config_path = os.path.join(run_base_dir, "params.pkl")
 with open(config_path, "rb") as f:
     config = pickle.load(f)
 
-# in real world experiment "auto_start_simulation" should always be false
-if not simulation_mode:
-    auto_start_simulation = False
 
 if run_pid:
     beta = 0.0
@@ -50,8 +51,8 @@ env_config.update(
     {
         "robot_id": robot_id,
         "DBG": False,
-        "evaluation_mode": True,
-        "real_experiment": not simulation_mode,
+        "evaluation_mode": evaluation_mode,
+        "real_experiment": False,
         "seed": 123,
         "duration": duration,
         "beta": beta,
@@ -70,24 +71,24 @@ env_config["simulation"].update(
         "wind_speed": 0.0,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
-        "position": (0, 0, 50),
+        "position": (0, 0, 40),
     }
 )
 if "observation" in env_config:
     env_config["observation"].update(
         {
-            "noise_stdv": 0.0 if not simulation_mode else 0.0,
+            "noise_stdv": 0.2,
         }
     )
 else:
     env_config["observation"] = {
-        "noise_stdv": 0.0 if not simulation_mode else 0.0,
+        "noise_stdv": 0.2,
     }
 
 if "action" in env_config:
     env_config["action"].update(
         {
-            "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
+            "act_noise_stdv": 0.5,
             "disable_servo": disable_servo,
             # "max_servo": -0.5,
             # "max_thrust": 0.5,
@@ -95,19 +96,36 @@ if "action" in env_config:
     )
 else:
     env_config["action"] = {
-        "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
+        "act_noise_stdv": 0.5,
         "disable_servo": disable_servo,
         # "max_servo": -0.5,
         # "max_thrust": 0.5,
     }
 
 
-wp_list = [
-    (40, 40, -30, 5),
-    (40, -40, -30, 5),
-    (-40, -40, -30, 5),
-    (-40, 40, -30, 5),
+def generate_coil(points, radius):
+    li = []
+    nwp_layer = 8
+    for i in range(points):
+        x = radius * np.sin(i * 2 * np.pi / nwp_layer)
+        y = radius * np.cos(i * 2 * np.pi / nwp_layer)
+        wp = (x, y, -40 - 2 * i, 3)
+        li.append(wp)
+    return li
+
+
+coil = generate_coil(8 * 5, 40)
+square = [
+    (30, 30, -50, 3),
+    (30, -30, -50, 4),
+    (-30, -30, -50, 3),
+    (-30, 30, -50, 4),
 ]
+
+if traj == "coil":
+    wp_list = coil
+elif traj == "square":
+    wp_list = square
 target_dict = {
     "type": "MultiGoal",  # InteractiveGoal
     "target_name_space": "goal_",
@@ -129,7 +147,7 @@ if online_training:
     config.update(
         {
             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
-            "num_workers": 0,
+            "num_workers": num_workers,
             "num_gpus": 1,
             "explore": True,
             "env_config": env_config,
@@ -147,7 +165,7 @@ if online_training:
     ray.init()
     agent = ppo.PPOTrainer(config=config, env=ENV)
     agent.restore(checkpoint_path)
-    for _ in range(int(train_iter)):
+    for _ in range(int(duration)):
         result = agent.train()
         print(pretty_print(result))
         if result["timesteps_total"] >= duration:
@@ -156,7 +174,7 @@ else:
     config.update(
         {
             "create_env_on_driver": True,  # Make sure worker 0 has an Env.
-            "num_workers": 0,
+            "num_workers": num_workers,
             "num_gpus": 1,
             "horizon": duration,
             "rollout_fragment_length": duration,
