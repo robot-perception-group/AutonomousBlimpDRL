@@ -9,23 +9,26 @@ from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 from ray.rllib.agents import ppo
 from ray.tune.logger import pretty_print
+from blimp_env.envs.common.gazebo_connection import GazeboConnection
 
 checkpoint_path = os.path.expanduser(
     "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_001080/checkpoint-1080"
 )
 
 robot_id = "0"
-auto_start_simulation = False  # start simulation
-duration = int()
+auto_start_simulation = True  # start simulation
+# duration = int(0.5 * 3600 * 10) + 24193600
+duration = 1e20
 run_pid = False
 
-traj = "coil"
+traj = "square"  # square
 
-num_workers = 2
-evaluation_mode = False
+num_workers = 1
 
+real_experiment = False  # no reset
+evaluation_mode = False  # fix robotid, don't support multiworker
 online_training = True  # if training during test
-train_ts = duration
+trigger_dist = 7
 
 ###########################################
 
@@ -43,7 +46,6 @@ else:
     beta = 0.5
     disable_servo = False
 
-trigger_dist = 5
 
 env_config = config["env_config"]
 env_config.update(
@@ -51,7 +53,7 @@ env_config.update(
         "robot_id": robot_id,
         "DBG": False,
         "evaluation_mode": evaluation_mode,
-        "real_experiment": False,
+        "real_experiment": online_training,
         "seed": 123,
         "duration": duration,
         "beta": beta,
@@ -61,12 +63,12 @@ env_config.update(
 env_config["simulation"].update(
     {
         "robot_id": int(robot_id),
-        "gui": True,
+        "gui": False,
         "auto_start_simulation": auto_start_simulation,
         "enable_meshes": True,
         "enable_wind": True,
-        "enable_wind_sampling": True,
-        "wind_speed": 0.0,
+        "enable_wind_sampling": False,
+        "wind_speed": 0.5,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, 40),
@@ -112,7 +114,7 @@ def generate_coil(points, radius):
     return li
 
 
-coil = generate_coil(8 * 5, 40)
+coil = generate_coil(8 * 5, 30)
 square = [
     (30, 30, -50, 3),
     (30, -30, -50, 4),
@@ -127,7 +129,7 @@ elif traj == "square":
 target_dict = {
     "type": "MultiGoal",  # InteractiveGoal
     "target_name_space": "goal_",
-    "trigger_dist": 5,
+    "trigger_dist": trigger_dist,
     "wp_list": wp_list,
     "enable_random_goal": False,
 }
@@ -136,18 +138,15 @@ if "target" in env_config:
 else:
     env_config["target"] = target_dict
 
-if auto_start_simulation:
-    close_simulation()
-    spawn_simulation_on_different_port(**env_config["simulation"])
-
-env_config["simulation"]["auto_start_simulation"] = False
 if online_training:
+    if auto_start_simulation:
+        close_simulation()
     config.update(
         {
             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
             "num_workers": num_workers,
             "num_gpus": 1,
-            "explore": True,
+            "explore": False,
             "env_config": env_config,
             "horizon": 400,
             "rollout_fragment_length": 400,
@@ -163,6 +162,10 @@ if online_training:
     ray.init()
     agent = ppo.PPOTrainer(config=config, env=ENV)
     agent.restore(checkpoint_path)
+    gaz = GazeboConnection()
+    gaz.pause_sim()
+    gaz.reset_sim()
+    gaz.unpause_sim()
     for _ in range(int(duration)):
         result = agent.train()
         print(pretty_print(result))
@@ -170,9 +173,12 @@ if online_training:
             break
     print("done")
 else:
+    if auto_start_simulation:
+        close_simulation()
+        env = ENV(**env_config["simulation"])
     config.update(
         {
-            "create_env_on_driver": True,  # Make sure worker 0 has an Env.
+            "create_env_on_driver": False,  # Make sure worker 0 has an Env.
             "num_workers": num_workers,
             "num_gpus": 1,
             "horizon": duration,
@@ -193,9 +199,11 @@ else:
     state = [np.zeros(cell_size, np.float32), np.zeros(cell_size, np.float32)]
     prev_action = np.zeros(4)
     prev_reward = np.zeros(1)
-    env = agent.workers.local_worker().env
 
-    obs = env.reset()
+    gaz = GazeboConnection()
+    gaz.pause_sim()
+    gaz.reset_sim()
+    gaz.unpause_sim()
     for steps in range(n_steps):
         action, state, _ = agent.compute_single_action(
             obs,
