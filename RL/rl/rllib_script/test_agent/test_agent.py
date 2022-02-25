@@ -3,7 +3,7 @@ import pickle
 
 import numpy as np
 import ray
-
+import sys
 import rl.rllib_script.agent.model.ray_model
 from blimp_env.envs import ResidualPlanarNavigateEnv
 from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
@@ -16,18 +16,19 @@ checkpoint_path = os.path.expanduser(
 )
 
 robot_id = "0"
-auto_start_simulation = True  # start simulation
-# duration = int(0.5 * 3600 * 10) + 24193600
-duration = 1e20
+auto_start_simulation = sys.argv  # start simulation
+duration = int(0.5 * 3600 * 10) + 24193600
+# duration = 1e20
 run_pid = False
 
-traj = "square"  # square
 
-num_workers = 1
+num_workers = 7
 
-real_experiment = False  # no reset
+real_experiment = True  # no reset
 evaluation_mode = False  # fix robotid, don't support multiworker
-online_training = True  # if training during test
+online_training = False  # if training during test
+
+traj = "square"  # square, coil
 trigger_dist = 7
 
 ###########################################
@@ -53,7 +54,7 @@ env_config.update(
         "robot_id": robot_id,
         "DBG": False,
         "evaluation_mode": evaluation_mode,
-        "real_experiment": online_training,
+        "real_experiment": real_experiment,
         "seed": 123,
         "duration": duration,
         "beta": beta,
@@ -67,7 +68,7 @@ env_config["simulation"].update(
         "auto_start_simulation": auto_start_simulation,
         "enable_meshes": True,
         "enable_wind": True,
-        "enable_wind_sampling": False,
+        "enable_wind_sampling": True,
         "wind_speed": 0.5,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
@@ -77,18 +78,18 @@ env_config["simulation"].update(
 if "observation" in env_config:
     env_config["observation"].update(
         {
-            "noise_stdv": 0.2,
+            "noise_stdv": 0.1,
         }
     )
 else:
     env_config["observation"] = {
-        "noise_stdv": 0.2,
+        "noise_stdv": 0.1,
     }
 
 if "action" in env_config:
     env_config["action"].update(
         {
-            "act_noise_stdv": 0.5,
+            "act_noise_stdv": 0.25,
             "disable_servo": disable_servo,
             # "max_servo": -0.5,
             # "max_thrust": 0.5,
@@ -96,7 +97,7 @@ if "action" in env_config:
     )
 else:
     env_config["action"] = {
-        "act_noise_stdv": 0.5,
+        "act_noise_stdv": 0.25,
         "disable_servo": disable_servo,
         # "max_servo": -0.5,
         # "max_thrust": 0.5,
@@ -116,10 +117,10 @@ def generate_coil(points, radius):
 
 coil = generate_coil(8 * 5, 30)
 square = [
-    (30, 30, -50, 3),
-    (30, -30, -50, 4),
-    (-30, -30, -50, 3),
-    (-30, 30, -50, 4),
+    (20, 20, -50, 3),
+    (20, -20, -50, 3),
+    (-20, -20, -50, 3),
+    (-20, 20, -50, 3),
 ]
 
 if traj == "coil":
@@ -138,9 +139,11 @@ if "target" in env_config:
 else:
     env_config["target"] = target_dict
 
+# if auto_start_simulation:
+#     close_simulation()
+
+
 if online_training:
-    if auto_start_simulation:
-        close_simulation()
     config.update(
         {
             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
@@ -150,75 +153,92 @@ if online_training:
             "env_config": env_config,
             "horizon": 400,
             "rollout_fragment_length": 400,
-            "train_batch_size": 1600,
-            "sgd_minibatch_size": 128,
+            "train_batch_size": 4000,
+            "sgd_minibatch_size": 256,
             "lr": 5e-4,
             "lr_schedule": None,
             "num_sgd_iter": 16,
         }
     )
-    print(config)
-    ray.shutdown()
-    ray.init()
-    agent = ppo.PPOTrainer(config=config, env=ENV)
-    agent.restore(checkpoint_path)
-    gaz = GazeboConnection()
-    gaz.pause_sim()
-    gaz.reset_sim()
-    gaz.unpause_sim()
-    for _ in range(int(duration)):
-        result = agent.train()
-        print(pretty_print(result))
-        if result["timesteps_total"] >= duration:
-            break
-    print("done")
 else:
-    if auto_start_simulation:
-        close_simulation()
-        env = ENV(**env_config["simulation"])
     config.update(
         {
             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
             "num_workers": num_workers,
             "num_gpus": 1,
-            "horizon": duration,
-            "rollout_fragment_length": duration,
             "explore": False,
             "env_config": env_config,
+            "horizon": 400,
+            "rollout_fragment_length": 400,
+            "train_batch_size": 4000,
+            "sgd_minibatch_size": 256,
+            "lr": 0,
+            "lr_schedule": None,
+            "num_sgd_iter": 0,
         }
     )
-    print(config)
-    ray.shutdown()
-    ray.init()  # local_mode: single thread
-    agent = ppo.PPOTrainer(config=config, env=ENV)
-    agent.restore(checkpoint_path)
 
-    n_steps = int(duration)
-    total_reward = 0
-    cell_size = config["model"]["custom_model_config"].get("lstm_cell_size", 64)
-    state = [np.zeros(cell_size, np.float32), np.zeros(cell_size, np.float32)]
-    prev_action = np.zeros(4)
-    prev_reward = np.zeros(1)
+print(config)
+ray.shutdown()
+ray.init()
+agent = ppo.PPOTrainer(config=config, env=ENV)
+agent.restore(checkpoint_path)
+gaz = GazeboConnection()
+gaz.pause_sim()
+gaz.reset_sim()
+gaz.unpause_sim()
+for _ in range(int(duration)):
+    result = agent.train()
+    print(pretty_print(result))
+    if result["timesteps_total"] >= duration:
+        break
+print("done")
 
-    gaz = GazeboConnection()
-    gaz.pause_sim()
-    gaz.reset_sim()
-    gaz.unpause_sim()
-    for steps in range(n_steps):
-        action, state, _ = agent.compute_single_action(
-            obs,
-            state=state,
-            prev_action=prev_action,
-            prev_reward=prev_reward,
-        )
-        obs, reward, done, info = env.step(action)
-        prev_action = action
-        prev_reward = reward
-        total_reward += reward
 
-        if steps % 20 == 0:
-            print(
-                f"Steps #{steps} Total Reward: {total_reward}, Average Reward: {total_reward/(steps+1)}"
-            )
-            print(f"Steps #{steps} Action: {action}")
-            print(f"Steps #{steps} Observation: {obs}")
+# else:
+#     config.update(
+#         {
+#             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
+#             "num_workers": num_workers,
+#             "num_gpus": 1,
+#             "horizon": duration,
+#             "rollout_fragment_length": duration,
+#             "explore": False,
+#             "env_config": env_config,
+#         }
+#     )
+#     print(config)
+#     ray.shutdown()
+#     ray.init()  # local_mode: single thread
+#     agent = ppo.PPOTrainer(config=config, env=ENV)
+#     agent.restore(checkpoint_path)
+
+#     n_steps = int(duration)
+#     total_reward = 0
+#     cell_size = config["model"]["custom_model_config"].get("lstm_cell_size", 64)
+#     state = [np.zeros(cell_size, np.float32), np.zeros(cell_size, np.float32)]
+#     prev_action = np.zeros(4)
+#     prev_reward = np.zeros(1)
+
+#     gaz = GazeboConnection()
+#     gaz.pause_sim()
+#     gaz.reset_sim()
+#     gaz.unpause_sim()
+#     for steps in range(n_steps):
+#         action, state, _ = agent.compute_single_action(
+#             obs,
+#             state=state,
+#             prev_action=prev_action,
+#             prev_reward=prev_reward,
+#         )
+#         obs, reward, done, info = env.step(action)
+#         prev_action = action
+#         prev_reward = reward
+#         total_reward += reward
+
+#         if steps % 20 == 0:
+#             print(
+#                 f"Steps #{steps} Total Reward: {total_reward}, Average Reward: {total_reward/(steps+1)}"
+#             )
+#             print(f"Steps #{steps} Action: {action}")
+#             print(f"Steps #{steps} Observation: {obs}")
