@@ -139,9 +139,6 @@ if "target" in env_config:
 else:
     env_config["target"] = target_dict
 
-# if auto_start_simulation:
-#     close_simulation()
-
 
 if online_training:
     config.update(
