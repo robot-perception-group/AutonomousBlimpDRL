@@ -100,7 +100,7 @@ act_dict = {
     "act_noise_stdv": 0.0 if not simulation_mode else 0.0,
     "disable_servo": disable_servo,
     # "max_servo": -0.5,
-    # "max_thrust": 0.5,
+    "max_thrust": 0.35,
 }
 if "action" in env_config:
     env_config["action"].update(act_dict)
