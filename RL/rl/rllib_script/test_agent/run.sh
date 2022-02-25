@@ -14,8 +14,8 @@ fi
 
 echo "start test agent"
 screen -d -m -S TestAgent screen bash -c "\
-    source ~/catkin_ws/devel/setup.bash;\
-	python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/test_agent/test_agent.py $auto_start_simulation;"
+  source ~/catkin_ws/devel/setup.bash;\
+  python3 $script_full_path/test_agent.py $auto_start_simulation;"
 
 
 echo "wait for environment to wake up"
