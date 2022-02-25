@@ -21,7 +21,7 @@ train_iter = 1e20
 run_pid = False
 
 checkpoint_path = os.path.expanduser(
-    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_000500/"
+    "~/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_001080/"
 )
 
 
