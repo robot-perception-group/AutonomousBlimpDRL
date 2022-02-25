@@ -16,7 +16,7 @@ checkpoint_path = os.path.expanduser(
 )
 
 robot_id = "0"
-auto_start_simulation = sys.argv  # start simulation
+auto_start_simulation = bool(sys.argv[1])  # start simulation
 duration = int(0.5 * 3600 * 10) + 24193600
 # duration = 1e20
 run_pid = False
@@ -72,7 +72,7 @@ env_config["simulation"].update(
         "wind_speed": 0.5,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
-        "position": (0, 0, 40),
+        "position": (0, 0, 100),
     }
 )
 if "observation" in env_config:
@@ -117,10 +117,10 @@ def generate_coil(points, radius):
 
 coil = generate_coil(8 * 5, 30)
 square = [
-    (20, 20, -50, 3),
-    (20, -20, -50, 3),
-    (-20, -20, -50, 3),
-    (-20, 20, -50, 3),
+    (20, 20, -100, 3),
+    (20, -20, -100, 3),
+    (-20, -20, -100, 3),
+    (-20, 20, -100, 3),
 ]
 
 if traj == "coil":
@@ -180,10 +180,6 @@ ray.shutdown()
 ray.init()
 agent = ppo.PPOTrainer(config=config, env=ENV)
 agent.restore(checkpoint_path)
-gaz = GazeboConnection()
-gaz.pause_sim()
-gaz.reset_sim()
-gaz.unpause_sim()
 for _ in range(int(duration)):
     result = agent.train()
     print(pretty_print(result))
