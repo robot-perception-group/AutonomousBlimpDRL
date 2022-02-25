@@ -3,9 +3,12 @@
 expname=$1
 auto_start_simulation=$2
 
+script_full_path=$(dirname "$0")
+
+
 if [[ $auto_start_simulation -eq 1 ]] 
 then
-  bash ./cleanup.sh
+  bash $script_full_path/cleanup.sh
 fi
 
 
@@ -19,10 +22,10 @@ echo "wait for environment to wake up"
 sleep 280;
 
 echo "start recording"
-screen -d -m -S RECORD bash -i ./start_parallel_record.sh "$expname"
+screen -d -m -S RECORD bash -i $script_full_path/start_parallel_record.sh "$expname"
 
 echo "record experiment for 30min"
 sleep 18000; 
 
 echo "finish recording"
-screen -d -m -S RECORD bash -i ./killbag.sh 
+screen -d -m -S RECORD bash -i $script_full_path/killbag.sh 
