@@ -28,7 +28,7 @@ real_experiment = True  # no reset
 evaluation_mode = False  # fix robotid, don't support multiworker
 online_training = False  # if training during test
 
-traj = "square"  # square, coil
+traj = "coil"  # square, coil
 trigger_dist = 7
 
 ###########################################
@@ -61,6 +61,7 @@ env_config.update(
         "success_threshhold": trigger_dist,  # [meters]
     }
 )
+init_alt = 100
 env_config["simulation"].update(
     {
         "robot_id": int(robot_id),
@@ -72,7 +73,7 @@ env_config["simulation"].update(
         "wind_speed": 0.5,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
-        "position": (0, 0, 100),
+        "position": (0, 0, init_alt),
     }
 )
 if "observation" in env_config:
@@ -104,18 +105,18 @@ else:
     }
 
 
-def generate_coil(points, radius):
+def generate_coil(points, radius, speed=4):
     li = []
     nwp_layer = 8
     for i in range(points):
         x = radius * np.sin(i * 2 * np.pi / nwp_layer)
         y = radius * np.cos(i * 2 * np.pi / nwp_layer)
-        wp = (x, y, -40 - 2 * i, 3)
+        wp = (x, y, -init_alt - 2 * i, speed)
         li.append(wp)
     return li
 
 
-coil = generate_coil(8 * 5, 30)
+coil = generate_coil(8 * 2 - 1, 30)
 square = [
     (20, 20, -100, 3),
     (20, -20, -100, 3),
@@ -171,7 +172,7 @@ else:
             "sgd_minibatch_size": 256,
             "lr": 0,
             "lr_schedule": None,
-            "num_sgd_iter": 0,
+            "num_sgd_iter": 16,
         }
     )
 
