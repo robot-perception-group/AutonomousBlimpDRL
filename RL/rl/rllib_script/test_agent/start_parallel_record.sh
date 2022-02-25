@@ -1,6 +1,6 @@
 #/bin/bash
 
-LOGDIR=${HOME}/ray_results/parallel_record/rosbag
+LOGDIR=${HOME}/ray_results/Robustness/rosbag
 FLIGHTNAME=$1
 SDATE=$( date "+%Y-%m-%d_%T" )
 HOSTNAME=$( hostname )
