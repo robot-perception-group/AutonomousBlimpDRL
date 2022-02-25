@@ -105,7 +105,7 @@ else:
     }
 
 
-def generate_coil(points, radius, speed=4):
+def generate_coil(points, radius, speed=5):
     li = []
     nwp_layer = 8
     for i in range(points):
@@ -118,10 +118,10 @@ def generate_coil(points, radius, speed=4):
 
 coil = generate_coil(8 * 2 - 1, 30)
 square = [
-    (20, 20, -100, 3),
-    (20, -20, -100, 3),
-    (-20, -20, -100, 3),
-    (-20, 20, -100, 3),
+    (20, 20, -init_alt, 5),
+    (20, -20, -init_alt, 5),
+    (-20, -20, -init_alt, 5),
+    (-20, 20, -init_alt, 5),
 ]
 
 if traj == "coil":
