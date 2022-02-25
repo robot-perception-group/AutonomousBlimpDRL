@@ -14,7 +14,6 @@ from rl.rllib_script.agent.torch_policy import MyTorchPolicy, ppo_surrogate_loss
 
 robot_id = "1"
 simulation_mode = False  # if realworld exp or simulation
-auto_start_simulation = False  # start simulation
 online_training = False  # if training during test, currently disabled because cannot install ray on tx2
 duration = 1e20
 train_iter = 1e20
@@ -47,10 +46,6 @@ myconfig_path = os.path.join(checkpoint_base_dir, "myconfig.pickle")
 with open(myconfig_path, "rb") as fh:
     config = pickle.load(fh)
 
-# in real world experiment "auto_start_simulation" should always be false
-if not simulation_mode:
-    auto_start_simulation = False
-
 if run_pid:
     beta = 0.0
     disable_servo = True
@@ -76,15 +71,6 @@ env_config.update(
 env_config["simulation"].update(
     {
         "robot_id": int(robot_id),
-        "gui": True,
-        "auto_start_simulation": auto_start_simulation,
-        "enable_meshes": True,
-        "enable_wind": True,
-        "enable_wind_sampling": False,
-        "wind_speed": 1.3,
-        "wind_direction": (1, 0),
-        "enable_buoyancy_sampling": False,
-        "position": (0, 0, 50),
     }
 )
 
@@ -118,10 +104,6 @@ if "target" in env_config:
     env_config["target"].update(target_dict)
 else:
     env_config["target"] = target_dict
-
-if auto_start_simulation:
-    close_simulation()
-    spawn_simulation_on_different_port(**env_config["simulation"])
 
 
 ###########################################
