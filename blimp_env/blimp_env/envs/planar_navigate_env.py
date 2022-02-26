@@ -434,15 +434,10 @@ class ResidualPlanarNavigateEnv(PlanarNavigateEnv):
                         "gain": 0.3,
                         "d_from_sensor": True,
                     },
-                    # "alt": {
-                    #     "pid_param": np.array([1.0, 0.01, 0.5]),
-                    #     "gain": 2.0,
-                    #     "offset": 0.005,
-                    # },
                     "alt": {
-                        "pid_param": np.array([1.0, 0.0, 0.0]),
+                        "pid_param": np.array([1.0, 0.01, 0.5]),
                         "gain": 2.0,
-                        "offset": 0.0,
+                        "offset": 0.005,
                     },
                     "vel": {
                         "pid_param": np.array([0.7, 0.01, 0.5]),
