@@ -70,7 +70,7 @@ env_config["simulation"].update(
         "enable_meshes": True,
         "enable_wind": True,
         "enable_wind_sampling": True,
-        "wind_speed": 0.5,
+        "wind_speed": 0.0,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, init_alt),
