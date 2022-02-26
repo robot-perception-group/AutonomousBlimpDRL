@@ -29,6 +29,8 @@ evaluation_mode = False  # fix robotid, don't support multiworker
 online_training = False  # if training during test
 
 traj = "square"  # square, coil
+windspeed = 0
+
 trigger_dist = 7
 init_alt = 100
 
@@ -70,7 +72,7 @@ env_config["simulation"].update(
         "enable_meshes": True,
         "enable_wind": True,
         "enable_wind_sampling": True,
-        "wind_speed": 0.0,
+        "wind_speed": windspeed,
         "wind_direction": (1, 0),
         "enable_buoyancy_sampling": False,
         "position": (0, 0, init_alt),
