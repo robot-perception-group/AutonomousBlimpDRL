@@ -30,6 +30,7 @@ online_training = False  # if training during test
 
 traj = "square"  # square, coil
 trigger_dist = 7
+init_alt = 100
 
 ###########################################
 
@@ -61,7 +62,6 @@ env_config.update(
         "success_threshhold": trigger_dist,  # [meters]
     }
 )
-init_alt = 100
 env_config["simulation"].update(
     {
         "robot_id": int(robot_id),
@@ -93,7 +93,7 @@ if "action" in env_config:
             "act_noise_stdv": 0.25,
             "disable_servo": disable_servo,
             # "max_servo": -0.5,
-            # "max_thrust": 0.5,
+            "max_thrust": 0.5,
         }
     )
 else:
@@ -101,7 +101,7 @@ else:
         "act_noise_stdv": 0.25,
         "disable_servo": disable_servo,
         # "max_servo": -0.5,
-        # "max_thrust": 0.5,
+        "max_thrust": 0.7,
     }
 
 
@@ -118,10 +118,10 @@ def generate_coil(points, radius, speed=5):
 
 coil = generate_coil(8 * 2 - 1, 30)
 square = [
-    (20, 20, -init_alt, 5),
-    (20, -20, -init_alt, 5),
-    (-20, -20, -init_alt, 5),
-    (-20, 20, -init_alt, 5),
+    (40, 40, -init_alt, 3),
+    (40, -40, -init_alt, 3),
+    (-40, -40, -init_alt, 3),
+    (-40, 40, -init_alt, 3),
 ]
 
 if traj == "coil":
@@ -144,7 +144,7 @@ else:
 if online_training:
     config.update(
         {
-            "create_env_on_driver": False,  # Make sure worker 0 has an Env.
+            "create_env_on_driver": False,
             "num_workers": num_workers,
             "num_gpus": 1,
             "explore": False,
@@ -161,7 +161,7 @@ if online_training:
 else:
     config.update(
         {
-            "create_env_on_driver": False,  # Make sure worker 0 has an Env.
+            "create_env_on_driver": False,
             "num_workers": num_workers,
             "num_gpus": 1,
             "explore": False,
@@ -172,7 +172,7 @@ else:
             "sgd_minibatch_size": 256,
             "lr": 0,
             "lr_schedule": None,
-            "num_sgd_iter": 16,
+            "num_sgd_iter": 0,
         }
     )
 
