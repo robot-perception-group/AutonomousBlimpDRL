@@ -16,7 +16,7 @@ checkpoint_path = os.path.expanduser(
 )
 
 robot_id = "0"
-auto_start_simulation = bool(sys.argv[1])  # start simulation
+auto_start_simulation = True  # start simulation
 duration = int(0.5 * 3600 * 10 * 7) + 24193600
 # duration = 1e20
 run_pid = False
@@ -28,8 +28,9 @@ real_experiment = True  # no reset
 evaluation_mode = False  # fix robotid, don't support multiworker
 online_training = False  # if training during test
 
-traj = "square"  # square, coil
-windspeed = 0
+
+traj = "square" if sys.argv[1] == 0 else "coil"
+windspeed = 0.5 * float(sys.argv[2])
 
 trigger_dist = 7
 init_alt = 100
