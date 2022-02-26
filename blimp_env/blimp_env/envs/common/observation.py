@@ -279,7 +279,6 @@ class PlanarKinematicsObservation(ROSObservation):
             processed_dict.update({"residual_act": rsdact})
 
         actuator = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
-        actuator[3] = actuator[3] * 2
         processed_dict.update({"actuator": actuator})
 
         proc_df = pd.DataFrame.from_records([processed_dict])
@@ -302,7 +301,7 @@ class PlanarKinematicsObservation(ROSObservation):
             goal_dict["position"],
             goal_dict["next_position"],
         )
-        vel = np.linalg.norm(obs_dict["velocity"])  # TODO
+        vel = np.linalg.norm(obs_dict["velocity"])  
         # vel = obs_dict["airspeed"]
         goal_vel = goal_dict["velocity"]
 
