@@ -17,20 +17,30 @@ checkpoint_path = os.path.expanduser(
 
 robot_id = "0"
 auto_start_simulation = True  # start simulation
-duration = int(0.5 * 3600 * 10 * 7) + 24193600
+duration = int(3 * 3600 * 10 * 7) + 24193600
 # duration = 1e20
-run_pid = False
 
 
 num_workers = 7
 
 real_experiment = True  # no reset
 evaluation_mode = False  # fix robotid, don't support multiworker
-online_training = False  # if training during test
+online_training = True  # if training during test
 
 
-traj = "square" if sys.argv[1] == 0 else "coil"
-windspeed = 0.5 * float(sys.argv[2])
+print(f"receive argument {sys.argv[1]}, {sys.argv[2]}")
+
+if float(sys.argv[1]) == 1.0:
+    run_pid = True
+elif float(sys.argv[1]) == 2.0:
+    run_pid = False
+else:
+    run_pid = False
+
+traj = "square"
+windspeed = 1.0
+buoyancy = 1.05
+
 
 trigger_dist = 7
 init_alt = 100
@@ -75,7 +85,8 @@ env_config["simulation"].update(
         "enable_wind_sampling": True,
         "wind_speed": windspeed,
         "wind_direction": (1, 0),
-        "enable_buoyancy_sampling": False,
+        "enable_buoyancy_sampling": True,
+        "buoyancy_range": [buoyancy, buoyancy],
         "position": (0, 0, init_alt),
     }
 )
@@ -104,7 +115,7 @@ else:
         "act_noise_stdv": 0.25,
         "disable_servo": disable_servo,
         # "max_servo": -0.5,
-        "max_thrust": 0.7,
+        "max_thrust": 0.5,
     }
 
 
