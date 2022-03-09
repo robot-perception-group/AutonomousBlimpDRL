@@ -6,40 +6,35 @@ import ray
 import sys
 import rl.rllib_script.agent.model.ray_model
 from blimp_env.envs import ResidualPlanarNavigateEnv
-from blimp_env.envs.script import close_simulation, spawn_simulation_on_different_port
 from ray.rllib.agents import ppo
 from ray.tune.logger import pretty_print
-from blimp_env.envs.common.gazebo_connection import GazeboConnection
 
 checkpoint_path = os.path.expanduser(
     "~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_001080/checkpoint-1080"
 )
 
-robot_id = "0"
 auto_start_simulation = True  # start simulation
-duration = int(3 * 3600 * 10 * 7) + 24193600
-# duration = 1e20
+duration = int(0.5 * 3600 * 10 * 7) + 24193600
 
-
-num_workers = 7
+num_workers = 2
 
 real_experiment = True  # no reset
 evaluation_mode = False  # fix robotid, don't support multiworker
-online_training = True  # if training during test
+online_training = False  # if training during test
 
 
-print(f"receive argument {sys.argv[1]}, {sys.argv[2]}")
-
-if float(sys.argv[1]) == 1.0:
+if float(sys.argv[1]) == 0.0:
     run_pid = True
-elif float(sys.argv[1]) == 2.0:
-    run_pid = False
-else:
+elif float(sys.argv[1]) == 1.0:
     run_pid = False
 
-traj = "square"
-windspeed = 1.0
-buoyancy = 1.05
+windspeed = 0.5 * float(sys.argv[2])
+buoyancy = 0.93 + 0.07 * float(sys.argv[3])
+
+if float(sys.argv[4]) == 0.0:
+    traj = "square"
+elif float(sys.argv[4]) == 1.0:
+    traj = "coil"
 
 
 trigger_dist = 7
@@ -65,7 +60,6 @@ else:
 env_config = config["env_config"]
 env_config.update(
     {
-        "robot_id": robot_id,
         "DBG": False,
         "evaluation_mode": evaluation_mode,
         "real_experiment": real_experiment,
@@ -77,7 +71,6 @@ env_config.update(
 )
 env_config["simulation"].update(
     {
-        "robot_id": int(robot_id),
         "gui": False,
         "auto_start_simulation": auto_start_simulation,
         "enable_meshes": True,
@@ -106,7 +99,6 @@ if "action" in env_config:
         {
             "act_noise_stdv": 0.25,
             "disable_servo": disable_servo,
-            # "max_servo": -0.5,
             "max_thrust": 0.5,
         }
     )
@@ -114,7 +106,6 @@ else:
     env_config["action"] = {
         "act_noise_stdv": 0.25,
         "disable_servo": disable_servo,
-        # "max_servo": -0.5,
         "max_thrust": 0.5,
     }
 
@@ -201,52 +192,3 @@ for _ in range(int(duration)):
     if result["timesteps_total"] >= duration:
         break
 print("done")
-
-
-# else:
-#     config.update(
-#         {
-#             "create_env_on_driver": False,  # Make sure worker 0 has an Env.
-#             "num_workers": num_workers,
-#             "num_gpus": 1,
-#             "horizon": duration,
-#             "rollout_fragment_length": duration,
-#             "explore": False,
-#             "env_config": env_config,
-#         }
-#     )
-#     print(config)
-#     ray.shutdown()
-#     ray.init()  # local_mode: single thread
-#     agent = ppo.PPOTrainer(config=config, env=ENV)
-#     agent.restore(checkpoint_path)
-
-#     n_steps = int(duration)
-#     total_reward = 0
-#     cell_size = config["model"]["custom_model_config"].get("lstm_cell_size", 64)
-#     state = [np.zeros(cell_size, np.float32), np.zeros(cell_size, np.float32)]
-#     prev_action = np.zeros(4)
-#     prev_reward = np.zeros(1)
-
-#     gaz = GazeboConnection()
-#     gaz.pause_sim()
-#     gaz.reset_sim()
-#     gaz.unpause_sim()
-#     for steps in range(n_steps):
-#         action, state, _ = agent.compute_single_action(
-#             obs,
-#             state=state,
-#             prev_action=prev_action,
-#             prev_reward=prev_reward,
-#         )
-#         obs, reward, done, info = env.step(action)
-#         prev_action = action
-#         prev_reward = reward
-#         total_reward += reward
-
-#         if steps % 20 == 0:
-#             print(
-#                 f"Steps #{steps} Total Reward: {total_reward}, Average Reward: {total_reward/(steps+1)}"
-#             )
-#             print(f"Steps #{steps} Action: {action}")
-#             print(f"Steps #{steps} Observation: {obs}")

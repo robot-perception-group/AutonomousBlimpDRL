@@ -23,9 +23,8 @@ See: https://www.gnu.org/licenses/gpl-3.0.en.html
 * /path_planner -- waypoints assignment.
 
 # Install blimp simulator
-See: https://github.com/robot-perception-group/airship_simulation. 
+see: https://github.com/Ootang2019/airship_simulation/tree/abcdrl
 
-Note: The default ROS version for the blimp simulator is melodic, you should switch to noetic branch.
 
 ## Configure software-in-the-loop firmware
 This step enables ROS control on the firmware.
@@ -42,13 +41,13 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/librepilot-gcs_release/bin/librepilot-gcs
 ```
 3. In "Tools" tab (top) --> "options" --> "Environment" --> "General" --> check "Expert Mode"
-3. Select "Connections" (bottom right) --> UDP: localhost --> Click "Connect"
-4. "Configuration" tab (bottom) --> "Input" tab (left) --> "Arming Setting" --> Change "Always Armed" to "Always Disarmed" --> Click "Apply"
-5. "HITL" tab --> click "Start" --> check "GCS Control". 
+4. Select "Connections" (bottom right) --> UDP: localhost --> Click "Connect"
+5. "Configuration" tab (bottom) --> "Input" tab (left) --> "Arming Setting" --> Change "Always Armed" to "Always Disarmed" --> Click "Apply"
+6. "HITL" tab --> click "Start" --> check "GCS Control". 
    This will disarm the firmware and allow to save the configuration
-6. "Configuration" tab --> "Input" tab (left) --> "Flight Mode Switch Settings" --> Change "Flight Mode"/"Pos. 1" from "Manual" to "ROSControlled" 
-7. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Disarmed" to "Always Armed" --> Click "Save" --> Click "Apply" 
-8. Confirm the change by restarting firmware, connecting via gcs, and checking if "Flight Mode"/"Pos. 1" is "ROSControlled"
+7. "Configuration" tab --> "Input" tab (left) --> "Flight Mode Switch Settings" --> Change "Flight Mode"/"Pos. 1" from "Manual" to "ROSControlled" 
+8. "Configuration" tab --> "Input" tab (left) --> "Arming Setting" --> Change "Always Disarmed" to "Always Armed" --> Click "Save" --> Click "Apply" 
+9. Confirm the change by restarting firmware, connecting via gcs, and checking if "Flight Mode"/"Pos. 1" is "ROSControlled"
 
 # Install RL training environment
 
@@ -57,7 +56,7 @@ In the same catkin_ws as airship_simulation:
 1. setup bimp_env
 ```console
 cd ~/catkin_ws/src
-git clone -b v1.0 https://github.com/robot-perception-group/AutonomousBlimpDRL.git
+git clone -b v2.0 https://github.com/robot-perception-group/AutonomousBlimpDRL.git
 cd ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env
 pip install .
 ```
@@ -67,28 +66,14 @@ cd ~/catkin_ws/src/AutonomousBlimpDRL/RL
 pip install .
 ```
 
-3. replace/add some files
-
-* ros2roshitl.py: reduec IMU message overhead
-* world.launch: change env easier
-* bilmp_ros: specify wind from launch
-```console
-rm ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/ros2roshitl.py ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/roshitl/nodes/ros2roshitl.py
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/rosbridge.cpp ~/catkin_ws/src/airship_simulation/LibrePilot/ROS/ROSBridge/src/rosbridge.cpp
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/launchfile/* ~/catkin_ws/src/airship_simulation/blimp_description/launch
-cp ~/catkin_ws/src/AutonomousBlimpDRL/replace/normwind/src/* ~/catkin_ws/src/airship_simulation/blimp_gazebo_plugin/normwind/src
-```
-
-4. compile ROS packages
+3. compile ROS packages
 ```console
 cd ~/catkin_ws
 catkin_make
 source ~/catkin_ws/devel/setup.bash
 ```
 
-
-5. (optional) export path to .bashrc
+4. (optional) export path to .bashrc
 
 Sometimes it is not able to find the package because of the setuptools versions. In this case, we have to manually setup the environment path.
 ```console
@@ -97,16 +82,15 @@ source ~/.bashrc
 ```
 
 # Start Training
-This will run QRDQN training for 7 days.
+This will run ppo training for 2 days.
 ```console
-cd ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/planarnavigateenv_qrdqn.py
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavigateenv_ppo.py
 ```
 
 Viualize
 * Training progress. In new terminal, enter the log folder and start tensorboard
 ```console
-tensorboard --logdir .
+tensorboard --logdir ~/ray_results/.
 ```
 * Gazebo. In new terminal, start gzcilent
 ```console
@@ -126,43 +110,27 @@ To close the simulation
 # Reproduction of results:
 
 --------------
-## Experiment 1: navigate square trajectory
+## Experiment 1: yaw control task
 --------------
 ```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square"
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/yawcontrolenv_ppo.py
 ```
 
 --------------
-## Experiment 2: hover at target position
+## Experiment 2: blimp control task 
 --------------
 ```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "hover_fixed_goal"
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavigateenv_ppo.py
 ```
 
 --------------
-## Experiment 3: navigate square with wind
+## Experiment 3: robustness evaluation
 --------------
 ```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square" --enable_wind --wind_speed 2.0
-```
-
---------------
-## Experiment 4: buoyancy change
---------------
-```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/script/play_sb3.py --task "square" 
-```
-right after blimp_spawned in Gazebo
-```console
-. ~/catkin_ws/src/airship_simulation/deflate_blimp.sh 8 0 0.2 .95
+bash ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/test_agent/run.sh
 ```
 
 # Cite
 ```
-@article{Liu2021ABCDRL,
-  title={Autonomous Blimp Control using Deep Reinforcement Learning},
-  author={Yu Tang Liu, Eric Price, Pascal Goldschmid, Michael J. Black, Aamir Ahmad},
-  journal={arXiv preprint arXiv:2109.10719},
-  year={2021}
-}
+
 ```

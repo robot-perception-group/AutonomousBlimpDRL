@@ -1,7 +1,7 @@
 #/bin/bash
 
-LOGDIR=${HOME}/ray_results/Robustness/rosbag
 FLIGHTNAME=$1
+LOGDIR=$2
 SDATE=$( date "+%Y-%m-%d_%T" )
 HOSTNAME=$( hostname )
 CCOUNT=1
