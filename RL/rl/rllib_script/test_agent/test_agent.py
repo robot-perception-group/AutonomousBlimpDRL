@@ -16,7 +16,7 @@ checkpoint_path = os.path.expanduser(
 auto_start_simulation = True  # start simulation
 duration = int(0.5 * 3600 * 10 * 7) + 24193600
 
-num_workers = 2
+num_workers = 7
 
 real_experiment = True  # no reset
 evaluation_mode = False  # fix robotid, don't support multiworker
@@ -83,31 +83,23 @@ env_config["simulation"].update(
         "position": (0, 0, init_alt),
     }
 )
-if "observation" in env_config:
-    env_config["observation"].update(
-        {
-            "noise_stdv": 0.1,
-        }
-    )
-else:
-    env_config["observation"] = {
-        "noise_stdv": 0.1,
-    }
 
-if "action" in env_config:
-    env_config["action"].update(
-        {
-            "act_noise_stdv": 0.25,
-            "disable_servo": disable_servo,
-            "max_thrust": 0.5,
-        }
-    )
+obs_config = {
+    "noise_stdv": 0.05,
+}
+if "observation" in env_config:
+    env_config["observation"].update(obs_config)
 else:
-    env_config["action"] = {
-        "act_noise_stdv": 0.25,
-        "disable_servo": disable_servo,
-        "max_thrust": 0.5,
-    }
+    env_config["observation"] = obs_config
+
+act_config = {
+    "act_noise_stdv": 0.5,
+    "disable_servo": disable_servo,
+}
+if "action" in env_config:
+    env_config["action"].update(act_config)
+else:
+    env_config["action"] = act_config
 
 
 def generate_coil(points, radius, speed=5):
@@ -133,17 +125,17 @@ if traj == "coil":
     wp_list = coil
 elif traj == "square":
     wp_list = square
-target_dict = {
-    "type": "MultiGoal",  # InteractiveGoal
+target_config = {
+    "type": "MultiGoal",
     "target_name_space": "goal_",
     "trigger_dist": trigger_dist,
     "wp_list": wp_list,
     "enable_random_goal": False,
 }
 if "target" in env_config:
-    env_config["target"].update(target_dict)
+    env_config["target"].update(target_config)
 else:
-    env_config["target"] = target_dict
+    env_config["target"] = target_config
 
 
 if online_training:

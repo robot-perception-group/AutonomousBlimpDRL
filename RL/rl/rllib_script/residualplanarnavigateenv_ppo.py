@@ -13,18 +13,18 @@ from rl.rllib_script.util import find_nearest_power_of_two
 ENV = ResidualPlanarNavigateEnv
 AGENT = ppo
 AGENT_NAME = "PPO"
-exp_name_posfix = "adaptive"
+exp_name_posfix = "test"
 
 env_default_config = ENV.default_config()
 duration = env_default_config["duration"]
 simulation_frequency = env_default_config["simulation_frequency"]
 policy_frequency = env_default_config["policy_frequency"]
 
-days = 1
+days = 28
 one_day_ts = 24 * 3600 * policy_frequency
 TIMESTEP = int(days * one_day_ts)
 
-restore = "/home/yliu2/catkin_ws/src/AutonomousBlimpDRL/RL/rl/trained_model/PPO_ResidualPlanarNavigateEnv_9d24f_00000_0_2022-02-21_17-09-14/checkpoint_001080/checkpoint-1080"
+restore = None
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gui", type=bool, default=False, help="Start with gazebo gui")
