@@ -42,9 +42,9 @@ parser.add_argument(
 parser.add_argument(
     "--use_lstm",
     dest="use_lstm",
-    default=True,
-    action="store_false",
-    help="disable lstm cell",
+    default=False,
+    action="store_true",
+    help="enable lstm cell",
 )
 
 

@@ -40,7 +40,7 @@ cd ~/catkin_ws/src/airship_simulation/LibrePilot
 cd ~/catkin_ws/src/airship_simulation/LibrePilot
 ./build/librepilot-gcs_release/bin/librepilot-gcs
 ```
-3. In "Tools" tab (top) --> "options" --> "Environment" --> "General" --> check "Expert Mode"
+3. In "Tools" tab (top) --> "options" --> "Environment" --> "General" --> check "Expert Mode" --> restart
 4. Select "Connections" (bottom right) --> UDP: localhost --> Click "Connect"
 5. "Configuration" tab (bottom) --> "Input" tab (left) --> "Arming Setting" --> Change "Always Armed" to "Always Disarmed" --> Click "Apply"
 6. "HITL" tab --> click "Start" --> check "GCS Control". 
@@ -82,9 +82,9 @@ source ~/.bashrc
 ```
 
 # Start Training
-This will run ppo training for 2 days.
+This will run ppo for 12days (2 days each * 3 seeds * 2 mixer_type)
 ```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavigateenv_ppo.py
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavigateenv_ppo.py --use_lstm
 ```
 
 Viualize
@@ -98,7 +98,7 @@ gzcilent
 ```
 * rviz. In new terminal, start rviz and load a configured rviz flie
 ```console
-rosrun rviz rviz -d blimp_env/blimp_env/envs/rviz/planar_goal_env.rviz
+rosrun rviz rviz -d ~/catkin_ws/src/AutonomousBlimpDRL/blimp_env/blimp_env/envs/rviz/planar_goal_env.rviz
 ```
 
 To close the simulation
@@ -108,19 +108,23 @@ To close the simulation
 
 
 # Reproduction of results:
-
+this will run evaluation of a policy in trained_model folder
 --------------
-## Experiment 1: yaw control task
+## Experiment 1: yaw control task training progress
 --------------
 ```console
 python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/yawcontrolenv_ppo.py
 ```
+use lstm network
+```console
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/yawcontrolenv_ppo.py --use_lstm
+```
 
 --------------
-## Experiment 2: blimp control task 
+## Experiment 2: blimp control task training progress
 --------------
 ```console
-python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavigateenv_ppo.py
+python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavigateenv_ppo.py --use_lstm
 ```
 
 --------------
@@ -129,6 +133,7 @@ python3 ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/residualplanarnavi
 ```console
 bash ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/test_agent/run.sh
 ```
+
 
 # Cite
 ```
