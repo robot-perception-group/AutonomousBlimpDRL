@@ -3,7 +3,7 @@
 # Autonomous Blimp Control using Deep Reinforcement Learning
 =================================================================
 
-## For more information, read our preprint on arXiv: https://arxiv.org/abs/2109.10719
+## For more information, read our preprint on arXiv: "placeholder"
 --------------------------------------------------------------
 
 # Copyright and License
@@ -108,7 +108,7 @@ To close the simulation
 
 
 # Reproduction of results:
-this will run evaluation of a policy in trained_model folder
+
 --------------
 ## Experiment 1: yaw control task training progress
 --------------
