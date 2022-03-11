@@ -143,8 +143,6 @@ bash ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/test_agent/run.sh
       journal = {arXiv e-prints},
          year = 2022,
 }
-
-
 ```
 
 previous work (git branch v1.0)
