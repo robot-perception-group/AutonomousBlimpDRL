@@ -3,7 +3,7 @@
 # Autonomous Blimp Control using Deep Reinforcement Learning
 =================================================================
 
-## For more information, read our preprint on arXiv: "placeholder"
+## For more information, read our preprint on arXiv: "https://arxiv.org/abs/2203.05360"
 --------------------------------------------------------------
 
 # Copyright and License
@@ -137,6 +137,14 @@ bash ~/catkin_ws/src/AutonomousBlimpDRL/RL/rl/rllib_script/test_agent/run.sh
 
 # Cite
 ```
+@ARTICLE{2022arXiv220305360T,
+       author = {{Tang Liu}, Yu and {Price}, Eric and {Black}, Michael J. and {Ahmad}, Aamir},
+        title = "{Deep Residual Reinforcement Learning based Autonomous Blimp Control}",
+      journal = {arXiv e-prints},
+         year = 2022,
+}
+
+
 ```
 
 previous work (git branch v1.0)
