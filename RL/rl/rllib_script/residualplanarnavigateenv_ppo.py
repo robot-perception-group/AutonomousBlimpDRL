@@ -38,7 +38,13 @@ parser.add_argument(
 parser.add_argument(
     "--resume", type=bool, default=False, help="resume the last experiment"
 )
-parser.add_argument("--use_lstm", type=bool, default=True, help="enable lstm cell")
+parser.add_argument(
+    "--use_lstm",
+    dest="use_lstm",
+    default=False,
+    action="store_true",
+    help="enable lstm cell",
+)
 
 
 def env_creator(env_config):
@@ -62,7 +68,9 @@ if __name__ == "__main__":
             "gui": args.gui,
             "auto_start_simulation": True,
         },
-        "mixer_type": "hybrid",  # absolute, relative, hybrid
+        "mixer_type": tune.grid_search(
+            ["hybrid", "absolute"]
+        ),  # absolute, relative, hybrid
         "mixer_param": (0.5, 0.7),  # alpha, beta
     }
 
