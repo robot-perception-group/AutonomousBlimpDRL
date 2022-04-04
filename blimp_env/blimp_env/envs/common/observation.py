@@ -248,7 +248,8 @@ class PlanarKinematicsObservation(ROSObservation):
                 }
             )
 
-        self.obs_dim += 4
+        self.actuator_list = [0, 1, 5, 6]
+        self.obs_dim += len(self.actuator_list)
         self.obs_name.append("actuator")
 
     def observe(self, rsdact=np.zeros(4)) -> np.ndarray:
@@ -278,7 +279,7 @@ class PlanarKinematicsObservation(ROSObservation):
         if self.enable_rsdact_feedback:
             processed_dict.update({"residual_act": rsdact})
 
-        actuator = self.env.action_type.get_cur_act()[[0, 1, 5, 6]]
+        actuator = self.env.action_type.get_cur_act()[self.actuator_list]
         processed_dict.update({"actuator": actuator})
 
         proc_df = pd.DataFrame.from_records([processed_dict])
@@ -301,7 +302,7 @@ class PlanarKinematicsObservation(ROSObservation):
             goal_dict["position"],
             goal_dict["next_position"],
         )
-        vel = np.linalg.norm(obs_dict["velocity"])  
+        vel = np.linalg.norm(obs_dict["velocity"])
         # vel = obs_dict["airspeed"]
         goal_vel = goal_dict["velocity"]
 
@@ -450,6 +451,180 @@ class DummyYawObservation(PlanarKinematicsObservation):
             state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
 
         return state_dict
+
+# TODO: finish AerobaticObservation /////////////////////////////////////////////
+
+class AerobaticObservation(ROSObservation):
+    """aerobatic observation with actuator feedback"""
+
+    OBS = [
+        "dist_to_origin",
+        "roll_diff",
+        "pitch_diff",
+        "yaw_diff",
+        "vel",
+        "roll_vel",
+        "pitch_vel",
+        "yaw_vel",
+    ]
+    OBS_range = {
+        "dist_to_origin": [0, 100 * np.sqrt(3)],
+        "roll_diff": [-np.pi, np.pi],
+        "pitch_diff": [-np.pi, np.pi],
+        "yaw_diff": [-np.pi, np.pi],
+        "vel": [0, 20],
+        "roll_vel": [-50, 50],
+        "pitch_vel": [-50, 50],
+        "yaw_vel": [-50, 50],
+    }
+
+    def __init__(
+        self,
+        env: "AbstractEnv",
+        noise_stdv=0.02,
+        scale_obs=True,
+        enable_airspeed_sensor=False,  # add airspeed sensor
+        **kwargs: dict
+    ) -> None:
+        super().__init__(env, **kwargs)
+        self.noise_stdv = noise_stdv
+        self.scale_obs = scale_obs
+        self.enable_airspeed_sensor = enable_airspeed_sensor
+
+        self.obs_name = self.OBS.copy()
+        self.obs_dim = len(self.OBS)
+        self.range_dict = self.OBS_range
+
+        if self.enable_airspeed_sensor:
+            self.obs_dim += 1
+            self.obs_name.append("airspeed")
+            self.range_dict.update({"airspeed": [0, 7]})
+
+        ## TODO: decide what actuator to use
+        self.actuator_list = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.obs_dim += len(self.actuator_list)
+        self.obs_name.append("actuator")
+
+    def observe(self) -> np.ndarray:
+        obs, obs_dict = self._observe()
+        while np.isnan(obs).any():
+            rospy.loginfo("[ observation ] obs corrupted by NA")
+            self.obs_err_handle()
+            obs, obs_dict = self._observe()
+        return obs, obs_dict
+
+    def _observe(self) -> np.ndarray:
+        obs_dict = {
+            "position": self.pos_data,
+            "velocity": self.vel_data,
+            "velocity_norm": np.linalg.norm(self.vel_data),
+            "linear_acceleration": self.acc_data,
+            "acceleration_norm": np.linalg.norm(self.acc_data),
+            "orientation": self.ori_data,
+            "angle": self.ang_data,
+            "angular_velocity": self.ang_vel_data,
+            "airspeed": self.airspeed_data,
+        }
+
+        goal_dict = self.env.goal
+        processed_dict = self.process_obs(obs_dict, goal_dict, self.scale_obs)
+
+        ## TODO: decide what actuator to use
+        actuator = self.env.action_type.get_cur_act()[self.actuator_list]
+        processed_dict.update({"actuator": actuator})
+
+        proc_df = pd.DataFrame.from_records([processed_dict])
+        processed = np.hstack(proc_df[self.obs_name].values[0])
+
+        obs_dict.update({"proc_dict": processed_dict})
+        obs_dict.update({"goal_dict": goal_dict})
+
+        if self.dbg_obs:
+            print("[ observation ] state", processed)
+            print("[ observation ] obs dict", obs_dict)
+
+        return processed, obs_dict
+
+    def process_obs(
+        self, obs_dict: dict, goal_dict: dict, scale_obs: bool = True
+    ) -> dict:
+        # TODO: define goal
+        obs_ori, goal_ori, obs_pos, goal_pos = (
+            obs_dict["orientation"],
+            goal_dict["orientation"],
+            obs_dict["postion"],
+            goal_dict["postion"],
+        )
+        vel = np.linalg.norm(obs_dict["velocity"])
+        # vel = obs_dict["airspeed"]
+        goal_vel = goal_dict["velocity"]
+
+        planar_dist = np.linalg.norm(obs_pos[0:2] - goal_pos[0:2])
+        yaw_diff = self.compute_yaw_diff(goal_pos, obs_pos, obs_dict["angle"][2])
+
+        state_dict = {
+            "z_diff": obs_pos[2] - goal_pos[2],
+            "planar_dist": planar_dist,
+            "yaw_diff": yaw_diff,
+            "vel_diff": vel - goal_vel,
+            "vel": vel,
+            "yaw_vel": obs_dict["angular_velocity"][2],
+            
+            "dist_to_origin": np.linalg.norm(obs_pos-goal_pos),
+            "roll_diff": ,
+            "pitch_diff",
+            "yaw_diff",
+            "vel",
+            "roll_vel",
+            "pitch_vel",
+            "yaw_vel",
+        }
+
+
+        if self.enable_airspeed_sensor:
+            state_dict.update({"airspeed": obs_dict["airspeed"]})
+
+        if scale_obs:
+            state_dict = self.scale_obs_dict(state_dict, self.noise_stdv)
+
+        return state_dict
+
+    def scale_obs_dict(self, state_dict: dict, noise_level: float = 0.0) -> dict:
+        for key, val in state_dict.items():
+            proc = utils.lmap(val, self.range_dict[key], [-1, 1])
+            proc += np.random.normal(0, noise_level, proc.shape)
+            proc = np.clip(proc, -1, 1)
+            state_dict[key] = proc
+        return state_dict
+
+    @classmethod
+    def compute_yaw_diff(
+        cls, goal_pos: np.array, obs_pos: np.array, obs_yaw: float
+    ) -> float:
+        """compute yaw angle of the vector machine position to goal position
+        then compute the difference of this angle to machine yaw angle
+        last, make sure this angle lies within (-pi, pi)
+
+        Args:
+            goal_pos (np.array): [machine position]
+            obs_pos (np.array): [goal postiion]
+            obs_yaw (float): [machine yaw angle]
+
+        Returns:
+            float: [yaw angle differences]
+        """
+        pos_diff = obs_pos - goal_pos
+        goal_yaw = np.arctan2(pos_diff[1], pos_diff[0]) - np.pi
+        ang_diff = goal_yaw - obs_yaw
+
+        if ang_diff > np.pi:
+            ang_diff -= 2 * np.pi
+        elif ang_diff < -np.pi:
+            ang_diff += 2 * np.pi
+
+        return ang_diff
+
+#//////////////////////////////////////////////////////////////////////
 
 
 def observation_factory(env: "AbstractEnv", config: dict) -> ObservationType:

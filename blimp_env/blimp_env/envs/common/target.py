@@ -354,6 +354,118 @@ class MultiGoal(TargetType):
         self.next_wp = self.wp_list[self.next_wp_index]
 
 
+# TODO: finish AerobaticGoal ////////////////////////////////////////
+class AerobaticGoal(TargetType):
+    """a fixed aerobatic goal"""
+
+    def __init__(
+        self,
+        env: "AbstractEnv",
+        target_name_space="target_0",
+        aerobatic_name="vertical_roll",
+        DBG_ROS=False,
+        **kwargs,  # pylint: disable=unused-argument
+    ) -> None:
+        super().__init__(env)
+
+        self.target_name_space = target_name_space
+        self.dbg_ros = DBG_ROS
+        self.target_dim = 9
+
+        self.pos_cmd_data = np.zeros(3)
+        self.vel_cmd_data = np.zeros(1)
+        self.ang_cmd_data = np.zeros(3)
+
+        self.x_range, self.y_range, self.z_range, self.v_range = (
+            xy_range,
+            xy_range,
+            z_range,
+            v_range,
+        )
+
+        self._pub_and_sub = False
+        self._create_pub_and_sub()
+
+    def space(self) -> spaces.Space:
+        """gym space, only for testing purpose"""
+        return spaces.Box(
+            low=np.full((self.target_dim), -1),
+            high=np.full((self.target_dim), 1),
+            dtype=np.float32,
+        )
+
+    def _create_pub_and_sub(self) -> None:
+        """create publicator and subscriber"""
+        self.wp_viz_publisher = rospy.Publisher(
+            self.target_name_space + "/rviz_pos_cmd", Marker, queue_size=1
+        )
+        self._pub_and_sub = True
+
+    def publish_waypoint_toRviz(self, waypoint):
+        marker = Marker()
+        marker.header.frame_id = "world"
+        marker.header.stamp = rospy.Time.now()
+        marker.action = marker.ADD
+        marker.type = marker.SPHERE
+        marker.id = 0
+        marker.scale.x, marker.scale.y, marker.scale.z = 2, 2, 2
+        marker.color.a, marker.color.r, marker.color.g, marker.color.b = 1, 1, 1, 0
+        marker.pose.position.x, marker.pose.position.y, marker.pose.position.z = (
+            waypoint[1],
+            waypoint[0],
+            -waypoint[2],
+        )  ## NED --> rviz(ENU)
+        marker.pose.orientation.w = 1
+        self.wp_viz_publisher.publish(marker)
+
+    def generate_goal(self):
+        x = np.random.uniform(*self.x_range)
+        y = np.random.uniform(*self.y_range)
+        z = np.random.uniform(*self.z_range)
+        pos_cmd = np.array([x, y, z])
+
+        v_cmd = np.random.uniform(*self.v_range)
+
+        phi, the = 0, 0
+        psi = np.random.uniform(-pi, pi)
+        ang_cmd = np.array([phi, the, psi])
+        q_cmd = euler2quat(0, 0, psi)
+        return pos_cmd, v_cmd, ang_cmd, q_cmd
+
+    def check_planar_distance(self, waypoint0, waypoint1, min_dist=30):
+        """check if planar distance between 2 waypoints are greater than min_dist"""
+        dist = np.linalg.norm(waypoint0[0:2] - waypoint1[0:2])
+        return dist > min_dist
+
+    def sample_new_goal(self, origin=np.array([0, 0, -100])):
+        far_enough = False
+        while far_enough == False:
+            pos_cmd, v_cmd, ang_cmd, _ = self.generate_goal()
+            far_enough = self.check_planar_distance(pos_cmd, origin)
+
+        self.pos_cmd_data = pos_cmd
+        self.vel_cmd_data = v_cmd
+        self.ang_cmd_data = ang_cmd
+
+    def sample(self) -> Dict[str, np.ndarray]:
+        """sample target state
+
+        Returns:
+            dict: target info dictionary with key specified by self.target_name
+        """
+        if self.env.steps % self.new_target_every_ts == 0:
+            self.sample_new_goal()
+        self.publish_waypoint_toRviz(self.pos_cmd_data)
+        return {
+            "position": self.pos_cmd_data,
+            "velocity": self.vel_cmd_data,
+            "angle": self.ang_cmd_data,
+        }
+
+
+# //////////////////////////////////////////////
+
+
 class ROSTarget(TargetType):
     """ROS Abstract Target"""
 
