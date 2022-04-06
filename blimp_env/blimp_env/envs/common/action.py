@@ -135,7 +135,22 @@ class ROSActionType(ActionType):
 
 
 class ContinuousAction(ROSActionType):
-    """continuous action space"""
+    """continuous action space
+    action channel
+    0: m2
+    1: lfin
+    2: rfin
+    3: tfin
+    4: bfin
+    5: stick
+    6: m1
+    7: unused
+    8: m0
+    9: unused
+    10: unused
+    11: unused
+
+    """
 
     ACTION_RANGE = (1000, 2000)
 
@@ -149,22 +164,6 @@ class ContinuousAction(ROSActionType):
         act_noise_stdv: float = 0.05,
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
-        """action channel
-        0: m2
-        1: lfin
-        2: rfin
-        3: tfin
-        4: bfin
-        5: stick
-        6: m1
-        7: unused
-        8: m0
-        9: unused
-        10: unused
-        11: unused
-
-        """
-
         super().__init__(
             env=env,
             robot_id=robot_id,
@@ -289,7 +288,7 @@ class ContinuousDifferentialAction(ContinuousAction):
     11: unused
     """
 
-    DIFF_ACT_SCALE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+    DIFF_ACT_SCALE = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.2, 0.2, 0.2])
     ACT_DIM = 8
 
     def __init__(
@@ -434,7 +433,14 @@ class ContinuousDifferentialAction(ContinuousAction):
 
 
 class SimpleContinuousDifferentialAction(ContinuousDifferentialAction):
-    """simplified action space by binding action that has similar dynamic effect"""
+    """simplified action space by binding action that has similar dynamic effect
+
+    action channel
+    0: back motor + top fin + bot fin
+    1: left fin + right fin
+    2: servo
+    3: left motor + right motor
+    """
 
     DIFF_ACT_SCALE = np.array([0.4, 0.4, 0.1, 0.05])
     ACT_DIM = 4
@@ -444,12 +450,6 @@ class SimpleContinuousDifferentialAction(ContinuousDifferentialAction):
         env: "AbstractEnv",
         **kwargs: dict,
     ) -> None:
-        """action channel
-        0: back motor + top fin + bot fin
-        1: left fin + right fin
-        2: servo
-        3: left motor + right motor
-        """
         super().__init__(env, **kwargs)
         self.act_dim = self.ACT_DIM
         self.diff_act_scale = self.DIFF_ACT_SCALE

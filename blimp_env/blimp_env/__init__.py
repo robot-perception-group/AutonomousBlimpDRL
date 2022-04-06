@@ -13,3 +13,7 @@ register(
     id="yaw_control-v0",
     entry_point="blimp_env.envs:YawControlEnv",
 )
+register(
+    id="aerobatic-v0",
+    entry_point="blimp_env.envs:AerobaticEnv",
+)

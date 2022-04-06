@@ -58,27 +58,25 @@ class RandomGoal(TargetType):
         target_name_space="target_0",
         new_target_every_ts: int = 1200,
         DBG_ROS=False,
-        xy_range=[-105, 105],
-        z_range=[-5, -210],
-        v_range=[2, 7],
+        range_dict={"xy": [-105, 105], "z": [-5, -210], "v": [2, 7]},
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(env)
 
         self.target_name_space = target_name_space
         self.dbg_ros = DBG_ROS
-        self.target_dim = 9
 
+        self.target_dim = 7
         self.pos_cmd_data = np.zeros(3)
         self.vel_cmd_data = np.zeros(1)
         self.ang_cmd_data = np.zeros(3)
 
         self.new_target_every_ts = new_target_every_ts
         self.x_range, self.y_range, self.z_range, self.v_range = (
-            xy_range,
-            xy_range,
-            z_range,
-            v_range,
+            range_dict["xy"],
+            range_dict["xy"],
+            range_dict["z"],
+            range_dict["v"],
         )
 
         self._pub_and_sub = False
@@ -354,34 +352,53 @@ class MultiGoal(TargetType):
         self.next_wp = self.wp_list[self.next_wp_index]
 
 
-# TODO: finish AerobaticGoal ////////////////////////////////////////
 class AerobaticGoal(TargetType):
     """a fixed aerobatic goal"""
+
+    TASK_TABLE = {
+        "stand": 0,  # pitch 90 degree
+        "backward": 1,  # control blimp to move backward
+        "upside_down": 2,  # pitch 180 degree, or roll 180 degree
+        "loop": 3,  # max pitch velocity
+        "roll": 4,  # max roll velocity
+    }
 
     def __init__(
         self,
         env: "AbstractEnv",
-        target_name_space="target_0",
-        aerobatic_name="vertical_roll",
-        DBG_ROS=False,
+        target_name_space: str = "goal_0",
+        task_name: Union[str, int] = "stand",
+        range_dict={"xy": [-105, 105], "z": [-5, -210], "v": [0, 20]},
+        robot_init_position=(0, 0, -100),
+        DBG_ROS: bool = False,
         **kwargs,  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(env)
 
+        self.task_table = self.TASK_TABLE
+        self.total_tasks = len(self.TASK_TABLE)
+        if isinstance(task_name, str):
+            if task_name != "random":
+                self.task = self.task_table[task_name]
+            else:
+                self.task = self.sample_task()
+        elif isinstance(task_name, int):
+            self.task = task_name
+        else:
+            raise ValueError("unrecognzied task")
+
         self.target_name_space = target_name_space
         self.dbg_ros = DBG_ROS
-        self.target_dim = 9
+        self.robot_init_position = robot_init_position
 
-        self.pos_cmd_data = np.zeros(3)
-        self.vel_cmd_data = np.zeros(1)
-        self.ang_cmd_data = np.zeros(3)
-
+        self.target_dim = 10
         self.x_range, self.y_range, self.z_range, self.v_range = (
-            xy_range,
-            xy_range,
-            z_range,
-            v_range,
+            range_dict["xy"],
+            range_dict["xy"],
+            range_dict["z"],
+            range_dict["v"],
         )
+        self._init_goal()
 
         self._pub_and_sub = False
         self._create_pub_and_sub()
@@ -418,34 +435,56 @@ class AerobaticGoal(TargetType):
         marker.pose.orientation.w = 1
         self.wp_viz_publisher.publish(marker)
 
-    def generate_goal(self):
+    def _init_goal(self) -> List[tuple]:
+        self.pos_cmd_data = np.array(self.robot_init_position)
+        self.vel_cmd_data = np.zeros(1)
+        self.ang_cmd_data = np.zeros(3)
+        self.angvel_cmd_data = np.zeros(3)
+
+        if self.task == int(0):
+            self.ang_cmd_data[1] = np.pi / 2
+
+        elif self.task == int(1):
+            self.sample_planar_goal()
+
+        elif self.task == int(2):
+            self.ang_cmd_data[0] = np.pi
+            self.ang_cmd_data[1] = np.pi
+
+        elif self.task == int(3):
+            self.angvel_cmd_data[1] = 50
+
+        elif self.task == int(4):
+            self.angvel_cmd_data[0] = 50
+
+        else:
+            raise ValueError("unrecognized task")
+
+    def sample_task(self):
+        return np.random.randint(self.total_tasks)
+
+    def generate_planar_goal(self):
         x = np.random.uniform(*self.x_range)
         y = np.random.uniform(*self.y_range)
         z = np.random.uniform(*self.z_range)
         pos_cmd = np.array([x, y, z])
-
         v_cmd = np.random.uniform(*self.v_range)
 
-        phi, the = 0, 0
-        psi = np.random.uniform(-pi, pi)
-        ang_cmd = np.array([phi, the, psi])
-        q_cmd = euler2quat(0, 0, psi)
-        return pos_cmd, v_cmd, ang_cmd, q_cmd
+        return pos_cmd, v_cmd
 
     def check_planar_distance(self, waypoint0, waypoint1, min_dist=30):
         """check if planar distance between 2 waypoints are greater than min_dist"""
         dist = np.linalg.norm(waypoint0[0:2] - waypoint1[0:2])
         return dist > min_dist
 
-    def sample_new_goal(self, origin=np.array([0, 0, -100])):
+    def sample_planar_goal(self, origin=np.array([0, 0, -100])):
         far_enough = False
         while far_enough == False:
-            pos_cmd, v_cmd, ang_cmd, _ = self.generate_goal()
+            pos_cmd, v_cmd = self.generate_planar_goal()
             far_enough = self.check_planar_distance(pos_cmd, origin)
 
         self.pos_cmd_data = pos_cmd
         self.vel_cmd_data = v_cmd
-        self.ang_cmd_data = ang_cmd
 
     def sample(self) -> Dict[str, np.ndarray]:
         """sample target state
@@ -453,17 +492,14 @@ class AerobaticGoal(TargetType):
         Returns:
             dict: target info dictionary with key specified by self.target_name
         """
-        if self.env.steps % self.new_target_every_ts == 0:
-            self.sample_new_goal()
         self.publish_waypoint_toRviz(self.pos_cmd_data)
         return {
+            "task": self.task,
             "position": self.pos_cmd_data,
             "velocity": self.vel_cmd_data,
             "angle": self.ang_cmd_data,
+            "angular_velocity": self.angvel_cmd_data,
         }
-
-
-# //////////////////////////////////////////////
 
 
 class ROSTarget(TargetType):
@@ -631,6 +667,8 @@ def target_factory(env: "AbstractEnv", config: dict) -> TargetType:
         return RandomGoal(env, **config)
     elif config["type"] == "MultiGoal":
         return MultiGoal(env, **config)
+    elif config["type"] == "AerobaticGoal":
+        return AerobaticGoal(env, **config)
     elif config["type"] == "InteractiveGoal":
         return InteractiveGoal(env, **config)
     else:
